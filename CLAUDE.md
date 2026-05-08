@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 2 mei 2026 — einde Fase 1
+**Laatst bijgewerkt:** 4 mei 2026 — Fase 2 in uitvoering (Stap 2.1)
 **Masterplan:** zie `westein-reisblog-masterplan.md` voor volledige architectuur
 
 ---
@@ -24,7 +24,8 @@ Een schaalbare, veilige Laravel-reisblog voor familievakanties van de familie We
 - **Slugs:** Spatie Sluggable
 - **Spam:** Spatie Honeypot
 - **Lokaal dev:** Herd + DBngin + VS Code op Windows
-- **Hosting:** Nederlandse shared hosting (provider t.b.d.)
+- **Versiebeheer:** Git + GitHub (private repo) via GitHub CLI
+- **Hosting:** Nederlandse shared hosting (provider t.b.d. — Hostnet wordt nu gebruikt voor mail)
 
 ## Designkeuze — definitief
 
@@ -38,6 +39,13 @@ Een schaalbare, veilige Laravel-reisblog voor familievakanties van de familie We
 - Stijl: edge-to-edge fotografie, magazine-uitstraling, kleine kapitalen voor tags
 - Design tokens staan in `resources/scss/design-tokens.scss`
 
+## Beslissingen Fase 2 — definitief
+
+- **Registratie:** open + e-mailverificatie verplicht (account pas actief na klik in mail)
+- **2FA:** verplicht voor Admin/Editor, optioneel voor andere rollen
+- **Mail (dev + prod):** SMTP via eigen domein `website.support@ml-westein.nl` — geen Mailtrap
+- **Rollen-model:** meerdere rollen per gebruiker (Spatie default, flexibel)
+
 ## Conventies — werk altijd zo
 
 1. **Eén plek voor één ding.** Geen business-logic in Blade. Geen validatie in controllers. Geen queries in models.
@@ -50,6 +58,8 @@ Een schaalbare, veilige Laravel-reisblog voor familievakanties van de familie We
 8. **Tests:** Feature-tests voor admin CRUD, reactie-moderatie, double-opt-in nieuwsbrief, RBAC. Geen 100% coverage als doel.
 9. **Pint vóór elke commit.** `.\vendor\bin\pint` lokaal, format-on-save staat aan in VS Code.
 10. **Line endings = LF.** `.gitattributes` regelt het, `.vscode/settings.json` ook.
+11. **Na élke `.env`-wijziging: `php artisan config:clear`.** Laravel cached config en blijft anders oude waardes gebruiken — dit veroorzaakt zwerm-debug-sessies. Geleerd tijdens Fase 2 mail-setup.
+12. **Nooit echte secrets in chats/issues plakken.** Wachtwoorden, API-keys, tokens altijd vervangen door `***` of `[REDACTED]`. Bij per ongeluk lekken: direct roteren in het hosting-paneel.
 
 ## Architectuur — kernkeuzes
 
@@ -66,7 +76,7 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 ## Roadmap — fase-status
 
 - ✅ **Fase 1 — Project setup & design system** _(afgerond 2 mei 2026)_
-- ⏳ **Fase 2 — Authenticatie & autorisatie** _(volgende)_
+- 🔄 **Fase 2 — Authenticatie & autorisatie** _(in uitvoering — Stap 2.1: mail werkt, Fortify-config volgt)_
 - ⏳ **Fase 3 — Database & content modellen**
 - ⏳ **Fase 4 — Afgeschermd Admin-gedeelte**
 - ⏳ **Fase 5 — Ontwikkeling openbare pagina's**
@@ -74,18 +84,34 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 
 ## Wat staat er nu
 
+**Uit Fase 1 (afgerond):**
+
 - Laravel 11 draait op `https://westein-reisblog.test`
 - Database `westein_reisblog` bereikbaar via DBngin (root, geen wachtwoord, lokaal)
 - Alle Composer- en NPM-packages volgens masterplan §4.3 geïnstalleerd
 - Telescope geïnstalleerd, Debugbar geïnstalleerd
 - Design tokens definitief in `resources/scss/design-tokens.scss` (alleen "Modern magazine")
-- `app.scss` schoongemaakt, alleen Playfair Display + Inter geladen
-- Mapindeling aangelegd (`Actions/`, `Controllers/Public/`, `Controllers/Admin/`, `views/public/`, `views/admin/`, etc.)
-- Layout-skeletten `layouts/public.blade.php` en `layouts/admin.blade.php` bestaan (leeg)
-- `.gitattributes` regelt LF line-endings
-- `.vscode/settings.json` heeft `files.eol: "\n"` en `editor.formatOnSave: true`
+- Mapindeling aangelegd, layout-skeletten bestaan (leeg)
+- `.gitattributes` regelt LF line-endings, `.vscode/settings.json` heeft format-on-save
 - Pint draait schoon op de codebase
-- Git-repo initieel committed (GitHub-push: bevestigen of dit gedaan is)
+- Private GitHub-repo `westein-reisblog` aangemaakt en initial commit gepusht
+
+**Uit Fase 2 (deels):**
+
+- SMTP geconfigureerd via `ml-westein.nl` (Hostnet), poort 465, SSL
+- `MAIL_USERNAME=website.support@ml-westein.nl`, `MAIL_FROM_ADDRESS` gelijk gehouden (vereiste voor de meeste mailservers)
+- Test-mail komt aan in inbox
+- Wachtwoord dat per ongeluk in chat lekte → geroteerd in Hostnet-paneel
+
+## Stap 2.1 — Fase 2 plan
+
+| Stap    | Inhoud                                                                 | Status                                               |
+| ------- | ---------------------------------------------------------------------- | ---------------------------------------------------- |
+| **2.1** | Mail-config + Fortify installeren                                      | 🔄 mail werkt, Fortify-vendor:publish + config volgt |
+| **2.2** | Bootstrap-views maken voor alle auth-pagina's, magazine-stijl          | ⏳                                                   |
+| **2.3** | E-mailverificatie inschakelen + flow testen                            | ⏳                                                   |
+| **2.4** | Spatie Permission seeden (rollen + permissies) + User-model uitbreiden | ⏳                                                   |
+| **2.5** | 2FA voor Admin/Editor + Honeypot + rate-limiting + admin-middleware    | ⏳                                                   |
 
 ## Wat NIET gedaan is — bewust uitgesteld
 
@@ -112,18 +138,18 @@ Zie masterplan §8. Highlights om niet te vergeten:
 - **Nederlands** in uitleg en commits, Engels in code.
 - **Wees eerlijk over trade-offs.** Als een keuze later last kan geven: zeg het.
 - **Geen onnodige herhaling van het masterplan.** Verwijs ernaar (`§3.4`) i.p.v. te kopiëren.
+- **Bij gevoelige info in user-output:** waarschuw de gebruiker direct als er een wachtwoord/API-key/secret in de chat staat. Adviseer roteren.
 
-## Volgende stap — Fase 2
+## Volgende concrete actie
 
-Authenticatie & autorisatie:
+Stap 2.1 afmaken — Fortify configureren:
 
-1. Fortify views publiceren en aanpassen naar Bootstrap 5 + magazine-design
-2. Login / register / wachtwoord-reset / e-mailverificatie inrichten
-3. Optioneel 2FA (alleen voor Admin/Editor)
-4. Spatie Permission: rollen + permissies seeder
-5. User-profiel uitbreiden (bio, avatar via Media Library, social_links JSON)
-6. Eerste Policies opzetten (PostPolicy, CommentPolicy)
-7. Honeypot + rate limiting op registratie/login
-8. Admin-middleware aanmaken en testen
+1. `php artisan vendor:publish --provider="Laravel\Fortify\FortifyServiceProvider"`
+2. `php artisan migrate` (publisht 2FA-kolommen op users)
+3. `bootstrap/providers.php` controleren op `App\Providers\FortifyServiceProvider::class`
+4. `config/fortify.php` features-array uitbreiden (registration, resetPasswords, emailVerification, updateProfileInformation, updatePasswords, twoFactorAuthentication)
+5. `app/Providers/FortifyServiceProvider.php` view-routes + rate-limiters toevoegen
+6. Verifiëren met `php artisan route:list --path=login`
+7. Pint + commit
 
-Verwachting: ~1 week.
+Daarna: Stap 2.2 — auth-views bouwen in magazine-stijl.
