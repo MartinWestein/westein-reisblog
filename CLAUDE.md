@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 4 mei 2026 — Fase 2 in uitvoering (Stap 2.1)
+**Laatst bijgewerkt:** 8 mei 2026 — Stap 2.1 afgerond, project verhuisd naar `C:\Herd\
 **Masterplan:** zie `westein-reisblog-masterplan.md` voor volledige architectuur
 
 ---
@@ -13,7 +13,7 @@ Een schaalbare, veilige Laravel-reisblog voor familievakanties van de familie We
 
 ## Stack — definitief
 
-- **Backend:** Laravel 11, PHP 8.3+, MySQL 8
+- **Backend:** Laravel 13, PHP 8.3+, MySQL 8
 - **Frontend:** Blade + Bootstrap 5 + Alpine.js + Vite
 - **Editor:** TipTap (in admin)
 - **Kaarten:** Leaflet
@@ -23,7 +23,7 @@ Een schaalbare, veilige Laravel-reisblog voor familievakanties van de familie We
 - **SEO:** Spatie SEO + Spatie Sitemap
 - **Slugs:** Spatie Sluggable
 - **Spam:** Spatie Honeypot
-- **Lokaal dev:** Herd + DBngin + VS Code op Windows
+- **Lokaal dev:** Herd + DBngin + VS Code op Windows. Projectroot: 'C:\Herd\westein-reisblog' (bewust buiten OneDrive - zie #leerpunten Fase 2)
 - **Versiebeheer:** Git + GitHub (private repo) via GitHub CLI
 - **Hosting:** Nederlandse shared hosting (provider t.b.d. — Hostnet wordt nu gebruikt voor mail)
 
@@ -60,6 +60,7 @@ Een schaalbare, veilige Laravel-reisblog voor familievakanties van de familie We
 10. **Line endings = LF.** `.gitattributes` regelt het, `.vscode/settings.json` ook.
 11. **Na élke `.env`-wijziging: `php artisan config:clear`.** Laravel cached config en blijft anders oude waardes gebruiken — dit veroorzaakt zwerm-debug-sessies. Geleerd tijdens Fase 2 mail-setup.
 12. **Nooit echte secrets in chats/issues plakken.** Wachtwoorden, API-keys, tokens altijd vervangen door `***` of `[REDACTED]`. Bij per ongeluk lekken: direct roteren in het hosting-paneel.
+13. **Geen Laravel-projecten in OneDrive.** OneDrive zet ACL-restricties op mappen die `is_writable()` op Windows misleiden, ook na verplaatsing. Project staat in `C:\Herd\` om die reden. `vendor/` en `node_modules/` willen sowieso geen sync-engine bovenop.
 
 ## Architectuur — kernkeuzes
 
@@ -76,7 +77,7 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 ## Roadmap — fase-status
 
 - ✅ **Fase 1 — Project setup & design system** _(afgerond 2 mei 2026)_
-- 🔄 **Fase 2 — Authenticatie & autorisatie** _(in uitvoering — Stap 2.1: mail werkt, Fortify-config volgt)_
+- 🔄 **Fase 2 — Authenticatie & autorisatie** _(in uitvoering — Stap 2.1 afgerond, Stap 2.2 volgt)_
 - ⏳ **Fase 3 — Database & content modellen**
 - ⏳ **Fase 4 — Afgeschermd Admin-gedeelte**
 - ⏳ **Fase 5 — Ontwikkeling openbare pagina's**
@@ -96,22 +97,28 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 - Pint draait schoon op de codebase
 - Private GitHub-repo `westein-reisblog` aangemaakt en initial commit gepusht
 
-**Uit Fase 2 (deels):**
+**Uit Fase 2 (Stap 2.1 afgerond):**
 
 - SMTP geconfigureerd via `ml-westein.nl` (Hostnet), poort 465, SSL
 - `MAIL_USERNAME=website.support@ml-westein.nl`, `MAIL_FROM_ADDRESS` gelijk gehouden (vereiste voor de meeste mailservers)
 - Test-mail komt aan in inbox
 - Wachtwoord dat per ongeluk in chat lekte → geroteerd in Hostnet-paneel
+- Project verhuisd: van `C:\Users\marti\OneDrive\...` naar `C:\Herd\westein-reisblog\` (OneDrive blokkeerde `is_writable()` op `bootstrap/cache/` via geërfde DENY-ACL's; verhuizing + map opnieuw aanmaken loste het op)
+- `laravel/fortify` geïnstalleerd via Composer
+- `App\Providers\FortifyServiceProvider` geregistreerd in `bootstrap/providers.php`
+- `Features::emailVerification()` actief in `config/fortify.php`
+- Login-routes verschijnen in `php artisan route:list --path=login` (GET én POST)
+- 2FA-kolommen reeds aanwezig op `users`-tabel (uit eerdere migratie)
 
 ## Stap 2.1 — Fase 2 plan
 
-| Stap    | Inhoud                                                                 | Status                                               |
-| ------- | ---------------------------------------------------------------------- | ---------------------------------------------------- |
-| **2.1** | Mail-config + Fortify installeren                                      | 🔄 mail werkt, Fortify-vendor:publish + config volgt |
-| **2.2** | Bootstrap-views maken voor alle auth-pagina's, magazine-stijl          | ⏳                                                   |
-| **2.3** | E-mailverificatie inschakelen + flow testen                            | ⏳                                                   |
-| **2.4** | Spatie Permission seeden (rollen + permissies) + User-model uitbreiden | ⏳                                                   |
-| **2.5** | 2FA voor Admin/Editor + Honeypot + rate-limiting + admin-middleware    | ⏳                                                   |
+| Stap    | Inhoud                                                                 | Status      |
+| ------- | ---------------------------------------------------------------------- | ----------- |
+| **2.1** | Mail-config + Fortify installeren                                      | ✅ afgerond |
+| **2.2** | Bootstrap-views maken voor alle auth-pagina's, magazine-stijl          | ⏳          |
+| **2.3** | E-mailverificatie inschakelen + flow testen                            | ⏳          |
+| **2.4** | Spatie Permission seeden (rollen + permissies) + User-model uitbreiden | ⏳          |
+| **2.5** | 2FA voor Admin/Editor + Honeypot + rate-limiting + admin-middleware    | ⏳          |
 
 ## Wat NIET gedaan is — bewust uitgesteld
 
@@ -142,14 +149,13 @@ Zie masterplan §8. Highlights om niet te vergeten:
 
 ## Volgende concrete actie
 
-Stap 2.1 afmaken — Fortify configureren:
+Stap 2.2 — Auth-views bouwen in magazine-stijl:
 
-1. `php artisan vendor:publish --provider="Laravel\Fortify\FortifyServiceProvider"`
-2. `php artisan migrate` (publisht 2FA-kolommen op users)
-3. `bootstrap/providers.php` controleren op `App\Providers\FortifyServiceProvider::class`
-4. `config/fortify.php` features-array uitbreiden (registration, resetPasswords, emailVerification, updateProfileInformation, updatePasswords, twoFactorAuthentication)
-5. `app/Providers/FortifyServiceProvider.php` view-routes + rate-limiters toevoegen
-6. Verifiëren met `php artisan route:list --path=login`
-7. Pint + commit
+1. View-bindings toevoegen in `app/Providers/FortifyServiceProvider.php` (`Fortify::loginView`, `registerView`, `requestPasswordResetLinkView`, `resetPasswordView`, `verifyEmailView`, `confirmPasswordView`, `twoFactorChallengeView`)
+2. Blade-views maken onder `resources/views/auth/` met Bootstrap 5 + magazine design tokens (Playfair Display headings, Inter body, zandbeige achtergrond)
+3. Layout `resources/views/layouts/auth.blade.php` voor minimale auth-pagina's (geen sidebar/menu)
+4. Honeypot-veld toevoegen aan registratieformulier (Spatie Honeypot)
+5. Browser-test: `/login`, `/register`, `/forgot-password` openen en visueel checken
+6. Pint + commit
 
-Daarna: Stap 2.2 — auth-views bouwen in magazine-stijl.
+Verwachting: 1-2 dagen.
