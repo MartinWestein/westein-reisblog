@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 8 mei 2026 — Stap 2.1 afgerond, project verhuisd naar `C:\Herd\
+**Laatst bijgewerkt:** 10 mei 2026 — Fase 2 volledig afgerond
 **Masterplan:** zie `westein-reisblog-masterplan.md` voor volledige architectuur
 
 ---
@@ -77,48 +77,49 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 ## Roadmap — fase-status
 
 - ✅ **Fase 1 — Project setup & design system** _(afgerond 2 mei 2026)_
-- 🔄 **Fase 2 — Authenticatie & autorisatie** _(in uitvoering — Stap 2.1 afgerond, Stap 2.2 volgt)_
-- ⏳ **Fase 3 — Database & content modellen**
-- ⏳ **Fase 4 — Afgeschermd Admin-gedeelte**
+- ✅ **Fase 2 — Authenticatie & autorisatie** _(afgerond 10 mei 2026)_
+- ⏳ **Fase 3 — Database & content modellen** _(volgende)_
+- ⏳ **Fase 4 — Afgeschermd Admin-gedeelte_
 - ⏳ **Fase 5 — Ontwikkeling openbare pagina's**
 - ⏳ **Fase 6 — SEO, performance en publicatie**
 
-## Wat staat er nu
-
 **Uit Fase 1 (afgerond):**
 
-- Laravel 11 draait op `https://westein-reisblog.test`
-- Database `westein_reisblog` bereikbaar via DBngin (root, geen wachtwoord, lokaal)
+- Laravel 11 op `https://westein-reisblog.test`, MySQL via DBngin
 - Alle Composer- en NPM-packages volgens masterplan §4.3 geïnstalleerd
-- Telescope geïnstalleerd, Debugbar geïnstalleerd
-- Design tokens definitief in `resources/scss/design-tokens.scss` (alleen "Modern magazine")
-- Mapindeling aangelegd, layout-skeletten bestaan (leeg)
-- `.gitattributes` regelt LF line-endings, `.vscode/settings.json` heeft format-on-save
-- Pint draait schoon op de codebase
-- Private GitHub-repo `westein-reisblog` aangemaakt en initial commit gepusht
+- Telescope + Debugbar geïnstalleerd
+- Design tokens "Modern magazine" definitief
+- Mapindeling, layout-skeletten, Pint, line-endings, GitHub-repo — staan
 
-**Uit Fase 2 (Stap 2.1 afgerond):**
+**Uit Fase 2 (afgerond):**
 
-- SMTP geconfigureerd via `ml-westein.nl` (Hostnet), poort 465, SSL
-- `MAIL_USERNAME=website.support@ml-westein.nl`, `MAIL_FROM_ADDRESS` gelijk gehouden (vereiste voor de meeste mailservers)
-- Test-mail komt aan in inbox
-- Wachtwoord dat per ongeluk in chat lekte → geroteerd in Hostnet-paneel
-- Project verhuisd: van `C:\Users\marti\OneDrive\...` naar `C:\Herd\westein-reisblog\` (OneDrive blokkeerde `is_writable()` op `bootstrap/cache/` via geërfde DENY-ACL's; verhuizing + map opnieuw aanmaken loste het op)
-- `laravel/fortify` geïnstalleerd via Composer
-- `App\Providers\FortifyServiceProvider` geregistreerd in `bootstrap/providers.php`
-- `Features::emailVerification()` actief in `config/fortify.php`
-- Login-routes verschijnen in `php artisan route:list --path=login` (GET én POST)
-- 2FA-kolommen reeds aanwezig op `users`-tabel (uit eerdere migratie)
+- SMTP via `ml-westein.nl` (Hostnet, poort 465 SSL) — mails komen aan
+- Project verhuisd naar `C:\Herd\westein-reisblog\` (uit OneDrive)
+- Fortify volledig geconfigureerd: registration, email-verification, password-reset, profile-update, 2FA
+- Auth-views in split-screen magazine-stijl: login, register, forgot-password, reset-password, verify-email, confirm-password, two-factor-challenge
+- Auth-layout `layouts/auth.blade.php` + SCSS in `_auth.scss`
+- Foto in fotokolom: `public/images/auth-hero.jpg`, ingeladen via inline-style + `asset()`
+- Honeypot werkt globaal (`ProtectAgainstSpam`-middleware appended) — alleen forms met `@honeypot` worden beschermd
+- Spatie Permission: 4 rollen (admin, editor, auteur, lid), 17 permissies, idempotente `RolePermissionSeeder`
+- `Gate::before` super-admin shortcut in `AppServiceProvider`
+- `User`-model: `HasRoles` + `TwoFactorAuthenticatable` traits, `bio`/`avatar_path`/`social_links` velden
+- Eigen admin-account aangemaakt + 2FA actief
+- Tijdelijke `/dashboard` (auth + verified middleware) — placeholder, definitief in Fase 4
+- Tijdelijke `/profiel/2fa` voor 2FA-beheer (QR + recovery codes) — placeholder
+- Admin-routes-bestand `routes/admin.php` geregistreerd via `bootstrap/app.php` met prefix `/admin`, name `admin.*`, middleware `auth + verified + role:admin|editor|auteur`
+- Tijdelijke `/admin` placeholder — definitief in Fase 4
+- Rate-limiters: login 5/min, 2FA 5/min, verification.send 6/min — getest
+- NL-vertalingen voor `auth`-strings (`failed`, `password`, `throttle`) in `lang/nl/auth.php`
 
-## Stap 2.1 — Fase 2 plan
+## Fase 2 — overzicht (afgerond)
 
 | Stap    | Inhoud                                                                 | Status      |
 | ------- | ---------------------------------------------------------------------- | ----------- |
 | **2.1** | Mail-config + Fortify installeren                                      | ✅ afgerond |
-| **2.2** | Bootstrap-views maken voor alle auth-pagina's, magazine-stijl          | ⏳          |
-| **2.3** | E-mailverificatie inschakelen + flow testen                            | ⏳          |
-| **2.4** | Spatie Permission seeden (rollen + permissies) + User-model uitbreiden | ⏳          |
-| **2.5** | 2FA voor Admin/Editor + Honeypot + rate-limiting + admin-middleware    | ⏳          |
+| **2.2** | Bootstrap-views maken voor alle auth-pagina's, magazine-stijl          | ✅ afgerond |
+| **2.3** | E-mailverificatie inschakelen + flow testen                            | ✅ afgerond |
+| **2.4** | Spatie Permission seeden (rollen + permissies) + User-model uitbreiden | ✅ afgerond |
+| **2.5** | 2FA voor Admin/Editor + Honeypot + rate-limiting + admin-middleware    | ✅ afgerond |
 
 ## Wat NIET gedaan is — bewust uitgesteld
 
@@ -147,15 +148,18 @@ Zie masterplan §8. Highlights om niet te vergeten:
 - **Geen onnodige herhaling van het masterplan.** Verwijs ernaar (`§3.4`) i.p.v. te kopiëren.
 - **Bij gevoelige info in user-output:** waarschuw de gebruiker direct als er een wachtwoord/API-key/secret in de chat staat. Adviseer roteren.
 
-## Volgende concrete actie
+## Volgende concrete actie — Fase 3 starten
 
-Stap 2.2 — Auth-views bouwen in magazine-stijl:
+Database & content modellen volgens masterplan §3:
 
-1. View-bindings toevoegen in `app/Providers/FortifyServiceProvider.php` (`Fortify::loginView`, `registerView`, `requestPasswordResetLinkView`, `resetPasswordView`, `verifyEmailView`, `confirmPasswordView`, `twoFactorChallengeView`)
-2. Blade-views maken onder `resources/views/auth/` met Bootstrap 5 + magazine design tokens (Playfair Display headings, Inter body, zandbeige achtergrond)
-3. Layout `resources/views/layouts/auth.blade.php` voor minimale auth-pagina's (geen sidebar/menu)
-4. Honeypot-veld toevoegen aan registratieformulier (Spatie Honeypot)
-5. Browser-test: `/login`, `/register`, `/forgot-password` openen en visueel checken
-6. Pint + commit
+1. Migraties bouwen voor: destinations, locations, posts, categories, tags, taggables, comments, routes, route_waypoints, subscribers, newsletters, newsletter_sends, pages, family_members
+2. Models met relaties: BelongsTo, HasMany, BelongsToMany, polymorphic Taggable
+3. Spatie Sluggable op Post, Destination, Location, Page
+4. Spatie Media Library configureren (collecties: featured-image op Post, photos op Location, avatars op User, hero op Destination)
+5. Image-conversies: WebP + meerdere groottes (klein 400px, medium 800px, groot 1600px) — queued
+6. Factories voor alle hoofdmodellen
+7. Seeders: CategorySeeder (Verslag, Tips, Eten, Activiteit), DemoContentSeeder
+8. Validatie-regel uit §3.4 (Post locatie-keuze) implementeren in boot-method op Post-model
+9. Unit tests voor de relaties (BelongsTo, HasMany, polymorphic)
 
-Verwachting: 1-2 dagen.
+Verwachting: 1-2 weken.
