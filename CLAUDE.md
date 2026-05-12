@@ -52,7 +52,9 @@ Een schaalbare, veilige Laravel-reisblog voor familievakanties van de familie We
 - **Tags:** polymorfe pivot (taggables) — herbruikbaar voor Locations/Routes later
 - **Tag-namen:** lowercase forceren via mutator (voorkomt 'Camper' én 'camper' als duplicaten)
 - **Categorie-volgorde:** `order`-veld op `categories` (int, voor handmatige sortering in UI)
-- **Posts ↔ Categories:** *(nog te beslissen — BelongsTo of BelongsToMany)*
+- **Posts ↔ Categories:** BelongsToMany (meerdere categorieën per post mogelijk, masterplan-conform)
+- **Location-slugs:** globaal uniek (afwijking van masterplan §3.3 dat "uniek binnen destination" zegt — eenvoudiger in code en URL-routing)
+- **Validatie §3.4 (auto-set destination_id vanuit location_id):** afwijking van masterplan — geen auto-set in `Post::booted()`. Admin moet beide velden handmatig kiezen. Vangen we later op met een Form Request-regel: "als location_id gevuld, moet destination_id matchen met location.destination_id". UX-helper in Fase 4 via JS.
 
 ## Conventies — werk altijd zo
 
