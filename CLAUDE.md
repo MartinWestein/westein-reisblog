@@ -79,7 +79,7 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 - ✅ **Fase 1 — Project setup & design system** _(afgerond 2 mei 2026)_
 - ✅ **Fase 2 — Authenticatie & autorisatie** _(afgerond 10 mei 2026)_
 - ⏳ **Fase 3 — Database & content modellen** _(volgende)_
-- ⏳ **Fase 4 — Afgeschermd Admin-gedeelte_
+- ⏳ **Fase 4 — Afgeschermd Admin-gedeelte**
 - ⏳ **Fase 5 — Ontwikkeling openbare pagina's**
 - ⏳ **Fase 6 — SEO, performance en publicatie**
 
