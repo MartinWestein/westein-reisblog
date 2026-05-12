@@ -2,24 +2,25 @@
 
 namespace App\Models;
 
+use Database\Factories\DestinationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
-class Category extends Model
+class Destination extends Model
 {
-    use HasFactory, HasSlug;
+    /** @use HasFactory<DestinationFactory> */
+    use HasFactory;
+
+    use HasSlug;
 
     protected $fillable = [
         'name',
+        'slug',
         'description',
-        'order',
-    ];
-
-    protected $casts = [
-        'order' => 'integer',
+        'country_code',
     ];
 
     public function getSlugOptions(): SlugOptions
@@ -35,8 +36,13 @@ class Category extends Model
         return 'slug';
     }
 
-    public function posts(): BelongsToMany
+    public function locations(): HasMany
     {
-        return $this->belongsToMany(Post::class)->withTimestamps();
+        return $this->hasMany(Location::class);
+    }
+
+    public function posts(): HasMany
+    {
+        return $this->hasMany(Post::class);
     }
 }
