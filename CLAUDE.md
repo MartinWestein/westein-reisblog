@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 12 mei 2026 — Fase 3 in uitvoering (Stap 3.1 afgerond)
+**Laatst bijgewerkt:** 13 mei 2026 — Fase 3 in uitvoering (Stap 3.2 afgerond)
 **Masterplan:** zie `westein-reisblog-masterplan.md` voor volledige architectuur
 
 ---
@@ -55,6 +55,9 @@ Een schaalbare, veilige Laravel-reisblog voor familievakanties van de familie We
 - **Posts ↔ Categories:** BelongsToMany (meerdere categorieën per post mogelijk, masterplan-conform)
 - **Location-slugs:** globaal uniek (afwijking van masterplan §3.3 dat "uniek binnen destination" zegt — eenvoudiger in code en URL-routing)
 - **Validatie §3.4 (auto-set destination_id vanuit location_id):** afwijking van masterplan — geen auto-set in `Post::booted()`. Admin moet beide velden handmatig kiezen. Vangen we later op met een Form Request-regel: "als location_id gevuld, moet destination_id matchen met location.destination_id". UX-helper in Fase 4 via JS.
+- **Stap 3.2 — slug-stabiliteit:** alle HasSlug-modellen gebruiken `doNotGenerateSlugsOnUpdate()`. Hernoemen van een Destination/Location/Post wijzigt de URL niet — belangrijk voor SEO en inbound links.
+- **Stap 3.2 — FK-strategie posts:** `user_id` is `restrictOnDelete` (auteur kan niet weg met posts), `destination_id` en `location_id` zijn `nullOnDelete` (post blijft bestaan als geografische koppeling vervalt).
+- **Stap 3.2 — cascading destination:** als een destination wordt verwijderd, gaan de locations mee (`cascadeOnDelete`). Posts behouden hun titel maar verliezen de koppeling.
 
 ## Conventies — werk altijd zo
 
@@ -143,7 +146,7 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 | Stap    | Inhoud                                                                                  | Status      |
 | ------- | --------------------------------------------------------------------------------------- | ----------- |
 | **3.1** | Foundation: Categories, Tags, polymorfe Taggables + Sluggable                           | ✅ afgerond |
-| **3.2** | Geografische kern: Destinations, Locations, Posts + locatie-keuze validatie (§3.4)      | ⏳          |
+| **3.2** | Geografische kern: Destinations, Locations, Posts + category_post pivot                 | ✅ afgerond |
 | **3.3** | Media Library: collecties op Post/Location/Destination/User + WebP-conversies queued    | ⏳          |
 | **3.4** | Rest: Comments, Routes + Waypoints, Subscribers, Newsletters, Pages, FamilyMembers, DemoSeeder, tests | ⏳ |
 
