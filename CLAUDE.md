@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 13 mei 2026 — Fase 3 in uitvoering (Stap 3.2 afgerond)
+**Laatst bijgewerkt:** 13 mei 2026 — Fase 3 in uitvoering (Stap 3.3 afgerond)
 **Masterplan:** zie `westein-reisblog-masterplan.md` voor volledige architectuur
 
 ---
@@ -58,6 +58,11 @@ Een schaalbare, veilige Laravel-reisblog voor familievakanties van de familie We
 - **Stap 3.2 — slug-stabiliteit:** alle HasSlug-modellen gebruiken `doNotGenerateSlugsOnUpdate()`. Hernoemen van een Destination/Location/Post wijzigt de URL niet — belangrijk voor SEO en inbound links.
 - **Stap 3.2 — FK-strategie posts:** `user_id` is `restrictOnDelete` (auteur kan niet weg met posts), `destination_id` en `location_id` zijn `nullOnDelete` (post blijft bestaan als geografische koppeling vervalt).
 - **Stap 3.2 — cascading destination:** als een destination wordt verwijderd, gaan de locations mee (`cascadeOnDelete`). Posts behouden hun titel maar verliezen de koppeling.
+- **Stap 3.3 — Media Library collecties:** Post=`featured` (single), Location=`gallery` (multi), Destination=`hero` (single) + `gallery` (multi), User=`avatar` (single). Acceptable MIME-types: JPEG, PNG, WebP.
+- **Stap 3.3 — WebP-conversies:** per collectie afgestemd (Optie B). Allemaal queued, origineel blijft bewaard. Quality 82, `Fit::Max` (geen crops).
+- **Stap 3.3 — Image driver:** GD (`config/media-library.php` + `config/image.php`), portable voor shared hosting.
+- **Stap 3.3 — User-avatar via Media Library:** het oude `avatar_path`-veld op `users` is nu ongebruikt; droppen via migratie in Stap 3.4 of Fase 4.
+- **Stap 3.3 — Tests:** `Queue::fake()` per test waar relevant (geen globale fake), één integration-test met sync queue voor echte WebP-output op disk.
 
 ## Conventies — werk altijd zo
 
@@ -147,7 +152,7 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 | ------- | --------------------------------------------------------------------------------------- | ----------- |
 | **3.1** | Foundation: Categories, Tags, polymorfe Taggables + Sluggable                           | ✅ afgerond |
 | **3.2** | Geografische kern: Destinations, Locations, Posts + category_post pivot                 | ✅ afgerond |
-| **3.3** | Media Library: collecties op Post/Location/Destination/User + WebP-conversies queued    | ⏳          |
+| **3.3** | Media Library: collecties op Post/Location/Destination/User + WebP-conversies queued    | ✅ afgerond |
 | **3.4** | Rest: Comments, Routes + Waypoints, Subscribers, Newsletters, Pages, FamilyMembers, DemoSeeder, tests | ⏳ |
 
 ## Wat NIET gedaan is — bewust uitgesteld
