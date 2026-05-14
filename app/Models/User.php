@@ -6,6 +6,8 @@ use App\Models\Concerns\RegistersMediaConversions;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -60,5 +62,20 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     {
         $this->registerWebpConversion('thumb', 100, $media, 'avatar');
         $this->registerWebpConversion('medium', 400, $media, 'avatar');
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    public function familyMember(): HasOne
+    {
+        return $this->hasOne(FamilyMember::class);
+    }
+
+    public function newsletters(): HasMany
+    {
+        return $this->hasMany(Newsletter::class);
     }
 }

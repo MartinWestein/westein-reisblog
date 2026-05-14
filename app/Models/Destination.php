@@ -52,6 +52,11 @@ class Destination extends Model implements HasMedia
         return $this->hasMany(Post::class);
     }
 
+    public function routes(): HasMany
+    {
+        return $this->hasMany(Route::class);
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('hero')

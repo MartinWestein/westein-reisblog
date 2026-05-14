@@ -63,6 +63,10 @@ Een schaalbare, veilige Laravel-reisblog voor familievakanties van de familie We
 - **Stap 3.3 — Image driver:** GD (`config/media-library.php` + `config/image.php`), portable voor shared hosting.
 - **Stap 3.3 — User-avatar via Media Library:** het oude `avatar_path`-veld op `users` is nu ongebruikt; droppen via migratie in Stap 3.4 of Fase 4.
 - **Stap 3.3 — Tests:** `Queue::fake()` per test waar relevant (geen globale fake), één integration-test met sync queue voor echte WebP-output op disk.
+- **Stap 3.4 — Sluggable bij duplicate slugs:** zelfs als je een slug expliciet meegeeft, plakt `HasSlug` er automatisch `-2` achter bij een botsing. De DB-unique-constraint is daardoor via de Eloquent-flow onbereikbaar — testen op constraint-niveau vereist een directe `DB::table()->insert()` om Eloquent te omzeilen.
+- **Stap 3.4 — Comment status-hook:** `Comment::booted()` zet status op basis van `user_id->hasAnyRole(['admin','editor'])`. Factories en seeders krijgen dezelfde behandeling als productie-code (geen `auth()->user()`-afhankelijkheid).
+- **Stap 3.4 — Subscriber Actions:** drie idempotente Action-classes (`SubscribeAction`, `ConfirmSubscriptionAction`, `UnsubscribeAction`). Mailable + routes + views in Fase 5.
+- **Stap 3.4 — Permissies:** 17 → 20 (3 nieuwe: `routes.manage`, `pages.manage`, `family.manage`).
 
 ## Conventies — werk altijd zo
 
@@ -98,7 +102,7 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 
 - ✅ **Fase 1 — Project setup & design system** _(afgerond 2 mei 2026)_
 - ✅ **Fase 2 — Authenticatie & autorisatie** _(afgerond 10 mei 2026)_
-- 🔄 **Fase 3 — Database & content modellen** _(in uitvoering — Stap 3.1 afgerond)_
+- ✅ **Fase 3 — Database & content modellen** _(afgerond 14 mei 2026)_
 - ⏳ **Fase 4 — Afgeschermd Admin-gedeelte**
 - ⏳ **Fase 5 — Ontwikkeling openbare pagina's**
 - ⏳ **Fase 6 — SEO, performance en publicatie**
@@ -148,12 +152,12 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 
 ## Fase 3 — overzicht (in uitvoering)
 
-| Stap    | Inhoud                                                                                  | Status      |
-| ------- | --------------------------------------------------------------------------------------- | ----------- |
-| **3.1** | Foundation: Categories, Tags, polymorfe Taggables + Sluggable                           | ✅ afgerond |
-| **3.2** | Geografische kern: Destinations, Locations, Posts + category_post pivot                 | ✅ afgerond |
-| **3.3** | Media Library: collecties op Post/Location/Destination/User + WebP-conversies queued    | ✅ afgerond |
-| **3.4** | Rest: Comments, Routes + Waypoints, Subscribers, Newsletters, Pages, FamilyMembers, DemoSeeder, tests | ⏳ |
+| Stap    | Inhoud                                                                                                | Status      |
+| ------- | ----------------------------------------------------------------------------------------------------- | ----------- |
+| **3.1** | Foundation: Categories, Tags, polymorfe Taggables + Sluggable                                         | ✅ afgerond |
+| **3.2** | Geografische kern: Destinations, Locations, Posts + category_post pivot                               | ✅ afgerond |
+| **3.3** | Media Library: collecties op Post/Location/Destination/User + WebP-conversies queued                  | ✅ afgerond |
+| **3.4** | Rest: Comments, Routes + Waypoints, Subscribers, Newsletters, Pages, FamilyMembers, DemoSeeder, tests | ✅ afgerond |
 
 ## Wat NIET gedaan is — bewust uitgesteld
 
@@ -184,15 +188,9 @@ Zie masterplan §8. Highlights om niet te vergeten:
 - **Bij gevoelige info in user-output:** waarschuw de gebruiker direct als er een wachtwoord/API-key/secret in de chat staat. Adviseer roteren.
 - **Bestandsnamen exact in casing.** Windows is case-insensitive, maar Git en Pest niet. PowerShell-`New-Item`-commando's altijd met juiste hoofdletters.
 
-## Volgende concrete actie — Stap 3.2
+## Volgende concrete actie — Fase 4
 
-Geografische kern + locatie-keuze validatie:
-
-1. Migraties: `destinations` → `locations` → `posts` (in deze volgorde i.v.m. FK's)
-2. Models: `Destination`, `Location`, `Post` — alle drie `HasSlug`; `Post` gebruikt `HasTags`-trait
-3. Relaties: `Destination hasMany Location`, `Location hasMany Post`, `Post belongsTo User`, `Post belongs(ToMany) Category` _(keuze nog te maken)_
-4. **Validatie-regel §3.4** in `Post::booted()`: als `location_id` gevuld → `destination_id` automatisch afleiden via boot-method
-5. Factories voor alle drie
-6. Pest-tests: relaties + §3.4-regel + slug-generatie
+Start van het Afgeschermd Admin-gedeelte. Eerste stap: admin-layout (sidebar, topbar, breadcrumbs) + dashboard met KPI's. 
+Daarna CRUD-modules per model, volgorde t.b.d. bij start van de fase.
 
 Verwachting: 2-3 dagen werk.

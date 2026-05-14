@@ -9,101 +9,75 @@ use Spatie\Permission\PermissionRegistrar;
 
 class RolePermissionSeeder extends Seeder
 {
-    /**
-     * Seed roles and permissions.
-     *
-     * Idempotent: kan veilig meerdere keren gedraaid worden.
-     */
     public function run(): void
     {
-        // Cache leeg na seeding (Spatie cached de permissies in geheugen)
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // 1. Permissies aanmaken
         $permissions = [
             // Posts
-            'posts.viewAny',
-            'posts.view',
-            'posts.create',
-            'posts.update.own',
-            'posts.update.any',
-            'posts.delete.own',
-            'posts.delete.any',
+            'posts.viewAny', 'posts.view', 'posts.create',
+            'posts.update.own', 'posts.update.any',
+            'posts.delete.own', 'posts.delete.any',
             'posts.publish',
 
-            // Reacties
-            'comments.moderate',
-            'comments.delete',
+            // Comments
+            'comments.moderate', 'comments.delete',
 
-            // Content (Destinations, Locations, Categories, Tags, Routes, Pages, FamilyMembers)
+            // Content (destinations, locations, categories, tags)
             'content.manage',
 
             // Media
-            'media.upload',
-            'media.delete',
+            'media.upload', 'media.delete',
 
-            // Newsletter & subscribers
-            'newsletters.manage',
-            'subscribers.manage',
+            // Routes (NIEUW)
+            'routes.manage',
 
-            // Gebruikers & rollen
-            'users.manage',
-            'roles.manage',
+            // Newsletter
+            'newsletters.manage', 'subscribers.manage',
+
+            // Pages (NIEUW)
+            'pages.manage',
+
+            // Family members (NIEUW)
+            'family.manage',
+
+            // Users & roles
+            'users.manage', 'roles.manage',
         ];
 
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate([
-                'name' => $permission,
-                'guard_name' => 'web',
-            ]);
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
-        // 2. Rollen aanmaken
         $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $editor = Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
         $author = Role::firstOrCreate(['name' => 'auteur', 'guard_name' => 'web']);
         $member = Role::firstOrCreate(['name' => 'lid', 'guard_name' => 'web']);
 
-        // 3. Permissies aan rollen koppelen
-
-        // Admin: krijgt alles via Gate::before in AppServiceProvider.
-        // Voor de zekerheid syncen we hier ook expliciet — mocht Gate::before
-        // ooit verdwijnen, blijft admin volledig functioneel.
         $admin->syncPermissions(Permission::all());
 
-        // Editor
         $editor->syncPermissions([
-            'posts.viewAny',
-            'posts.view',
-            'posts.create',
-            'posts.update.own',
-            'posts.update.any',
-            'posts.delete.own',
-            'posts.delete.any',
+            'posts.viewAny', 'posts.view', 'posts.create',
+            'posts.update.own', 'posts.update.any',
+            'posts.delete.own', 'posts.delete.any',
             'posts.publish',
-            'comments.moderate',
-            'comments.delete',
+            'comments.moderate', 'comments.delete',
             'content.manage',
-            'media.upload',
-            'media.delete',
-            'newsletters.manage',
-            'subscribers.manage',
+            'media.upload', 'media.delete',
+            'routes.manage',
+            'newsletters.manage', 'subscribers.manage',
+            'pages.manage',
         ]);
 
-        // Auteur
         $author->syncPermissions([
-            'posts.viewAny',
-            'posts.view',
-            'posts.create',
-            'posts.update.own',
-            'posts.delete.own',
+            'posts.viewAny', 'posts.view', 'posts.create',
+            'posts.update.own', 'posts.delete.own',
             'media.upload',
+            'routes.manage',
         ]);
 
-        // Lid: geen admin-permissies (mag alleen reageren — afgeschermd via
-        // `auth`-middleware op de comment-route, niet via Spatie Permission).
+        // 'lid' krijgt geen admin-permissies — reageren wordt via auth-middleware geregeld
 
-        // Cache opnieuw leeg na sync
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 }
