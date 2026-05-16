@@ -65,9 +65,9 @@ class Post extends Model implements HasMedia
         return 'slug';
     }
 
-    public function user(): BelongsTo
+    public function author(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function destination(): BelongsTo

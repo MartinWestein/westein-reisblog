@@ -39,7 +39,7 @@ test('location heeft veel posts', function () {
     $user = User::factory()->create();
     $location = Location::factory()->create();
 
-    Post::factory()->count(3)->for($user)->create([
+    Post::factory()->count(3)->for($user, 'author')->create([
         'location_id' => $location->id,
         'destination_id' => $location->destination_id,
     ]);

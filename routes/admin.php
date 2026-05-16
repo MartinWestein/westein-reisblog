@@ -1,7 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('admin.dashboard');
-})->name('home');
+Route::get('/', DashboardController::class)->name('home');

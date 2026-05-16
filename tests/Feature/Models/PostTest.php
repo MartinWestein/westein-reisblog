@@ -23,12 +23,12 @@ test('post-slug blijft stabiel na hernoemen', function () {
     expect($post->fresh()->slug)->toBe($originalSlug);
 });
 
-test('post behoort tot een user', function () {
+test('post behoort tot een author', function () {
     $user = User::factory()->create();
-    $post = Post::factory()->for($user)->create();
+    $post = Post::factory()->for($user, 'author')->create();
 
-    expect($post->user)->toBeInstanceOf(User::class)
-        ->and($post->user->id)->toBe($user->id);
+    expect($post->author)->toBeInstanceOf(User::class)
+        ->and($post->author->id)->toBe($user->id);
 });
 
 test('post kan behoren tot een destination', function () {
@@ -55,7 +55,7 @@ test('post kan behoren tot een location', function () {
 
 test('post kan beide destination_id en location_id leeg hebben (tip-scenario)', function () {
     $user = User::factory()->create();
-    $post = Post::factory()->for($user)->create([
+    $post = Post::factory()->for($user, 'author')->create([
         'destination_id' => null,
         'location_id' => null,
     ]);
