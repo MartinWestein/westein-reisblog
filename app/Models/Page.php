@@ -6,6 +6,7 @@ use Database\Factories\PageFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -20,6 +21,7 @@ class Page extends Model implements HasMedia
 
     use HasSlug;
     use InteractsWithMedia;
+    use SoftDeletes;
 
     protected $fillable = [
         'title',

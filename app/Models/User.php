@@ -26,8 +26,9 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'email',
         'password',
         'bio',
-        'avatar_path',
         'social_links',
+        'deactivated_at',
+        'deactivation_reason',
     ];
 
     protected $hidden = [
@@ -48,6 +49,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'social_links' => 'array',
+            'deactivated_at' => 'datetime',
         ];
     }
 

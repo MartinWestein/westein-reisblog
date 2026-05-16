@@ -7,6 +7,7 @@ use Database\Factories\DestinationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -21,6 +22,7 @@ class Destination extends Model implements HasMedia
     use HasSlug;
     use InteractsWithMedia;
     use RegistersMediaConversions;
+    use SoftDeletes;
 
     protected $fillable = [
         'name',

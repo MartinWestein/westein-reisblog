@@ -1,0 +1,22 @@
+// Magazine design tokens (gedeeld met publieke kant)
+@import 'design-tokens';
+
+// Bootstrap variable overrides VOOR de Bootstrap import
+$primary: #1E90FF;
+$body-color: #14213D;
+$body-bg: #F8F6F2;
+$border-radius: 8px;
+$enable-shadows: true;
+$enable-rounded: true;
+$font-family-base: 'Inter', system-ui, -apple-system, sans-serif;
+$headings-font-family: 'Playfair Display', Georgia, serif;
+
+@import 'bootstrap/scss/bootstrap';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
+// Admin-specifieke styling
+@import 'admin/layout';
+@import 'admin/sidebar';
+@import 'admin/topbar';
+@import 'admin/components';
+@import 'admin/forms';

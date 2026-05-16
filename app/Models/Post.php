@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -25,6 +26,7 @@ class Post extends Model implements HasMedia
     use HasTags;
     use InteractsWithMedia;
     use RegistersMediaConversions;
+    use SoftDeletes;
 
     protected $fillable = [
         'user_id',
@@ -97,6 +99,9 @@ class Post extends Model implements HasMedia
     {
         $this->addMediaCollection('featured')
             ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
+
+        $this->addMediaCollection('inline_images')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
     }
 

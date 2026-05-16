@@ -50,11 +50,33 @@ test('destination heeft veel posts', function () {
     expect($destination->posts)->toHaveCount(2);
 });
 
-test('locations worden verwijderd als destination wordt verwijderd', function () {
+test('soft-deleted destination blijft locations behouden', function () {
+    $destination = Destination::factory()->create();
+    Location::factory()->count(2)->for($destination)->create();
+
+    $destination->delete(); // soft delete
+
+    expect(Location::count())->toBe(2)
+        ->and(Destination::withTrashed()->count())->toBe(1)
+        ->and(Destination::count())->toBe(0);
+});
+
+test('herstellen van soft-deleted destination geeft locations terug', function () {
     $destination = Destination::factory()->create();
     Location::factory()->count(2)->for($destination)->create();
 
     $destination->delete();
+    $destination->restore();
+
+    expect(Destination::count())->toBe(1)
+        ->and($destination->fresh()->locations)->toHaveCount(2);
+});
+
+test('locations worden verwijderd als destination wordt verwijderd', function () {
+    $destination = Destination::factory()->create();
+    Location::factory()->count(2)->for($destination)->create();
+
+    $destination->forceDelete();
 
     expect(Location::count())->toBe(0);
 });

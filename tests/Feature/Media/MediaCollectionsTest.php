@@ -15,14 +15,20 @@ beforeEach(function () {
     Queue::fake();
 });
 
-test('Post registreert featured collectie als single-file', function () {
+test('Post registreert featured (single) en inline_images (multi) collecties', function () {
     $post = Post::factory()->create();
 
     $collections = $post->getRegisteredMediaCollections();
 
-    expect($collections)->toHaveCount(1)
-        ->and($collections->first()->name)->toBe('featured')
-        ->and($collections->first()->singleFile)->toBeTrue();
+    expect($collections)->toHaveCount(2);
+
+    $featured = $collections->firstWhere('name', 'featured');
+    expect($featured)->not->toBeNull()
+        ->and($featured->singleFile)->toBeTrue();
+
+    $inline = $collections->firstWhere('name', 'inline_images');
+    expect($inline)->not->toBeNull()
+        ->and($inline->singleFile)->toBeFalse();
 });
 
 test('Location registreert gallery collectie als multi-file', function () {

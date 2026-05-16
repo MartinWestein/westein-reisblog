@@ -1,0 +1,112 @@
+// Page header
+.admin-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.admin-page-header__title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--admin-text);
+    margin: 0 0 0.25rem;
+    line-height: 1.15;
+}
+
+.admin-page-header__subtitle {
+    color: var(--admin-text-muted);
+    font-size: 0.9375rem;
+    margin: 0;
+}
+
+.admin-page-header__actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+// Card
+.admin-card {
+    background-color: var(--admin-surface);
+    border: 1px solid var(--admin-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.admin-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-card__title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--admin-text);
+}
+
+// Flash messages
+.admin-flash {
+    padding: 0.875rem 1.25rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 0.9375rem;
+
+    i {
+        font-size: 1.125rem;
+        flex-shrink: 0;
+        margin-top: 0.125rem;
+    }
+
+    &--success {
+        background-color: rgba(65, 179, 163, 0.12);
+        color: #2A6B61;
+        border: 1px solid rgba(65, 179, 163, 0.3);
+    }
+    &--error {
+        background-color: rgba(217, 83, 79, 0.1);
+        color: #A93530;
+        border: 1px solid rgba(217, 83, 79, 0.3);
+    }
+    &--info {
+        background-color: rgba(30, 144, 255, 0.08);
+        color: #1872CC;
+        border: 1px solid rgba(30, 144, 255, 0.25);
+    }
+    &--warning {
+        background-color: rgba(232, 168, 124, 0.15);
+        color: #A85F2E;
+        border: 1px solid rgba(232, 168, 124, 0.35);
+    }
+}
+
+// Role badge
+.admin-role-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-radius: 999px;
+    background-color: rgba(30, 144, 255, 0.1);
+    color: #1872CC;
+
+    & + & {
+        margin-left: 0.25rem;
+    }
+}

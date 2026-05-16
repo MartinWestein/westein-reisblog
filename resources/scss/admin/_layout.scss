@@ -1,0 +1,60 @@
+:root {
+    --admin-sidebar-width: 240px;
+    --admin-sidebar-collapsed-width: 64px;
+    --admin-topbar-height: 64px;
+    --admin-content-max: 1280px;
+    --admin-bg: #F8F6F2;
+    --admin-surface: #FFFFFF;
+    --admin-text: #14213D;
+    --admin-text-muted: #5C6779;
+    --admin-border: rgba(20, 33, 61, 0.08);
+    --admin-hover: rgba(30, 144, 255, 0.06);
+    --admin-active: rgba(30, 144, 255, 0.12);
+}
+
+.admin-shell {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--admin-bg);
+}
+
+.admin-shell > .admin-sidebar {
+    flex: 0 0 var(--admin-sidebar-width);
+    width: var(--admin-sidebar-width);
+    transition: flex-basis 200ms ease, width 200ms ease;
+}
+
+.admin-shell.is-collapsed > .admin-sidebar {
+    flex: 0 0 var(--admin-sidebar-collapsed-width);
+    width: var(--admin-sidebar-collapsed-width);
+}
+
+.admin-main {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-content {
+    flex: 1;
+    padding: 1.5rem 2rem 4rem;
+    max-width: var(--admin-content-max);
+    width: 100%;
+    margin: 0 auto;
+}
+
+@media (max-width: 991.98px) {
+    // Sidebar wordt uit het flex-spoor gehaald \u2014 hij positioneert zichzelf
+    // via fixed/transform (zie _topbar.scss). Daarom hier display:none op de
+    // flex-item zelf, zodat .admin-main de volle breedte krijgt.
+    .admin-shell > .admin-sidebar:not(.is-open) {
+        flex: 0 0 0;
+        width: 0;
+        overflow: hidden;
+    }
+
+    .admin-content {
+        padding: 1rem 1.25rem 3rem;
+    }
+}

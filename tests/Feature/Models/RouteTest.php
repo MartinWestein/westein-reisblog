@@ -84,7 +84,7 @@ test('waypoint cascade-verwijdert bij route delete', function () {
 
     expect($route->waypoints)->toHaveCount(1);
 
-    $route->delete();
+    $route->forceDelete();
 
     expect(RouteWaypoint::where('route_id', $route->id)->count())->toBe(0);
 });

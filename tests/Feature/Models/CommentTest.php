@@ -163,7 +163,7 @@ test('comment cascade-verwijdert bij post delete', function () {
 
     expect(Comment::count())->toBe(1);
 
-    $post->delete();
+    $post->forceDelete();
 
     expect(Comment::count())->toBe(0);
 });
@@ -177,7 +177,7 @@ test('replies cascaden mee als parent comment wordt verwijderd', function () {
 
     expect(Comment::count())->toBe(2);
 
-    $parent->delete();
+    $parent->forceDelete();
 
     expect(Comment::count())->toBe(0);
 });
