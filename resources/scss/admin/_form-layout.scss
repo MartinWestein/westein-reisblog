@@ -1,0 +1,88 @@
+/* ============================================================
+   Admin Form Layout — herbruikbaar two-column pattern
+   Gebruikt door: FamilyMembers, Pages, Posts, Destinations, …
+   ============================================================ */
+
+.admin-form-layout {
+    margin: 0;
+}
+
+.admin-form-layout__grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+.admin-form-layout__main {
+    flex: 1 1 360px;
+    min-width: 0;
+    background: #FFFFFF;
+    border-radius: var(--radius-md, 12px);
+    box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
+    padding: 1.75rem;
+}
+
+.admin-form-layout__side {
+    flex: 0 0 100%;
+    min-width: 0;
+
+    @media (min-width: 992px) {
+        flex: 0 0 320px;
+    }
+
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.admin-form-layout__side > .admin-form-section {
+    background: #FFFFFF;
+    border-radius: var(--radius-md, 12px);
+    box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
+    padding: 1.25rem 1.5rem;
+}
+
+.admin-form-layout__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(20, 33, 61, 0.08);
+}
+
+/* ============================================================
+   Form-section — subtiele groepering binnen een kolom
+   ============================================================ */
+
+.admin-form-section + .admin-form-section,
+.admin-form-layout__main .admin-form-section + .admin-form-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(20, 33, 61, 0.08);
+}
+
+.admin-form-section__header {
+    margin-bottom: 1rem;
+}
+
+.admin-form-section__title {
+    font-family: var(--font-body, 'Inter', system-ui, sans-serif);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--admin-text-muted, #5C6779);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 0.25rem;
+}
+
+.admin-form-section__description {
+    font-size: 0.8125rem;
+    color: var(--admin-text-muted, #5C6779);
+    margin: 0;
+}
+
+.admin-form-section__body > .admin-field:last-child {
+    margin-bottom: 0;
+}

@@ -86,13 +86,13 @@
                 <i class="bi bi-list"></i>
             </button>
 
-            <nav class="admin-breadcrumbs" aria-label="breadcrumb">
-                @hasSection('breadcrumbs')
-                    @yield('breadcrumbs')
-                @else
-                    <a href="{{ route('admin.home') }}">{{ __('Beheer') }}</a>
-                @endif
-            </nav>
+<nav class="admin-breadcrumbs" aria-label="{{ __('Kruimelpad') }}">
+    @hasSection('breadcrumbs')
+        @yield('breadcrumbs')
+    @else
+        <a href="{{ route('admin.home') }}">{{ __('Beheer') }}</a>
+    @endif
+</nav>
 
             <div class="admin-usermenu" x-data="{ open: false }" @click.outside="open = false">
                 <button type="button" class="admin-usermenu__trigger" @click="open = !open">

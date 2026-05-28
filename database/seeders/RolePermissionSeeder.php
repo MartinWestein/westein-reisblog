@@ -67,6 +67,7 @@ class RolePermissionSeeder extends Seeder
             'routes.manage',
             'newsletters.manage', 'subscribers.manage',
             'pages.manage',
+            'family.manage',
         ]);
 
         $author->syncPermissions([
