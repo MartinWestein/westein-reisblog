@@ -155,26 +155,26 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 
 ## Fase 4 — overzicht (in uitvoering)
 
-| Stap     | Inhoud                                                                                  | Status      |
-| -------- | --------------------------------------------------------------------------------------- | ----------- |
-| **4.0**  | Fundament: soft deletes op kern-content, users opruimen + `deactivated_at`, Post `inline_images` collectie | ✅ afgerond |
-| **4.1**  | Admin-layout: inklapbare sidebar (flexbox), gegroepeerde nav, topbar met gebruikersmenu, flash + form-componenten | ✅ afgerond |
-| **4.2**  | Dashboard met 6 KPI-cards + gemixte activity feed. Rename `Post::user()` → `Post::author()` | ✅ afgerond |
-| **4.3.1** | Categories CRUD                                                                        | ✅ afgerond |
-| **4.3.2** | Tags CRUD (met morphedByMany op Posts)                                                 | ✅ afgerond |
-| **4.3.3** | FamilyMembers CRUD — eerste cards-layout + eerste media-upload                         | ✅ afgerond |
-| **4.3.4** | Pages CRUD — eerste TipTap (simple-profiel) + HTMLPurifier                             | ✅ afgerond |
-| **4.4**  | Destinations + Locations CRUD                                                           | ⏳ volgende |
-| **4.5**  | Posts CRUD inclusief TipTap rich                                                        | ⏳          |
-| **4.6**  | TipTap image-picker modal                                                               | ⏳          |
-| **4.7**  | Comment-moderatie                                                                       | ⏳          |
-| **4.8**  | Routes + Waypoints CRUD                                                                 | ⏳          |
-| **4.9**  | Subscribers + import/export                                                             | ⏳          |
-| **4.10** | Newsletter compose & dispatch                                                           | ⏳          |
-| **4.11** | `/admin/media` browser                                                                  | ⏳          |
-| **4.12** | `/admin/prullenbak`                                                                     | ⏳          |
-| **4.13** | Users + rollen beheer                                                                   | ⏳          |
-| **4.14** | Tests, Pint, fase-4-bouwplan document, commit                                           | ⏳          |
+| Stap      | Inhoud                                                                                  | Status      |
+| --------- | --------------------------------------------------------------------------------------- | ----------- |
+| **4.0**   | Fundament: soft deletes op kern-content, users opruimen + `deactivated_at`, Post `inline_images` collectie | ✅ afgerond |
+| **4.1**   | Admin-layout: inklapbare sidebar (flexbox), gegroepeerde nav, topbar met gebruikersmenu, flash + form-componenten | ✅ afgerond |
+| **4.2**   | Dashboard met 6 KPI-cards + gemixte activity feed. Rename `Post::user()` → `Post::author()` | ✅ afgerond |
+| **4.3.1** | Categories CRUD                                                                         | ✅ afgerond |
+| **4.3.2** | Tags CRUD (met morphedByMany op Posts)                                                  | ✅ afgerond |
+| **4.3.3** | FamilyMembers CRUD — eerste cards-layout + eerste media-upload                          | ✅ afgerond |
+| **4.3.4** | Pages CRUD — eerste TipTap (simple-profiel) + HTMLPurifier                              | ✅ afgerond |
+| **4.4**   | Destinations + Locations CRUD                                                           | ✅ Destinations afgerond, Locations volgt |
+| **4.5**   | Posts CRUD inclusief TipTap rich                                                        | ⏳          |
+| **4.6**   | TipTap image-picker modal                                                               | ⏳          |
+| **4.7**   | Comment-moderatie                                                                       | ⏳          |
+| **4.8**   | Routes + Waypoints CRUD                                                                 | ⏳          |
+| **4.9**   | Subscribers + import/export                                                             | ⏳          |
+| **4.10**  | Newsletter compose & dispatch                                                           | ⏳          |
+| **4.11**  | `/admin/media` browser                                                                  | ⏳          |
+| **4.12**  | `/admin/prullenbak`                                                                     | ⏳          |
+| **4.13**  | Users + rollen beheer                                                                   | ⏳          |
+| **4.14**  | Tests, Pint, fase-4-bouwplan document, commit                                           | ⏳          |
 
 ## Wat staat er nu in Fase 4
 
@@ -233,6 +233,12 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 21. **HTMLPurifier `simple`-config rewrites externe links automatisch** met `HTML.TargetBlank: true` + `HTML.Nofollow: true`. Geen extra controller-logica nodig om `target="_blank"` of `rel="nofollow noopener"` toe te voegen. Per-test bewezen.
 
 22. **Admin-tests staan in `tests\Feature\` direct**, met naamconventie `{Module}ManagementTest.php` (bv. `PageManagementTest.php`, `FamilyMemberManagementTest.php`). Niet in een `Admin/`-submap. Model-tests staan apart in `tests\Feature\Models\`.
+
+23. **`@php(...)`-shorthand met een toewijzing compileert stuk.** `@php($x = ...)` werd gecompileerd naar `<?php($x = ...)` — zonder spatie na `<?php`, wat ongeldige PHP 
+is en verderop een misleidende `syntax error, unexpected token "endif"` op regel 1 geeft. De fout wijst NIET naar de echte regel. Gebruik altijd de blok-vorm voor assignments: `@php $x = ...; @endphp` (puntkomma verplicht). Shorthand alleen voor losse calls.
+Diagnose-truc: lint de gecompileerde view met `php -l` op het bestand in `storage\framework\views\*.php` — de eerste regel toont de fout-compilatie direct.
+
+24. **`<x-admin.image-upload>` is nu generiek.** Remove-checkbox heet `remove_{{ $name }}` (was hardcoded `remove_portrait`). Controller/Request luisteren naar `remove_{name}`. Werkt voor portrait (FamilyMember) én hero (Destination), klaar voor Posts.
 
 ## Werkstijl voor Claude
 

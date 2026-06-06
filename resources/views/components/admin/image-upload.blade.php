@@ -107,7 +107,7 @@
         <label class="image-upload__remove-toggle" x-show="hasCurrent && !previewUrl">
             <input
                 type="checkbox"
-                name="remove_portrait"
+                name="remove_{{ $name }}"
                 value="1"
                 x-model="markedForRemoval"
             >

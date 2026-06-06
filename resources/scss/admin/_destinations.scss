@@ -1,0 +1,90 @@
+.destination-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.destination-card {
+    position: relative;
+    background: var(--color-surface, #fff);
+    border-radius: var(--radius-md, 12px);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    transition: transform .15s ease, box-shadow .15s ease;
+
+    &:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+    // Driepuntsmenu zweeft rechtsboven over de hero
+    .card-actions-menu {
+        position: absolute;
+        top: .5rem;
+        right: .5rem;
+        z-index: 2;
+    }
+}
+
+.destination-card__media {
+    display: block;
+    position: relative;
+    aspect-ratio: 3 / 2;
+    background-color: #14213D;
+    background-size: cover;
+    background-position: center;
+    text-decoration: none;
+}
+
+.destination-card__placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, .4);
+    font-size: 2.5rem;
+}
+
+.destination-card__overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: .25rem;
+    padding: 1rem;
+    background: linear-gradient(180deg, rgba(20,33,61,0) 40%, rgba(20,33,61,.75) 100%);
+}
+
+.destination-card__name {
+    margin: 0;
+    font-family: var(--font-heading, 'Playfair Display', serif);
+    font-size: 1.375rem;
+    color: #FFFDF7;
+    text-shadow: 0 1px 8px rgba(0,0,0,.4);
+}
+
+.destination-card__country {
+    align-self: flex-start;
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #FFFDF7;
+    background: rgba(255,255,255,.2);
+    border-radius: var(--radius-sm, 6px);
+    padding: .1rem .4rem;
+}
+
+.destination-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .75rem 1rem;
+}
+
+.destination-card__meta {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .8125rem;
+    color: var(--color-muted, #5C6779);
+}
