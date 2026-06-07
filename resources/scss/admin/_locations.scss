@@ -1,0 +1,111 @@
+.destination-context {
+    position: relative;
+    margin-bottom: 1.5rem;
+    border-radius: var(--radius-md, 12px);
+    overflow: hidden;
+    background-color: #14213D;
+    background-size: cover;
+    background-position: center;
+    aspect-ratio: 6 / 1;
+    min-height: 140px;
+}
+
+.destination-context__overlay {
+    position: absolute;
+    inset: 0;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: linear-gradient(180deg, rgba(20,33,61,.25) 0%, rgba(20,33,61,.75) 100%);
+    color: #FFFDF7;
+}
+
+.destination-context__back {
+    align-self: flex-start;
+    color: rgba(255,255,255,.85);
+    font-size: .875rem;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+
+    &:hover { color: #FFFDF7; text-decoration: underline; }
+}
+
+.destination-context__title {
+    margin: 0;
+    font-family: var(--font-heading, 'Playfair Display', serif);
+    font-size: 1.75rem;
+    color: #FFFDF7;
+    text-shadow: 0 1px 8px rgba(0,0,0,.4);
+}
+
+.destination-context__meta {
+    margin: 0;
+    font-size: .8125rem;
+    color: rgba(255,255,255,.85);
+}
+
+.location-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.25rem;
+}
+
+.location-card {
+    position: relative;
+    background: var(--color-surface, #fff);
+    border-radius: var(--radius-md, 12px);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    transition: transform .15s ease, box-shadow .15s ease;
+
+    &:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+    .card-actions-menu {
+        position: absolute;
+        top: .5rem;
+        right: .5rem;
+        z-index: 2;
+    }
+}
+
+.location-card__media {
+    display: block;
+    position: relative;
+    aspect-ratio: 4 / 3;
+    background-color: #14213D;
+    background-size: cover;
+    background-position: center;
+    text-decoration: none;
+}
+
+.location-card__placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,.4);
+    font-size: 2rem;
+}
+
+.location-card__body { padding: .75rem 1rem 1rem; }
+
+.location-card__name {
+    margin: 0 0 .25rem;
+    font-family: var(--font-heading, 'Playfair Display', serif);
+    font-size: 1.125rem;
+    color: var(--color-text, #14213D);
+}
+
+.location-card__coords {
+    margin: 0;
+    font-size: .8125rem;
+    color: var(--color-muted, #5C6779);
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    font-family: ui-monospace, 'SF Mono', 'Consolas', monospace;
+}

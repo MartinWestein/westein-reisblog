@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DestinationController;
 use App\Http\Controllers\Admin\FamilyMemberController;
+use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\MediaController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\TagController;
@@ -25,3 +26,8 @@ Route::resource('bestemmingen', DestinationController::class)
 Route::post('media/upload', [MediaController::class, 'upload'])->name('media.upload');
 Route::patch('media/reorder', [MediaController::class, 'reorder'])->name('media.reorder');
 Route::delete('media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
+Route::resource('bestemmingen.locaties', LocationController::class)
+    ->parameters(['bestemmingen' => 'destination', 'locaties' => 'location'])
+    ->scoped(['location' => 'slug'])
+    ->except(['show'])
+    ->names('destinations.locations');

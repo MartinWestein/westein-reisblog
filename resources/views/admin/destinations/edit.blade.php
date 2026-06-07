@@ -21,6 +21,13 @@
         'action' => route('admin.destinations.update', $destination),
         'method' => 'PUT',
     ])
+    
+    <div class="mt-4">
+        <a href="{{ route('admin.destinations.locations.index', $destination) }}" class="btn btn-outline-primary">
+            <i class="bi bi-pin-map"></i>
+            {{ __('Locaties beheren') }}
+        </a>
+    </div>
 
     <section class="admin-form-section mt-4">
         <header class="admin-form-section__header">

@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 31 mei 2026 — Fase 4 in uitvoering (Stap 4.3.4 afgerond)
+**Laatst bijgewerkt:** 7 juni 2026 — Fase 4 in uitvoering (Stap 4.4 afgerond)
 **Masterplan:** zie `westein-reisblog-masterplan.md` voor volledige architectuur
 **Bouwplannen:** Fase 2 staat vast in `fase-2-bouwplan.md`. Fase 4 wordt na afronding vastgelegd in `fase-4-bouwplan.md`.
 
@@ -94,6 +94,19 @@ Een schaalbare, veilige Laravel-reisblog voor familievakanties van de familie We
     - Reserved slugs centraal in `config/westein.php`, gevalideerd via `App\Rules\NotReservedSlug` (alleen in StoreRequest; UpdateRequest heeft slug niet in rules)
     - Publicatie via toggle `is_published` (form-helper, geen kolom) + datetime-local-veld → genormaliseerd via `publicationData()`-methode op de FormRequest
     - Hero-image bewust uitgesteld naar v2: model heeft `hero`-collectie al, maar UI-veld is nog niet ontsloten (isoleerde TipTap + Purifier risico)
+20. **Generieke media-endpoints met eigenaar-gebaseerde autorisatie.** `MediaController` met
+    drie routes: `POST media/upload`, `PATCH media/reorder`, `DELETE media/{media}`. Autorisatie
+    via `$this->authorize('update', $media->model)` — erft van het bovenliggende model, geen
+    losse media-permission. Client-side model-type via whitelist in `config/westein.php`
+    (`gallery_models`) — nooit rauwe class-strings van client vertrouwen.
+21. **Gallery-flow:** AJAX direct opslaan (upload + reorder + delete), los van form-submit.
+    Reorder via SortableJS + `Media::setNewOrder()` met volledige id-lijst uit DOM-volgorde.
+    Component (`<x-admin.gallery-upload>`) hoort op de EDIT-pagina; "store→edit"-redirect zorgt
+    dat een net aangemaakt model direct een werkpagina krijgt voor de galerij.
+22. **Locations: volledig genest** onder Destinations (`/admin/bestemmingen/{destination}/locaties/{location}`)
+    met Laravel `scoped()`-binding (`->scoped(['location' => 'slug'])`). Cross-destination-aanroepen
+    geven automatisch 404. Locations hebben geen hero, alleen `gallery`-collectie; eerste foto
+    dient als thumbnail in de index-cards.
 
 ## Conventies — werk altijd zo
 
@@ -142,6 +155,12 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - **`<x-admin.avatar-initials>`** — portret of initialen-fallback met deterministische accent-kleur (`crc32(id) % palette`). Props: `member`, `size`.
 - **`<x-admin.card-actions-menu>`** — driepuntsmenu (⋮) met Bewerken + inline delete-confirm (Alpine). Props: `edit-url`, `delete-url`, `delete-confirm`.
 - **`<x-admin.delete-button>`** — inline delete-confirm voor tabel-rijen (bestond al sinds 4.3.1).
+- **`<x-admin.gallery-upload>`** (Stap 4.4) — multi-image galerij met drag-drop upload,
+  SortableJS-reorder, per-foto delete. Alle acties via AJAX (los van form-submit). Alpine-factory
+  in `resources/js/admin/gallery-upload.js`. Props: `name` (collectie), `model` (HasMedia-instance),
+  `max-mb`. Werkt voor elk model in de `gallery_models`-whitelist (Destination, Location, straks Posts).
+- **`MediaController`** (Stap 4.4) — generieke endpoints (`upload`/`reorder`/`destroy`) met
+  eigenaar-policy-check via `$media->model`. Geen losse media-permission nodig.
 - **`App\Rules\NotReservedSlug`** (Stap 4.3.4) — validatieregel die slugs uit `config('westein.reserved_slugs')` weigert. Herbruikbaar voor andere slug-velden die top-level routes raken.
 
 ## Roadmap — fase-status
@@ -164,7 +183,7 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 | **4.3.2** | Tags CRUD (met morphedByMany op Posts)                                                  | ✅ afgerond |
 | **4.3.3** | FamilyMembers CRUD — eerste cards-layout + eerste media-upload                          | ✅ afgerond |
 | **4.3.4** | Pages CRUD — eerste TipTap (simple-profiel) + HTMLPurifier                              | ✅ afgerond |
-| **4.4**   | Destinations + Locations CRUD                                                           | ✅ Destinations afgerond, Locations volgt |
+| **4.4**   | Destinations + Locations CRUD + generieke gallery-component                             | ✅ afgerond |
 | **4.5**   | Posts CRUD inclusief TipTap rich                                                        | ⏳          |
 | **4.6**   | TipTap image-picker modal                                                               | ⏳          |
 | **4.7**   | Comment-moderatie                                                                       | ⏳          |
@@ -185,6 +204,17 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - **Tags CRUD** (`/admin/tags`) — server-side filters, sort, paginate, inline delete-confirm. `Tag::posts()` via `morphedByMany`, `withCount('posts')` voor "gebruikt in N posts"-teller. Tag heeft `doNotGenerateSlugsOnUpdate()`.
 - **FamilyMembers CRUD** (`/admin/family-members`) — eerste cards-layout (4 per rij, ronde portret/initialen, driepuntsmenu, bio inline-expand), eerste media-upload via `<x-admin.image-upload>` (drag-and-drop, `portrait`-collectie). Two-column form via `<x-admin.form-layout>`. Server-side search/sort/paginate. `FamilyMemberPolicy` op `family.manage` (Admin + Editor). Demo-seeder met 4 familieleden (geen foto's → initialen-fallback). 15 Pest-tests.
 - **Pages CRUD** (`/admin/pages`) — **eerste TipTap-integratie (simple-profiel)** + **eerste HTMLPurifier sanitization**. Tabel-patroon met drie statusbadges (Concept/Gepland/Gepubliceerd) + statusfilter dropdown. Two-column form via `<x-admin.form-layout>`. Publicatie via Alpine-toggle + datetime-local-veld (scheduling werkt via `Page::published()`-scope). Slug locked bij update (uit `rules()` weggelaten, tamper-proof bewezen). Reserved-slug validatie via `App\Rules\NotReservedSlug` + `config/westein.php`. Soft delete via `$page->delete()`. 18 Pest-tests (RBAC-matrix, CRUD, scheduling, slug-locking, sanitization).
+- **Destinations CRUD** (`/admin/bestemmingen`) — cards-layout met hero-image-achtergrond +
+  overlay-naam + landcode-badge + locaties-teller. Two-column form (naam/slug/beschrijving links,
+  landcode + hero-upload rechts). Slug locked bij update (Pages-patroon). `<x-admin.image-upload>`
+  generiek gemaakt (`remove_{{ $name }}` i.p.v. hardcoded `remove_portrait`). 15 Pest-tests.
+- **Generieke gallery-component** (`<x-admin.gallery-upload>`) + `MediaController` met drie AJAX-
+  endpoints (upload/reorder/destroy). SortableJS toegevoegd via npm. Model-type whitelist in
+  `config/westein.php`. 9 Pest-tests (RBAC, whitelist-validatie, cross-model-afwijzing).
+- **Locations CRUD** (`/admin/bestemmingen/{destination}/locaties/{location}`) — volledig genest
+  met `scoped()`-binding (cross-destination = 404). Cards-layout met gallery-thumbnail. Banner-
+  header met destination-context boven de index. Two-column form met lat/lng-getalvelden (Leaflet
+  later). Geen hero, alleen gallery. 18 Pest-tests (incl. scoped 404, lat/lng-range-validatie).
 
 ## Leerpunten Fase 4 — bewaar voor volgende keer
 
@@ -246,6 +276,14 @@ Diagnose-truc: lint de gecompileerde view met `php -l` op het bestand in `storag
 
 27. **`<x-admin.gallery-upload>` = herbruikbare multi-image galerij.** SortableJS-reorder (`Media::setNewOrder()` met volledige id-lijst uit DOM-volgorde), AJAX-upload/delete los van form-submit. Factory in resources/js/admin/gallery-upload.js. Hoort op de EDIT-pagina (model moet bestaan); sluit aan op de store→edit-redirect. Props: name (collectie), model, max-mb.
 
+28. **AJAX-endpoints in tests vereisen `Accept: application/json`.** Bij file-upload tests kun je geen `postJson()` gebruiken (die is voor JSON-bodies, niet multipart). Gebruik in plaats daarvan `->withHeaders(['Accept' => 'application/json'])->post(...)`. Zonder de Accept-header probeert Laravel bij een validatiefout een redirect-response te bouwen → cryptische "Call to a member function all() on array". De productie-JS-client stuurt sowieso al JSON Accept; in de test moet je dat expliciet repliceren.
+
+29. **Geneste resource-routes met `scoped()` voorkomen cross-parent-aanroepen.**
+    `Route::resource('bestemmingen.locaties', ...)->scoped(['location' => 'slug'])` zorgt dat
+    Laravel valideert dat `$location` echt onder `$destination` valt — anders 404.
+    Cruciaal voor data-integriteit bij volledig geneste URL's. Test dit expliciet met een
+    `assertNotFound()`-scenario.
+
 ## Werkstijl voor Claude
 
 - Iteratief, stap voor stap. Niet alles in één keer.
@@ -260,20 +298,32 @@ Diagnose-truc: lint de gecompileerde view met `php -l` op het bestand in `storag
 - Waarschuw bij secrets in chat. Adviseer roteren.
 - Bestandsnamen exact in casing (Git en Pest zijn case-sensitive).
 
-## Volgende concrete actie — Stap 4.4: Destinations + Locations CRUD
+## Volgende concrete actie — Stap 4.5: Posts CRUD inclusief TipTap rich
 
-Twee gerelateerde modules in één stap. Destinations = land/regio (Italië, Schotland). Locations = stad/plek binnen Destination, met lat/lng voor Leaflet. Beide cards-layout conform beslissing #12, beide met media-upload (hero + gallery).
+Stap 4.4 is afgerond (Destinations + gallery-component + Locations + 42 Pest-tests).
 
-Vragen die we vooraf moeten beslissen:
+Stap 4.5 is de grootste content-module: Posts. Dit raakt vrijwel alle bestaande conventies en
+introduceert TipTap **rich** (de tweede editor-profiel naast `simple` uit Pages). Belangrijkste
+brokken:
 
-1. **Bestaande staat checken** — Destination/Location-models + migraties: kolommen kompleet? Soft-deletes? Factories/seeders? Bestaat er al een DestinationPolicy/LocationPolicy? Welke permission gebruiken we (`content.manage` lijkt logisch — staat al in seeder)?
-2. **Module-volgorde** — Destinations eerst (Locations hebben FK naar Destination), of beide tegelijk?
-3. **Cards-layout voor Destinations** — hero-image als card-achtergrond met overlay-tekst? Of klein thumbnail + tekst-card? Hoeveel per rij?
-4. **Locations-index** — geneste onder Destination (`/admin/bestemmingen/{destination}/locaties`) of flat (`/admin/locaties` met destination-filter)? Of allebei?
-5. **Multi-image gallery** — `<x-admin.image-upload>` is single-file. Voor Location-gallery hebben we een nieuwe component nodig (of een uitbreiding). Hoeveel werk maken we ervan in v1?
-6. **Leaflet-preview in Location-form** — kaart waar je de marker kunt verplaatsen om lat/lng te zetten, of gewoon twee getalvelden?
-7. **Form Request consistentie-check §3.4** — Posts/Locations: als location_id gevuld is moet destination_id consistent zijn. Voor Destination/Location CRUD zelf nog niet relevant, maar Locations heeft FK naar Destination die we moeten valideren (bestaat? niet soft-deleted?).
+1. **TipTap rich-profiel** — alle extensions inclusief Tables, YouTube, CodeBlock, Image
+   (image-picker komt in Stap 4.6, eerst placeholder). Tweede Purifier-config (`rich`).
+2. **Polymorfe tags** — `morphedByMany`-relatie bestaat al op Tag, nu UI voor tag-selectie op
+   Post-form (multi-select met autocomplete; nieuw of bestaand).
+3. **Multi-categorie** — Post BelongsToMany Categories via `category_post`-pivot.
+4. **Locatie-keuze** — destination_id + optioneel location_id (zie masterplan §3.4). Consistentie-
+   validatie in Form Request: location_id moet binnen destination_id vallen.
+5. **Status-flow** — draft / scheduled / published / archived. Publish-action zet
+   `published_at`; scheduled met datum in toekomst.
+6. **Featured image** — single via bestaande `<x-admin.image-upload>`.
+7. **Inline images-collectie** — bestaat al sinds Stap 4.0, wordt in 4.6 ontsloten via picker.
 
-Begin met vraag 1 (huidige staat checken via PowerShell), daarna de ontwerpvragen één voor één via `ask_user_input_v0`.
+Vragen voor vooraf:
+1. Huidige staat van Post-model checken: zijn alle velden + relaties + factories er?
+2. UI voor tags/categorieën: aparte multi-select widgets of beide in één "Taxonomie"-sectie?
+3. Featured image bij create of pas bij edit? (Consistent met Destinations: hero meteen bij create)
+4. Status-flow UI: dropdown of toggle + datetime-picker zoals Pages?
+5. Welke kolommen tonen we op de Posts-index? (titel, auteur, status, categorie, gepubliceerd-op)
+6. Index-volgorde: standaard nieuwste eerst? Filter op status?
 
-Verwachting: 3-4 dagen werk (twee modules, eerste cards-layout met hero-image-achtergrond, eerste multi-image-gallery, eerste Leaflet-integratie in admin).
+Verwachting: 4-5 dagen werk. Grootste module van Fase 4.
