@@ -2,6 +2,7 @@ import 'bootstrap';
 import { Tooltip } from 'bootstrap';
 import Alpine from 'alpinejs';
 
+import { galleryUpload } from './admin/gallery-upload.js';
 import { imageUpload } from './admin/image-upload.js';
 import { tiptapSimple } from './admin/tiptap-simple.js';
 
@@ -9,6 +10,7 @@ import { tiptapSimple } from './admin/tiptap-simple.js';
 document.addEventListener('alpine:init', () => {
     Alpine.data('imageUpload', imageUpload);
     Alpine.data('tiptapSimple', tiptapSimple);
+    Alpine.data('galleryUpload', galleryUpload);
 });
 
 window.Alpine = Alpine;

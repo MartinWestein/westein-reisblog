@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Destination;
+use App\Models\Location;
+
 return [
 
     /*
@@ -16,6 +19,19 @@ return [
         'bestemmingen', 'reistips', 'categorie', 'tag', 'auteurs',
         'reisroutes', 'fotos', 'blog', 'nieuwsbrief',
         'email', 'password', 'two-factor-challenge', 'up',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Gallery media — toegestane eigenaarsmodellen
+    |--------------------------------------------------------------------------
+    | Mapt de client-side type-string op de echte modelklasse. NOOIT de rauwe
+    | class-string van de client vertrouwen — alleen wat hier staat mag doel
+    | zijn van upload/reorder/delete via de generieke media-endpoints.
+    */
+    'gallery_models' => [
+        'destination' => Destination::class,
+        'location' => Location::class,
     ],
 
 ];

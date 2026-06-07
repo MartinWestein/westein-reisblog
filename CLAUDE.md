@@ -240,6 +240,12 @@ Diagnose-truc: lint de gecompileerde view met `php -l` op het bestand in `storag
 
 24. **`<x-admin.image-upload>` is nu generiek.** Remove-checkbox heet `remove_{{ $name }}` (was hardcoded `remove_portrait`). Controller/Request luisteren naar `remove_{name}`. Werkt voor portrait (FamilyMember) én hero (Destination), klaar voor Posts.
 
+25. **Generieke media-endpoints met eigenaar-gebaseerde autorisatie.** `MediaController` (upload/reorder/destroy) resolvet het eigenaarsmodel en checkt `authorize('update', $model)`. Geen losse media-permission nodig — autorisatie erft van het bovenliggende model. Werkt voor elk model met een gallery-collectie. Routevolgorde: statische `media/reorder` MOET vóór dynamische `media/{media}` staan.
+
+26. **Model-type whitelist in config/westein.php (`gallery_models`).** NOOIT de rauwe class-string van de client vertrouwen bij generieke media-endpoints. Client stuurt een type-string ('destination'), server mapt die tegen de whitelist naar de echte klasse. Voorkomt upload naar willekeurige modellen.
+
+27. **`<x-admin.gallery-upload>` = herbruikbare multi-image galerij.** SortableJS-reorder (`Media::setNewOrder()` met volledige id-lijst uit DOM-volgorde), AJAX-upload/delete los van form-submit. Factory in resources/js/admin/gallery-upload.js. Hoort op de EDIT-pagina (model moet bestaan); sluit aan op de store→edit-redirect. Props: name (collectie), model, max-mb.
+
 ## Werkstijl voor Claude
 
 - Iteratief, stap voor stap. Niet alles in één keer.

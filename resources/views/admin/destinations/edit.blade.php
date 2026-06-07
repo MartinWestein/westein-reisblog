@@ -22,5 +22,15 @@
         'method' => 'PUT',
     ])
 
-    {{-- Gallery-beheer verschijnt hier in de volgende stap (na de gallery-component) --}}
+    <section class="admin-form-section mt-4">
+        <header class="admin-form-section__header">
+            <h3 class="admin-form-section__title">{{ __('Galerij') }}</h3>
+            <p class="admin-form-section__description">
+                {{ __('Voeg foto\'s toe, sleep om te ordenen. Wijzigingen worden direct opgeslagen.') }}
+            </p>
+        </header>
+        <div class="admin-form-section__body">
+            <x-admin.gallery-upload :model="$destination" name="gallery" :max-mb="16" />
+        </div>
+    </section>
 @endsection

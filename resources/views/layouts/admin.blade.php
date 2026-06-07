@@ -44,7 +44,7 @@
                 <x-admin.nav-link route="admin.locations.index" icon="bi-geo-alt" label="Locaties" />
                 <x-admin.nav-link route="admin.routes.index" icon="bi-signpost-split" label="Routes" />
                 <x-admin.nav-link route="admin.pages.index" icon="bi-file-earmark-text" label="Pagina's" />
-                <x-admin.nav-link route="admin.family.index" icon="bi-people" label="Familie" />
+                <x-admin.nav-link route="admin.family-members.index" icon="bi-people" label="Familie" />
             </div>
 
             <div class="admin-sidebar__section">

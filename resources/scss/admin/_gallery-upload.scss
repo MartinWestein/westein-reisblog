@@ -1,0 +1,114 @@
+.gallery-upload {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.gallery-upload__dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .25rem;
+    padding: 2rem 1rem;
+    border: 2px dashed rgba(20, 33, 61, .18);
+    border-radius: var(--radius-md, 12px);
+    background: var(--color-bg, #F8F6F2);
+    color: var(--color-muted, #5C6779);
+    cursor: pointer;
+    text-align: center;
+    transition: border-color .15s ease, background .15s ease;
+
+    &:hover { border-color: var(--brand-primary, #1E90FF); }
+
+    &--dragging {
+        border-color: var(--brand-primary, #1E90FF);
+        background: rgba(30, 144, 255, .06);
+    }
+
+    i { font-size: 1.75rem; color: var(--brand-primary, #1E90FF); }
+}
+
+.gallery-upload__dropzone-title { margin: 0; font-weight: 500; color: var(--color-text, #14213D); }
+.gallery-upload__dropzone-meta { margin: 0; font-size: .8125rem; }
+.gallery-upload__uploading { margin-top: .5rem; font-size: .875rem; }
+
+.gallery-upload__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: .75rem;
+}
+
+.gallery-upload__item {
+    position: relative;
+    margin: 0;
+    aspect-ratio: 1 / 1;
+    border-radius: var(--radius-sm, 6px);
+    overflow: hidden;
+    background: #14213D;
+    box-shadow: var(--shadow-sm);
+}
+
+.gallery-upload__thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.gallery-upload__handle {
+    position: absolute;
+    top: .35rem;
+    left: .35rem;
+    z-index: 2;
+    border: none;
+    border-radius: var(--radius-sm, 6px);
+    padding: .15rem .35rem;
+    background: rgba(0, 0, 0, .55);
+    color: #fff;
+    cursor: grab;
+    font-size: .9rem;
+    line-height: 1;
+
+    &:active { cursor: grabbing; }
+}
+
+.gallery-upload__actions {
+    position: absolute;
+    bottom: .35rem;
+    right: .35rem;
+    z-index: 2;
+}
+
+.gallery-upload__delete {
+    border: none;
+    border-radius: var(--radius-sm, 6px);
+    padding: .2rem .4rem;
+    background: rgba(0, 0, 0, .55);
+    color: #fff;
+    cursor: pointer;
+    font-size: .9rem;
+    line-height: 1;
+
+    &:hover { background: #B91C1C; }
+}
+
+.gallery-upload__confirm {
+    display: flex;
+    gap: .25rem;
+    background: rgba(255, 255, 255, .95);
+    padding: .25rem;
+    border-radius: var(--radius-sm, 6px);
+
+    .btn { padding: .1rem .4rem; font-size: .75rem; }
+}
+
+.gallery-upload__empty {
+    font-size: .875rem;
+    color: var(--color-muted, #5C6779);
+    font-style: italic;
+}
+
+// SortableJS-klassen tijdens slepen
+.sortable-ghost { opacity: .4; }
+.sortable-chosen { box-shadow: var(--shadow-lg); }
