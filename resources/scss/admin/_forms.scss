@@ -61,3 +61,87 @@
 [x-cloak] {
     display: none !important;
 }
+
+.tag-pills {
+    position: relative;
+
+    &__box {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .375rem;
+        padding: .375rem .5rem;
+        min-height: 2.5rem;
+        border: 1px solid rgba(20, 33, 61, 0.15);
+        border-radius: var(--radius-sm, 6px);
+        background: #FFFFFF;
+        cursor: text;
+
+        &:focus-within {
+            border-color: var(--brand-primary, #1E90FF);
+            box-shadow: 0 0 0 3px rgba(30, 144, 255, 0.15);
+        }
+    }
+
+    &__pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .25rem;
+        padding: .125rem .25rem .125rem .5rem;
+        background: var(--brand-primary, #1E90FF);
+        color: #FFFFFF;
+        border-radius: 999px;
+        font-size: .8125rem;
+        line-height: 1.4;
+    }
+
+    &__remove {
+        appearance: none;
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.85);
+        cursor: pointer;
+        display: inline-flex;
+        padding: 0;
+        line-height: 1;
+
+        &:hover { color: #FFFFFF; }
+    }
+
+    &__input {
+        flex: 1;
+        min-width: 8rem;
+        border: none;
+        outline: none;
+        padding: .125rem;
+        font-size: .9375rem;
+        background: transparent;
+    }
+
+    &__menu {
+        position: absolute;
+        z-index: 20;
+        left: 0;
+        right: 0;
+        margin-top: .25rem;
+        background: #FFFFFF;
+        border: 1px solid rgba(20, 33, 61, 0.15);
+        border-radius: var(--radius-sm, 6px);
+        box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,.08));
+        overflow: hidden;
+    }
+
+    &__option {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: .5rem .75rem;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-size: .9375rem;
+
+        &:hover, &.is-active {
+            background: rgba(30, 144, 255, 0.1);
+        }
+    }
+}

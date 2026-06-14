@@ -5,11 +5,16 @@ import Alpine from 'alpinejs';
 import { galleryUpload } from './admin/gallery-upload.js';
 import { imageUpload } from './admin/image-upload.js';
 import { tiptapSimple } from './admin/tiptap-simple.js';
+import { tiptapRich } from './admin/tiptap-rich.js';
+import { tagPills } from './admin/tag-pills.js';
+import './admin/image-picker.js'
 
 // Alpine data factories registreren VOORDAT Alpine.start() draait
 document.addEventListener('alpine:init', () => {
     Alpine.data('imageUpload', imageUpload);
     Alpine.data('tiptapSimple', tiptapSimple);
+    Alpine.data('tiptapRich', tiptapRich);
+    Alpine.data('tagPills', tagPills);
     Alpine.data('galleryUpload', galleryUpload);
 });
 

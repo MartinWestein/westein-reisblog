@@ -34,4 +34,7 @@ return [
         'location' => Location::class,
     ],
 
+    // Slug van de algemene 'Tips'-categorie — heft de bestemming-verplichting op bij Posts (masterplan §3.4)
+    'general_tips_category_slug' => 'tips',
+
 ];

@@ -113,6 +113,36 @@
                 margin: 1.5rem 0;
             }
 
+            // Tabellen (rich-profiel)
+            table {
+                border-collapse: collapse;
+                width: 100%;
+                margin: 1rem 0;
+                overflow: hidden;
+
+                td, th {
+                    border: 1px solid rgba(20, 33, 61, 0.2);
+                    padding: .5rem .625rem;
+                    vertical-align: top;
+                    position: relative;
+                }
+
+                th {
+                    background: #F0EEE8;
+                    font-weight: 600;
+                    text-align: left;
+                }
+
+                // Actieve cel-selectie in de editor
+                .selectedCell::after {
+                    content: '';
+                    position: absolute;
+                    inset: 0;
+                    background: rgba(30, 144, 255, 0.12);
+                    pointer-events: none;
+                }
+            }
+            
             // Placeholder (alleen zichtbaar als doc leeg is)
             p.is-editor-empty:first-child::before {
                 content: attr(data-placeholder);

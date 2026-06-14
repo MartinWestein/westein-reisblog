@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 7 juni 2026 — Fase 4 in uitvoering (Stap 4.4 afgerond)
+**Laatst bijgewerkt:** 13 juni 2026 — Fase 4 in uitvoering (Stap 4.5 afgerond)
 **Masterplan:** zie `westein-reisblog-masterplan.md` voor volledige architectuur
 **Bouwplannen:** Fase 2 staat vast in `fase-2-bouwplan.md`. Fase 4 wordt na afronding vastgelegd in `fase-4-bouwplan.md`.
 
@@ -107,6 +107,14 @@ Een schaalbare, veilige Laravel-reisblog voor familievakanties van de familie We
     met Laravel `scoped()`-binding (`->scoped(['location' => 'slug'])`). Cross-destination-aanroepen
     geven automatisch 404. Locations hebben geen hero, alleen `gallery`-collectie; eerste foto
     dient als thumbnail in de index-cards.
+22. **Posts status-flow:** dropdown met 4 statussen; `published_at` datetime-local verschijnt bij `scheduled`. UI verbergt `published`/`scheduled` voor wie geen `posts.publish` heeft; Form Request handhaaft dezelfde regel server-side via `Rule::in($this->allowedStatuses())`. Permissief in beide richtingen: `archived` is vrij voor iedereen met update-recht (een auteur mag z'n eigen werk archiveren), alleen het *publiek-maken* (`scheduled`/`published`) vraagt extra recht.
+23. **Posts §3.4-validatie:** locatie↔bestemming-match altijd verplicht; bestemming verplicht *tenzij* de post de Tips-categorie heeft. Permissieve uitzondering: Tips-post **mag** een bestemming hebben (masterplan-conform). Anker-slug `tips` zit in `config/westein.php` (`general_tips_category_slug`), nooit hardcoded.
+24. **Posts taxonomie-UI:** twee aparte secties in de side-kolom. Categorieën als checkbox-groep (eindige, geseed'de lijst). Tags via pill-input met autocomplete (`tagPills` Alpine-factory), één hidden komma-gescheiden string als bron-van-waarheid; Form Request splitst server-side terug naar array in `prepareForValidation()`.
+25. **Abstracte basis voor Post Form Requests:** `PostRequest` (abstract) levert `rules()`/`prepareForValidation()`/`withValidator()`/`allowedStatuses()`/`hasTipsCategory()`/`publicationData()`/`messages()`. Store en Update erven en verschillen alleen in `authorize()` en `slugRules()`. Bewuste afwijking van Pages (twee onafhankelijke Requests met gedupliceerde `publicationData()`) — gerechtvaardigd door vier gedeelde stukken logica.
+26. **Image-picker (4.6) browse-scope = projectbreed, alleen content-foto's.** Eén query op `media`-tabel gefilterd op `collection_name ∈ {gallery, hero, featured, inline_images}`. Avatars (User) en portretten (FamilyMember) blijven buiten beeld. Eigenaar eager-loaded voor context-labels ("Bestemming: Italië", "Locatie: Italië → Rome"). Cursor-paginatie (24/pagina). Browse-permission: PostPolicy.create (wie bij rich editor kan, mag bladeren).
+27. **Image-upload (4.6) landt in post-eigen `inline_images`-collectie.** Autorisatie via PostPolicy.update (own/any). Bewust géén centrale media-pool — die komt eventueel in 4.11 als praktijk wijst dat veel kruislings hergebruik gepaard gaat met hard-deletes. Aanvaarde fragiliteit: een hard-deleted post neemt z'n `inline_images` mee, dus een andere post die diezelfde foto via browse hergebruikte verliest 'm — verzacht door soft-delete + 30-dagen-venster.
+28. **Image-picker create-flow: browse altijd live, upload-tab disabled tot opgeslagen.** Bladeren/invoegen heeft geen post nodig (invoegt enkel `<img src>` in editor-HTML; pas bij submit met de body meegeschreven). Upload-tab toont "Sla eerst op als concept" tot store→edit-redirect. Geen stub-endpoint, geen §3.4-omzeiling, geen weesconcepten.
+29. **Image-extensie (4.6) = invoegen + alignment via class.** Geen drag-resize (TipTap-resize-extensies hebben v3-compat-risico, zie leerpunt #30). Vier classes: `img-align-{left|center|right|full}`, met `img-`-prefix om Bootstrap-utility-collisions te vermijden. Default bij invoegen = `img-align-full`. Geen inline `style` — Purifier-allowlist bevat alleen `img[class]` plus `Attr.AllowedClasses`-whitelist op exact deze vier classes. `URI.AllowedSchemes` expliciet op `http|https|mailto` (geen `data:` of `javascript:`).
 
 ## Conventies — werk altijd zo
 
@@ -162,6 +170,9 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - **`MediaController`** (Stap 4.4) — generieke endpoints (`upload`/`reorder`/`destroy`) met
   eigenaar-policy-check via `$media->model`. Geen losse media-permission nodig.
 - **`App\Rules\NotReservedSlug`** (Stap 4.3.4) — validatieregel die slugs uit `config('westein.reserved_slugs')` weigert. Herbruikbaar voor andere slug-velden die top-level routes raken.
+- **`<x-admin.image-picker-modal>`** (Stap 4.6) — modal met twee tabs (browse + upload) voor de TipTap rich-editor. Coördinatie via `Alpine.store('imagePicker')`: editor roept `openFor(this)`, modal roept `selectImage(src, alt)`. Lui laden, cursor-paginatie, filter op collectie, drag-and-drop upload. Upload-tab automatisch disabled op create-view (geen post-id → "Sla eerst op als concept"). Props: `post` (nullable Post-model).
+- **`MediaPickerController` + `PostInlineImageController`** (Stap 4.6) — twee AJAX-endpoints voor de image-picker. `GET media-picker` projectbreed bladeren (filter op `collection_name ∈ {gallery, hero, featured, inline_images}`, autorisatie via `posts.create`); `POST posts/{post}/inline-images` upload naar de eigen `inline_images`-collectie (autorisatie via `posts.update` own/any). Response-shape consistent over beide: `{id, url, thumb_url, alt, context?}`.
+- **`tiptapRich`-factory** uitgebreid (Stap 4.6) met `openImagePicker()`/`insertImage()`/`setImageAlign()`/`deleteImage()`. Image-extensie via `Image.extend({addAttributes})` met een `align`-attribute die parseert uit/rendert naar de `img-align-*` class. Alle TipTap-aanroepen via `Alpine.raw(this.editor)` — zie leerpunt #34.
 
 ## Roadmap — fase-status
 
@@ -184,8 +195,8 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 | **4.3.3** | FamilyMembers CRUD — eerste cards-layout + eerste media-upload                          | ✅ afgerond |
 | **4.3.4** | Pages CRUD — eerste TipTap (simple-profiel) + HTMLPurifier                              | ✅ afgerond |
 | **4.4**   | Destinations + Locations CRUD + generieke gallery-component                             | ✅ afgerond |
-| **4.5**   | Posts CRUD inclusief TipTap rich                                                        | ⏳          |
-| **4.6**   | TipTap image-picker modal                                                               | ⏳          |
+| **4.5**   | Posts CRUD inclusief TipTap rich                                                        | ✅ afgerond |
+| **4.6**   | TipTap image-picker modal                                                               | ✅ afgerond |
 | **4.7**   | Comment-moderatie                                                                       | ⏳          |
 | **4.8**   | Routes + Waypoints CRUD                                                                 | ⏳          |
 | **4.9**   | Subscribers + import/export                                                             | ⏳          |
@@ -215,6 +226,46 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
   met `scoped()`-binding (cross-destination = 404). Cards-layout met gallery-thumbnail. Banner-
   header met destination-context boven de index. Two-column form met lat/lng-getalvelden (Leaflet
   later). Geen hero, alleen gallery. 18 Pest-tests (incl. scoped 404, lat/lng-range-validatie).
+- **Posts CRUD** (`/admin/posts`) — **eerste TipTap rich-profiel** + eerste own/any-policy.
+  Tabel-index met featured-thumbnail per rij, filters voor status/auteur/bestemming, server-side
+  sort/paginate. Two-column form via `<x-admin.form-layout>`: TipTap rich-editor links met tabel-
+  invoeg + codeblok + scheidingslijn; rechts twee aparte secties Categorieën (checkbox-groep,
+  geordend op `Category.order`) en Tags (pill-input met autocomplete via Alpine-factory
+  `tagPills`, één hidden comma-string als bron-van-waarheid). Status-dropdown met 4 statussen;
+  `published_at` datetime-local verschijnt bij `scheduled`. Featured image bij create én edit via
+  bestaande `<x-admin.image-upload>` (Destination-hero-patroon). Slug locked bij update (Pages-
+  patroon, weggelaten uit `rules()`). §3.4-validatie via `withValidator`-`after`-closure: locatie
+  moet binnen bestemming vallen, bestemming verplicht tenzij Tips-categorie (permissief,
+  masterplan-conform). Abstracte basis `PostRequest` waar Store en Update van erven (vier
+  gedeelde stukken logica — bewuste afwijking van het Pages-patroon met twee onafhankelijke
+  Requests). Status-vork bewaakt door `posts.publish`: `published`/`scheduled` weggelaten uit UI-
+  dropdown voor wie geen recht heeft + server-side `Rule::in()` als waarborg. Body gesaneerd via
+  `mews/purifier` 'rich'-profiel (tabellen, code, links, scheidingslijn; géén iframes/img tot
+  4.6). Tags lowercase/dedupe/firstOrCreate via bestaande `Post::syncTagsByName()` na komma-split
+  in `PostRequest::prepareForValidation()`. Store→edit-redirect (i.p.v. Pages' →index — edit-
+  pagina wordt in 4.6 inline-image-werkplek). PostPolicy met own/any-logica: editor mag any,
+  auteur mag alleen eigen (`update`/`delete` checken `$post->user_id === $user->id`). 33 Pest-
+tests groen (RBAC-matrix incl. own/any, CRUD met relatie-sync, §3.4-consistentie, status-vork,
+  slug-locking, rich-sanitization met tabel-behoud, tag-dedupe).
+- **TipTap image-picker** (Stap 4.6) — twee tabs (Bladeren + Uploaden) gecoördineerd via
+  `Alpine.store('imagePicker')`. Browse-tab: projectbreed grid uit de `media`-tabel gefilterd op
+  content-collecties (`gallery`, `hero`, `featured`, `inline_images`), met eigenaar-context per
+  thumbnail ("Bestemming: Italië → Rome"), zoekveld op bestandsnaam, collectie-filter, cursor-
+  paginatie van 24/pagina. Upload-tab: drag-and-drop naar de post-eigen `inline_images`-
+  collectie, alt-veld voor toegankelijkheid, automatisch disabled op create-view tot de post is
+  opgeslagen. TipTap Image-extensie uitgebreid met een `align`-attribute (parseert uit/rendert
+  naar `img-align-{left|center|right|full}`); toolbar kreeg image-knop + vier alignment-knoppen
+  die activeren zodra een image geselecteerd is. Modal-CSS (`_image-picker.scss`) en image-
+  alignment-CSS in de editor (in dezelfde partial). Purifier `rich`-config uitgebreid met
+  `img[src|alt|title|class]` + `Attr.AllowedClasses` op exact de vier `img-align-*`-namen +
+  `URI.AllowedSchemes` op `http|https|mailto` (geen `data:`, geen `javascript:`). Post-model
+  webp-conversies (`thumb` 400px, `medium` 800px) toegevoegd op `inline_images`. 25 nieuwe
+  Pest-tests (13 MediaPicker incl. RBAC, scope-isolatie van avatars/portretten, collectie-
+  filter, zoeken, context-labels, cursor-paginatie; 12 PostInlineImage incl. RBAC own/any-
+  matrix, response-shape, alt-bewaring, mime/size/length-validatie). PostManagementTest van 33
+  → 36 tests: bestaande "verwijdert img-tags"-test omgekeerd naar "behoudt img-tags met
+  alignment-class" + drie nieuwe sanitization-tests (onbekende classes gestript, javascript:-
+  scheme gestript, data:-URI gestript). Totaal nu **61 groene tests** voor de Post-stack.
 
 ## Leerpunten Fase 4 — bewaar voor volgende keer
 
@@ -284,6 +335,21 @@ Diagnose-truc: lint de gecompileerde view met `php -l` op het bestand in `storag
     Cruciaal voor data-integriteit bij volledig geneste URL's. Test dit expliciet met een
     `assertNotFound()`-scenario.
 
+30. **TipTap v3 tabel-extensies zijn named exports, niet default.** `@tiptap/extension-table`, `@tiptap/extension-table-row`, `@tiptap/extension-table-header`, `@tiptap/extension-table-cell` exporteren géén default — gebruik `import { Table } from '@tiptap/extension-table'`. Eén `import Table from ...` met default-vorm gooit `SyntaxError: ... does not provide an export named 'default'` bij het laden van de bundle, en daarmee stopt de **hele** admin.js vóór de `Alpine.data()`-registraties. Symptoom: ALLE Alpine-componenten op de pagina lijken dood (TipTap typt niet, image-upload sleept niet, dropdowns reageren niet). Eén fout, veel symptomen — check eerst de browserconsole bij dit soort "alles dood"-bevindingen, niet de losse componenten. Afwijking van StarterKit en `@tiptap/core` zelf (die wél een default exporteren), dus makkelijk over het hoofd te zien.
+31. **`tagPills` Alpine-factory + hidden komma-string-veld.** Patroon voor multi-value form-input zonder dynamische DOM-array-namen: één hidden field bevat een komma-gescheiden string, de factory beheert de zichtbare pills + autocomplete + keyboard-handling (Enter/komma/Backspace/Pijltjes). Server-side Form Request splitst in `prepareForValidation()` terug naar een array. Robuuster dan `name="tags[]"` met dynamic DOM-elementen, en eenvoudiger te valideren. Herbruikbaar voor andere "vrije lijst"-velden.
+32. **`<option x-show>` werkt in moderne browsers.** Een `<select>` met `x-show` op afzonderlijke `<option>`-elementen om client-side te filteren werkt in praktijk prima (getest in deze stap voor locatie-filter binnen-bestemming). Browsers die `display:none` op `<option>` negeren bestaan in theorie, maar in moderne Chrome/Edge/Firefox is dit een geldig en simpel patroon. Server-side validatie (§3.4) blijft de echte waarborg; client-side filter is puur UX-hulp.
+33. **`tests/Pest.php` draait alléén `RefreshDatabase` centraal, géén seeders.** Elke testfile zet z'n eigen rollen/permissies op in `beforeEach`. CLAUDE.md zegt "rollen centraal", maar in werkelijkheid herhaalt iedere `*ManagementTest.php` z'n eigen RBAC-setup. Bewust — zo is elke suite zelfvoorzienend en zie je in de file zelf welke rollen/rechten de policy nodig heeft. Tips-categorie en andere test-data worden per test met factories aangemaakt; slug via `config('westein.general_tips_category_slug')` zodat test en Form Request dezelfde bron delen.
+
+34. **`Alpine.raw()` vereist voor ELKE TipTap-aanroep vanuit een Alpine-factory.** Alpine wikkelt de editor in een Vue-reactivity Proxy. ProseMirror doet identiteitschecks zoals `tr.before.eq(state.doc)` die over die Proxy heen falen — symptoom: `RangeError: Applying a mismatched transaction`, en bij `isActive()`-aanroepen via de proxy krijg je intermittent `false` voor nodes die wél actief zijn (zichtbaar wanneer je tussen meerdere images switcht). Geldt zowel voor mutaties (`setImage`, `updateAttributes`, `deleteSelection`) als query-calls (`isActive`, `getAttributes`). Patroon: `const rawEditor = window.Alpine.raw(this.editor); if (!rawEditor || rawEditor.isDestroyed) return; rawEditor.commands.x()` — of `rawEditor.chain().focus().x().run()` voor chains. NIET strikt nodig voor toolbar-buttons binnen het editor-element (die hebben editor-focus en lijken een ander code-pad te raken), wel altijd nodig voor externe triggers (modal, sidebar, callbacks) én voor `syncState()` zodra meerdere instances van een node in het doc kunnen staan. Drie keer geleerd in één avond (insertImage → setImageAlign/deleteImage → syncState); bouwt nu de defaultaanname in voor élke nieuwe TipTap-aanraking.
+
+35. **Wrap externe TipTap-aanroepen in try/finally aan de aanroep-kant.** Een onverwerkte error in `editor.insertImage()` of vergelijkbaar liet de image-picker modal in een half-open state hangen (`open=true`, achtergrond dim, geen manier om te sluiten). Patroon in de store: `try { editor.insertImage(...) } catch (err) { console.error(...) } finally { this.close() }`. Garandeert UI-consistentie ook bij toekomstige TipTap-regressies en maakt het bug-zoeken makkelijker (de modal sluit, en je ziet de fout in de console zonder dat de UI vastzit).
+
+36. **`assertRedirect('/login')` faalt bij `getJson()`/`postJson()` voor unauthenticated requests.** Laravel honoreert de `Accept: application/json`-header die `getJson()` automatisch zet, en schakelt unauthenticated → 302 redirect om naar 401 JSON-response. Voor AJAX-endpoint-tests gebruik `->assertUnauthorized()` in plaats van `->assertRedirect(route('login'))`. Klopt ook semantisch met wat de browser-client krijgt (modal-fetch stuurt sowieso `Accept: application/json`).
+
+37. **Purifier `Attr.AllowedClasses` werkt globaal, niet per-element.** Eén whitelist voor het HELE document, geen per-element scoping. In de rich-config staan vier `img-align-*`-classes; als je in de toekomst `table[class]` zou toevoegen aan `HTML.Allowed`, moet je de bestaande `tiptap-table`-class óók aan deze whitelist toevoegen of 'ie wordt gestript. Voor 4.6 niet acuut (table heeft géén `[class]`), maar bewustzijn nodig bij élke uitbreiding van class-bevattende elementen.
+
+38. **TipTap v3 custom-attribute pattern via `Extension.extend({ addAttributes })`.** Een custom attribute (zoals `align` op Image) wordt opgehangen via `Image.extend({ addAttributes() { return { ...this.parent?.(), align: { default, parseHTML, renderHTML } } } })`. `parseHTML` leest met een regex uit een class-attribuut (`/img-align-(left|center|right|full)/`), `renderHTML` schrijft terug als `{ class: 'img-align-...' }`. Géén inline `style` — Purifier-allowlist kan strikt blijven (`img[class]` plus `Attr.AllowedClasses`-whitelist) zonder `CSS.AllowedProperties` te openen. Patroon herbruikbaar voor toekomstige custom attributes (figure-caption, link-style, embed-config).
+
 ## Werkstijl voor Claude
 
 - Iteratief, stap voor stap. Niet alles in één keer.
@@ -298,32 +364,20 @@ Diagnose-truc: lint de gecompileerde view met `php -l` op het bestand in `storag
 - Waarschuw bij secrets in chat. Adviseer roteren.
 - Bestandsnamen exact in casing (Git en Pest zijn case-sensitive).
 
-## Volgende concrete actie — Stap 4.5: Posts CRUD inclusief TipTap rich
+## Volgende concrete actie — Stap 4.7: Comment-moderatie
 
-Stap 4.4 is afgerond (Destinations + gallery-component + Locations + 42 Pest-tests).
+Stap 4.6 is afgerond (TipTap image-picker + projectbrede browse + post-eigen upload + 25 nieuwe
+Pest-tests). De totale Post-stack staat nu op 61 groene tests.
 
-Stap 4.5 is de grootste content-module: Posts. Dit raakt vrijwel alle bestaande conventies en
-introduceert TipTap **rich** (de tweede editor-profiel naast `simple` uit Pages). Belangrijkste
-brokken:
+Stap 4.7 pakt de modereerflow op de `comments`-tabel uit Fase 3: lijst van pending-reacties,
+goedkeuren/afkeuren/spam-markeren, optioneel inline-bewerking, RBAC via `comments.moderate`. Eerste
+module met een puur state-machine-flow (geen rich text, geen media) — voorzien als kleine stap
+(2-3 dagen).
 
-1. **TipTap rich-profiel** — alle extensions inclusief Tables, YouTube, CodeBlock, Image
-   (image-picker komt in Stap 4.6, eerst placeholder). Tweede Purifier-config (`rich`).
-2. **Polymorfe tags** — `morphedByMany`-relatie bestaat al op Tag, nu UI voor tag-selectie op
-   Post-form (multi-select met autocomplete; nieuw of bestaand).
-3. **Multi-categorie** — Post BelongsToMany Categories via `category_post`-pivot.
-4. **Locatie-keuze** — destination_id + optioneel location_id (zie masterplan §3.4). Consistentie-
-   validatie in Form Request: location_id moet binnen destination_id vallen.
-5. **Status-flow** — draft / scheduled / published / archived. Publish-action zet
-   `published_at`; scheduled met datum in toekomst.
-6. **Featured image** — single via bestaande `<x-admin.image-upload>`.
-7. **Inline images-collectie** — bestaat al sinds Stap 4.0, wordt in 4.6 ontsloten via picker.
-
-Vragen voor vooraf:
-1. Huidige staat van Post-model checken: zijn alle velden + relaties + factories er?
-2. UI voor tags/categorieën: aparte multi-select widgets of beide in één "Taxonomie"-sectie?
-3. Featured image bij create of pas bij edit? (Consistent met Destinations: hero meteen bij create)
-4. Status-flow UI: dropdown of toggle + datetime-picker zoals Pages?
-5. Welke kolommen tonen we op de Posts-index? (titel, auteur, status, categorie, gepubliceerd-op)
-6. Index-volgorde: standaard nieuwste eerst? Filter op status?
-
-Verwachting: 4-5 dagen werk. Grootste module van Fase 4.
+Open vragen voor vooraf:
+1. Index-layout — tabel of cards? (Tabel ligt voor de hand: status-kolom + bulk-acties zijn
+   tabel-natuurlijk. Cards passen niet bij scannable moderatie-werk.)
+2. Bulk-acties — JA/NEE in deze stap, of pas in 4.13 erover na?
+3. Antwoord-flow — heeft een admin de mogelijkheid om als beheerder direct te antwoorden (een
+   threaded reply), of is dat bewust uit scope tot Fase 5?
+4. Spam-detectie — alleen handmatig markeren, of een lichte Honeypot/keyword-check vooraf?

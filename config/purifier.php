@@ -39,6 +39,41 @@ return [
             'AutoFormat.RemoveEmpty' => true,
             'AutoFormat.AutoParagraph' => false,
         ],
+
+        'rich' => [
+            'HTML.Allowed' => 'p,br,hr,'.
+                'strong,em,u,s,'.
+                'h2,h3,h4,'.
+                'ul,ol,li,'.
+                'blockquote,'.
+                'code,pre,'.
+                'a[href|title|target|rel],'.
+                'table,thead,tbody,tr,th[colspan|rowspan|scope],td[colspan|rowspan],'.
+                'img[src|alt|title|class]',
+            'HTML.AllowedElements' => null,
+            'HTML.TargetBlank' => true,
+            'HTML.Nofollow' => true,
+            'AutoFormat.RemoveEmpty' => true,
+            'AutoFormat.AutoParagraph' => false,
+            // Image alignment-classes (stap 4.6) — strikt: alleen deze vier worden
+            // doorgelaten. Class-injecties zoals "<img class='evil-style-hack'>"
+            // worden door Purifier silently gestript.
+            'Attr.AllowedClasses' => [
+                'img-align-left',
+                'img-align-center',
+                'img-align-right',
+                'img-align-full',
+            ],
+            // URI-schemes voor src (img) en href (a) gewhitelist. data:-URI's
+            // expliciet geweerd — komt overeen met allowBase64: false in de
+            // TipTap Image-extensie. javascript: en file: werden door Purifier
+            // sowieso al geweerd, maar zo hebben we het expliciet gemaakt.
+            'URI.AllowedSchemes' => [
+                'http' => true,
+                'https' => true,
+                'mailto' => true,
+            ],
+        ],
         'test' => [
             'Attr.EnableID' => 'true',
         ],

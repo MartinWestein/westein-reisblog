@@ -107,7 +107,12 @@ class Post extends Model implements HasMedia
 
     public function registerMediaConversions(?Media $media = null): void
     {
+        // Featured image (post-header)
         $this->registerWebpConversion('thumb', 400, $media, 'featured');
         $this->registerWebpConversion('medium', 800, $media, 'featured');
+
+        // Inline images (binnen post-body via TipTap image-picker — stap 4.6)
+        $this->registerWebpConversion('thumb', 400, $media, 'inline_images');
+        $this->registerWebpConversion('medium', 800, $media, 'inline_images');
     }
 }

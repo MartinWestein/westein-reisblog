@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Destination;
 use App\Models\Location;
 use App\Models\Post;
 use App\Models\User;
@@ -53,6 +54,35 @@ class PostFactory extends Factory
         return $this->state(fn () => [
             'status' => 'scheduled',
             'published_at' => now()->addDays(fake()->numberBetween(1, 14)),
+        ]);
+    }
+
+    /**
+     * Post hangt alleen aan een Destination (geen Location).
+     * Voor de §3.4-tak "post direct aan destination" en post-niet-Tips zonder location.
+     */
+    public function forDestinationOnly(): static
+    {
+        return $this->state(function () {
+            $destination = Destination::factory()->create();
+
+            return [
+                'destination_id' => $destination->id,
+                'location_id' => null,
+            ];
+        });
+    }
+
+    /**
+     * Algemene tip — geen destination, geen location.
+     * Caller moet zelf de Tips-categorie attachen (afterCreating wordt bewust niet
+     * gebruikt om expliciet te houden waar de Tips-koppeling vandaan komt).
+     */
+    public function tipsGeneral(): static
+    {
+        return $this->state(fn () => [
+            'destination_id' => null,
+            'location_id' => null,
         ]);
     }
 }
