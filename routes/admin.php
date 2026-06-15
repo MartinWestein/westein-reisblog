@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CommentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DestinationController;
 use App\Http\Controllers\Admin\FamilyMemberController;
@@ -41,3 +42,9 @@ Route::get('media-picker', [MediaPickerController::class, 'index'])
 
 Route::post('posts/{post}/inline-images', [PostInlineImageController::class, 'store'])
     ->name('posts.inline-images.store');
+
+Route::get('reacties', [CommentController::class, 'index'])->name('comments.index');
+Route::patch('reacties/{comment}/goedkeuren', [CommentController::class, 'approve'])->name('comments.approve');
+Route::patch('reacties/{comment}/afkeuren', [CommentController::class, 'reject'])->name('comments.reject');
+Route::patch('reacties/{comment}/spam', [CommentController::class, 'spam'])->name('comments.spam');
+Route::delete('reacties/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');

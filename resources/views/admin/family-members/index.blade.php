@@ -86,7 +86,7 @@
                     />
 
                     <div class="family-card__avatar-wrap">
-                        <x-admin.avatar-initials :member="$member" :size="120" />
+                        <x-admin.avatar-initials :subject="$member" :size="120" />
                     </div>
 
                     <h2 class="family-card__name">{{ $member->name }}</h2>

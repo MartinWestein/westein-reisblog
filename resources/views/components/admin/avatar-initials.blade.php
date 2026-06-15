@@ -1,22 +1,19 @@
 @props([
-    'member',
+    'subject',
     'size' => 120,
 ])
-
 @php
-    $hasPortrait = $member->hasMedia('portrait');
-    $portraitUrl = $hasPortrait ? $member->getFirstMediaUrl('portrait', 'webp-300') : null;
+    $portraitUrl = $subject->avatarUrl();
     $fontSize = (int) ($size * 0.38);
 @endphp
-
 <div
     class="admin-avatar"
     style="width: {{ $size }}px; height: {{ $size }}px;"
 >
-    @if ($hasPortrait)
+    @if ($portraitUrl)
         <img
             src="{{ $portraitUrl }}"
-            alt="{{ $member->name }}"
+            alt="{{ $subject->name }}"
             class="admin-avatar__image"
             loading="lazy"
             width="{{ $size }}"
@@ -25,10 +22,10 @@
     @else
         <span
             class="admin-avatar__initials"
-            style="background-color: {{ $member->accentColor() }}; font-size: {{ $fontSize }}px;"
-            aria-label="{{ $member->name }}"
+            style="background-color: {{ $subject->accentColor() }}; font-size: {{ $fontSize }}px;"
+            aria-label="{{ $subject->name }}"
         >
-            {{ $member->initials() }}
+            {{ $subject->initials() }}
         </span>
     @endif
 </div>

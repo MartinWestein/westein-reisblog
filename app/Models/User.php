@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasAvatarFallback;
 use App\Models\Concerns\RegistersMediaConversions;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -19,7 +20,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, InteractsWithMedia, Notifiable, RegistersMediaConversions, TwoFactorAuthenticatable;
+    use HasAvatarFallback, HasFactory, HasRoles, InteractsWithMedia, Notifiable, RegistersMediaConversions, TwoFactorAuthenticatable;
 
     protected $fillable = [
         'name',
@@ -64,6 +65,16 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     {
         $this->registerWebpConversion('thumb', 100, $media, 'avatar');
         $this->registerWebpConversion('medium', 400, $media, 'avatar');
+    }
+
+    /**
+     * URL naar de avatar-foto (avatar → thumb), of null als er geen foto is.
+     */
+    public function avatarUrl(): ?string
+    {
+        return $this->hasMedia('avatar')
+            ? $this->getFirstMediaUrl('avatar', 'thumb')
+            : null;
     }
 
     public function comments(): HasMany

@@ -15,6 +15,8 @@ class Comment extends Model
     /** @use HasFactory<CommentFactory> */
     use HasFactory;
 
+    public const STATUSES = ['pending', 'approved', 'rejected', 'spam'];
+
     protected $fillable = [
         'post_id',
         'user_id',
@@ -97,5 +99,12 @@ class Comment extends Model
     public function isApproved(): bool
     {
         return $this->status === 'approved';
+    }
+
+    public function moderate(string $status): void
+    {
+        $this->status = $status;
+        $this->approved_at = $status === 'approved' ? now() : null;
+        $this->save();
     }
 }
