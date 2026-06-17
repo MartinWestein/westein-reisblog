@@ -1,0 +1,26 @@
+.admin-route-thumb {
+    display: block;
+    border-radius: 4px;
+    overflow: hidden;
+
+    &__bg {
+        fill: #F0EEE8;
+    }
+
+    &__line {
+        stroke: var(--brand-primary, #1E90FF);
+        stroke-width: 1.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    &__dot {
+        fill: var(--brand-primary, #1E90FF);
+    }
+
+    &__empty {
+        fill: var(--color-muted, #5C6779);
+        font-size: 8px;
+        font-family: var(--font-body, 'Inter', sans-serif);
+    }
+}

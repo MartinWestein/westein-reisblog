@@ -41,8 +41,8 @@
                 <div class="admin-sidebar__section-label">{{ __('Content') }}</div>
                 <x-admin.nav-link route="admin.posts.index" icon="bi-journal-text" label="Posts" />
                 <x-admin.nav-link route="admin.destinations.index" icon="bi-globe-europe-africa" label="Bestemmingen" />
-                <x-admin.nav-link route="admin.locations.index" icon="bi-geo-alt" label="Locaties" />
-                <x-admin.nav-link route="admin.routes.index" icon="bi-signpost-split" label="Routes" />
+                <x-admin.nav-link route="admin.locaties.index" icon="bi-geo-alt" label="Locaties" />
+                <x-admin.nav-link route="admin.reisroutes.index" icon="bi-signpost-split" label="Routes" />
                 <x-admin.nav-link route="admin.pages.index" icon="bi-file-earmark-text" label="Pagina's" />
                 <x-admin.nav-link route="admin.family-members.index" icon="bi-people" label="Familie" />
             </div>

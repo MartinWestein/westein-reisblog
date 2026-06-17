@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\MediaPickerController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\PostInlineImageController;
+use App\Http\Controllers\Admin\RouteController;
 use App\Http\Controllers\Admin\TagController;
 use Illuminate\Support\Facades\Route;
 
@@ -42,6 +43,11 @@ Route::get('media-picker', [MediaPickerController::class, 'index'])
 
 Route::post('posts/{post}/inline-images', [PostInlineImageController::class, 'store'])
     ->name('posts.inline-images.store');
+
+Route::resource('reisroutes', RouteController::class)
+    ->except(['show'])
+    ->parameters(['reisroutes' => 'route'])
+    ->names('reisroutes');
 
 Route::get('reacties', [CommentController::class, 'index'])->name('comments.index');
 Route::patch('reacties/{comment}/goedkeuren', [CommentController::class, 'approve'])->name('comments.approve');

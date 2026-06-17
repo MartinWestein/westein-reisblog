@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 13 juni 2026 — Fase 4 in uitvoering (Stap 4.5 afgerond)
+**Laatst bijgewerkt:** 17 juni 2026 — Fase 4 in uitvoering (Stap 4.8 afgerond)
 **Masterplan:** zie `westein-reisblog-masterplan.md` voor volledige architectuur
 **Bouwplannen:** Fase 2 staat vast in `fase-2-bouwplan.md`. Fase 4 wordt na afronding vastgelegd in `fase-4-bouwplan.md`.
 
@@ -116,6 +116,15 @@ Een schaalbare, veilige Laravel-reisblog voor familievakanties van de familie We
 28. **Image-picker create-flow: browse altijd live, upload-tab disabled tot opgeslagen.** Bladeren/invoegen heeft geen post nodig (invoegt enkel `<img src>` in editor-HTML; pas bij submit met de body meegeschreven). Upload-tab toont "Sla eerst op als concept" tot store→edit-redirect. Geen stub-endpoint, geen §3.4-omzeiling, geen weesconcepten.
 29. **Image-extensie (4.6) = invoegen + alignment via class.** Geen drag-resize (TipTap-resize-extensies hebben v3-compat-risico, zie leerpunt #30). Vier classes: `img-align-{left|center|right|full}`, met `img-`-prefix om Bootstrap-utility-collisions te vermijden. Default bij invoegen = `img-align-full`. Geen inline `style` — Purifier-allowlist bevat alleen `img[class]` plus `Attr.AllowedClasses`-whitelist op exact deze vier classes. `URI.AllowedSchemes` expliciet op `http|https|mailto` (geen `data:` of `javascript:`).
 30. **State-machine modules gebruiken verb-routes, niet één PATCH met status-veld.** Bij moderatie/workflow-acties (Comments: approve/reject/spam — straks waarschijnlijk Subscribers: confirm/unsubscribe) is de actie *expliciet*: de knop zegt "Goedkeuren", de route is `comments.approve`, de test is `patch(route('comments.approve', $c))`. Status valt niet te tamperen vanuit de client, logs zijn leesbaar, geen Form Request nodig voor een veld dat sowieso server-side vastligt. De transitie-regel zelf (welke timestamps wel/niet wissen) blijft gecentraliseerd in een model-method (`Comment::moderate(string $status)`), zodat de routevorm en de business-rule onafhankelijk kunnen evolueren. Edit-forms met meerdere velden tegelijk (Posts, Pages) houden hun status gewoon in de PATCH — andere context, andere oplossing.
+31. **Routes publicatie-model = `is_published` boolean + `published_at` timestamp.** Bewuste keuze tegen een full enum à la Posts/Pages. Routes-content is niet tijdgevoelig zoals een blogpost, maar wél vooraf-planbaar (roadtrip 2027 voorbouwen zonder dat 'ie publiek staat). `scopePublished()` checkt is_published=true AND (published_at IS NULL OR published_at <= now()) — toekomstige datum = automatisch concept-onzichtbaar zonder migratie wanneer we later expliciete scheduling-UI willen.
+32. **Routes admin-URL = platte `/admin/reisroutes/{route:slug}`**, niet genest onder Destination. Spatie Sluggable-default = globally unique slug, dus geen `scoped()`-binding nodig zoals bij Locations. Past bij de publieke URL `/reisroutes/{slug}` uit het masterplan. Vanaf een Destination-edit doorlinken kan via `?destination={slug}`-filter op de index.
+33. **Routes hero = optioneel met fallback-keten via `Route::displayHeroUrl()`.** Probeert eigen `hero`-collectie → eerste-waypoint-`gallery`-foto → null. Caller toont placeholder bij null. Eén plek voor één ding (geen if-else in views). Sluit aan op het Destination-hero-patroon maar voegt de waypoint-fallback toe.
+34. **Routes description = TipTap simple + Purifier simple.** Consistent met Pages. Bewuste afwijking van plain-textarea-overweging: extra implementatiekosten zijn drie regels (component bestaat), maar route-beschrijvingen profiteren van koppen/lijsten/links naar specifieke posts. KISS-textarea-met-later-upgrade is ontraden: migratie van plain→rich is duurder dan nu meteen rich kiezen.
+35. **Routes waypoint-serialisatie = JSON in één hidden field.** Bron-van-waarheid is Alpine-state; `serialize()` schrijft een JSON-string in een hidden `<input name="waypoints">`. Form Request decodeert in `prepareForValidation()` naar een array waarop standaard array-validatie loopt. Robuuster dan dynamische `waypoints[N][location_id]`-arrays met DOM-rename bij reorder. Patroon bewezen via tagPills (Stap 4.5).
+36. **Routes waypoint-sync = delete-then-recreate.** Eenvoudig, schoon, geen FK-/media-/comment-afhankelijkheden op waypoint-IDs. Mocht 't ooit relevant worden (waypoint-foto's bv.), refactor naar upsert. Combineert prima met het revisit-scenario (zie beslissing 39).
+37. **Routes index-thumbnail = server-side SVG-polylijn (`<x-admin.route-thumb>`).** Lat/lng-bounds → genormaliseerde viewBox → inline SVG. Geen Leaflet-init per rij, geen tile-fetches. Upgrade-pad naar mini-Leaflet bij rij blijft open voor stap 9.X als de SVG visueel te karig blijkt — geen migratie nodig om te switchen.
+38. **Routes Form Request = abstract base `RouteRequest` (Posts-patroon).** Aanvankelijk leunde ik naar Pages-patroon (twee onafhankelijke Requests). Tijdens uitwerken bleek dat vier stukken logica gedeeld moeten worden: `prepareForValidation()` (waypoints-JSON-decode), `withValidator()` (§3.4-equivalent: waypoints binnen bestemming), `publicationData()` (publication-state-derivatie), `messages()`. Drempel uit Posts-beslissing #25 wordt gehaald — abstract base levert hier echte DRY-winst. Verschil tussen Store en Update zit alleen in `authorize()` en `slugRules()`.
+39. **Routes location-revisits = toegestaan.** Fase 3 voegde een `unique(route_id, location_id)`-constraint toe op `route_waypoints`, vermoedelijk by-default zonder bewuste afweging. In 4.8 gedropt via migratie omdat fly-in/fly-out roadtrips (Rome → Florence → Venetië → Rome) een echt use case zijn voor familiereizen. Geen vervangende index nodig (FK's dekken query-performance). Leaflet rendert revisit-routes prima als polylijn-loops.
 
 ## Conventies — werk altijd zo
 
@@ -203,7 +212,7 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 | **4.5**   | Posts CRUD inclusief TipTap rich                                                        | ✅ afgerond |
 | **4.6**   | TipTap image-picker modal                                                               | ✅ afgerond |
 | **4.7**   | Comment-moderatie (state-machine, verb-route, avatar-refactor)                          | ✅ afgerond |
-| **4.8**   | Routes + Waypoints CRUD                                                                 | ⏳          |
+| **4.8**   | Routes + Waypoints CRUD                                                                 | ✅ afgerond |
 | **4.9**   | Subscribers + import/export                                                             | ⏳          |
 | **4.10**  | Newsletter compose & dispatch                                                           | ⏳          |
 | **4.11**  | `/admin/media` browser                                                                  | ⏳          |
@@ -272,6 +281,10 @@ tests groen (RBAC-matrix incl. own/any, CRUD met relatie-sync, §3.4-consistenti
   alignment-class" + drie nieuwe sanitization-tests (onbekende classes gestript, javascript:-
   scheme gestript, data:-URI gestript). Totaal nu **61 groene tests** voor de Post-stack.
 - **Comment-moderatie** (`/admin/reacties`) — eerste state-machine-module: pending → approved/rejected/spam, plus hard-delete. Verb-routes (approve/reject/spam) i.p.v. één PATCH met status-veld; transitie-regel (`approved_at` zetten bij approved, wissen bij elke andere status) gecentraliseerd in `Comment::moderate(string $status)`. Tabel-index met statusfilter-dropdown inclusief tellers per status ("Te modereren (19)"), default-filter = pending wachtrij, server-side zoek op body + auteur, sorteerbare datumkolom, inline body-expand voor moderatiewerk. Avatar per regel via `<x-admin.avatar-initials>` op `size=32`. Contextuele actie-knoppen via `<x-admin.comment-actions>` (geen "goedkeuren" op iets dat al approved is, geen "afkeuren" buiten pending, etc.). `CommentPolicy` op `comments.moderate` (Admin+Editor) en `comments.delete` (idem). Geen bulk-acties (uitgesteld naar 4.13), geen admin-reply (Fase 5 frontend), spam = handmatig markeren. 16 Pest-tests. Aanvullend: `HasAvatarFallback`-trait geëxtraheerd uit FamilyMember en gedeeld met User, `<x-admin.avatar-initials>` generiek gemaakt (prop `:member` → `:subject`), beide modellen kregen een lokale `avatarUrl()`-methode die de juiste collectie+conversie kent.  
+- **`<x-admin.route-thumb>`** (Stap 4.8) — inline-SVG route-mini-kaart. Neemt een collectie waypoints (met geladen `->location`), berekent bounds uit lat/lng, projecteert naar genormaliseerde SVG-coordinaten met aspect-preserving fit, rendert polylijn + dots. Geen JS, geen tiles, geen externe afhankelijkheden. Props: `waypoints`, `width=80`, `height=56`. Herbruikbaar overal waar je een "route-vorm hint" wil tonen (admin-index, straks publieke detail-cards in Fase 5).
+- **`routeWaypoints` Alpine-factory** (Stap 4.8) — beheert een dynamische lijst van waypoints met `location_id` + `notes`, SortableJS-binding voor drag-reorder, live-filter op bestemming, JSON-serialisatie naar hidden field. Patroon: DOM-revert in SortableJS `onEnd` gevolgd door Alpine-array-mutation + force-notify via spread → voorkomt desync tussen DOM en model. Cross-component coördinatie met de Leaflet-preview-modal: `openMapPreview()` luistert op `shown.bs.modal` om kaart te instantiëren, `hidden.bs.modal` om op te ruimen.
+- **`RouteController` + `RoutePolicy` + abstract `RouteRequest` met Store/Update-subklassen** (Stap 4.8) — eerste module die de Posts-Form-Request-architectuur uitbreidt voor een ander datadomein. `syncWaypoints()` delete-then-recreate, geen upsert. `handleHero()` consistent met Destination-patroon.
+- **Leaflet-integratie in admin** (Stap 4.8) — `import L from 'leaflet'` + `import 'leaflet/dist/leaflet.css'` in `resources/js/admin.js`, plus standaard marker-icon-fix (`L.Icon.Default.mergeOptions({...})` met expliciete PNG-imports). `window.L = L` voor Alpine-factory-toegang. Klaar voor hergebruik in Fase 5 op publieke route-detail- en fotogalerij-pagina's.
 
 ## Leerpunten Fase 4 — bewaar voor volgende keer
 
@@ -366,6 +379,18 @@ Diagnose-truc: lint de gecompileerde view met `php -l` op het bestand in `storag
 
 41. **`Set-Content` met here-string is de enige betrouwbare manier om vanuit een chat een PHP-bestand in PowerShell neer te zetten.** `(Get-Content … -Raw) -replace … | Set-Content` heeft een hoog risico op vermangelde escaping zodra de inhoud quotes bevat — bewezen toen `'->for($this->commenter, ''author'')'` per ongeluk een dwalende `'` invoegde tussen `factory()` en `->for`. Stel je bouwt of vervangt een PHP-bestand: schrijf 'm in z'n geheel via `@'...'@ | Set-Content path -Encoding UTF8` en sla het bestand-search-replace-traject over. Voor kleine, lokale wijzigingen in bestaande bestanden: gewone editor-actie of een gerichte tool, geen one-liner regex-vervanging.
 
+42. **Pages-index gebruikt straight Bootstrap, geen `.admin-*` custom class-stelsel.** Toen ik de Route-index begon te bouwen, gokte ik op `.admin-table`, `.admin-filters`, `.admin-empty-state`, `.admin-pagination`, `.admin-page-header` als bestaande klassen — al die scss-namen bestaan niet. Het echte patroon: `<x-admin.page-header title="..." subtitle="...">` met `<x-slot:actions>`-slot voor de create-knop, `<x-admin.card>` als wrapper rond zowel filter-rij als tabel, en straight Bootstrap-utilities erbinnen (`d-flex gap-2 align-items-center flex-wrap` voor filter, `table table-hover align-middle mb-0` voor tabel, `text-end` voor actie-kolom, `text-muted small` voor meta-info). Alleen `.admin-breadcrumbs__current` is custom-styled. Cementeert leerpunt #9: grep een bestaande module van hetzelfde index-type vóór je een nieuwe view begint. Specifiek voor tabel-modules: leen van `pages/index.blade.php`, niet uit CLAUDE.md-vermeldingen.
+
+43. **Alpine factory: gedestructureerde constructor-argumenten komen NIET automatisch op `this`.** Een factory zoals `function routeWaypoints({ initialWaypoints, locations, initialDestinationId })` heeft `locations` als variabele binnen de functie-scope, maar tenzij je 'm expliciet in `return { ... }` opneemt, bestaat 'ie niet op de Alpine-state. Symptoom: `this.locations` is `undefined`, getter-methods stil-falen (geen exception), UI rendert nul opties of leeg-string. Patroon: ELK genoemd argument moet ook in de return staan, ook al hernoem je 'm niet. Vorige factories werkten omdat ze single-argument waren of toevallig matchten met de juiste eerste-veld-naam. Bij meerdere argumenten wordt 't bug-gevoelig.
+
+44. **Check component-prop-namen door de component-bron op te zoeken, niet door te gokken uit CLAUDE.md-vermeldingen.** Twee discoveries in stap 4.8: `<x-admin.sort-link>` heet de prop `sort` (de kolom-id), niet `column`; en `<x-admin.delete-button>` heeft géén `:confirm`-prop — de confirm-flow zit ingebakken in de component (`x-data="{ confirming: false }"`-toggle). Vorige modules werkten omdat ze de juiste prop-namen toevallig raakten. Patroon: `Get-Content -LiteralPath resources\views\components\admin\{naam}.blade.php` als reflex zodra je 'n component gebruikt waarvan je de signature niet recent gezien hebt.
+
+45. **Check Fase 3-`unique`-constraints tegen actueel module-gebruik vóór je 'n CRUD opent.** `route_waypoints.unique(route_id, location_id)` werd in Fase 3 toegevoegd, vermoedelijk by-default zonder afweging tegen het werkelijke domein. Bleek pas tijdens 4.8 te conflicteren met fly-in/fly-out roadtrips (start+eindig op zelfde locatie). Brede les: bij elke module-implementatie checken welke constraints uit voorgaande fasen het gebruik beperken, en bij twijfel liever droppen — Eloquent dwingt identiteit-via-PK al af. Vergelijkbare risico's verwacht ik bij Subscribers (`unique(email)` — wel terecht) en Newsletter-Sends (`unique(newsletter_id, subscriber_id)` — wel terecht omdat herverzending via een aparte status moet, niet via een tweede row).
+
+46. **Leaflet-integratie in Vite vereist twee fixes.** Eén: marker-iconen breken zonder expliciete PNG-imports, fix is `delete L.Icon.Default.prototype._getIconUrl;` + `L.Icon.Default.mergeOptions({ iconRetinaUrl, iconUrl, shadowUrl })` met de drie PNG's via Vite-imports. Twee: Leaflet rendert verkeerd (leeg/grijs canvas) als 't in een hidden container instantieert — `L.map()` aanroepen in een Bootstrap-modal die nog niet zichtbaar is geeft een dood canvas. Fix: luister op `shown.bs.modal`-event vóór `L.map()`, en cleanup op `hidden.bs.modal` via `.remove()`. Patroon herbruikbaar voor publieke fullscreen-kaart-modals in Fase 5.
+
+47. **SortableJS + Alpine sync-pattern: revert DOM, re-render uit model.** SortableJS muteert DOM direct bij drag-end, wat desync veroorzaakt met de Alpine `x-for`-render (Alpine ziet de DOM-mutatie als out-of-band, snapt 'm niet, en bij volgende update herschikt 'ie alles fout). Patroon in `onEnd`-callback: eerst de DOM-mutatie terugdraaien door het item op `event.oldIndex` terug te plaatsen, DAN de Alpine-array herordenen via splice → triggert `x-for` herrender vanaf het model, beide weer in sync. Force-notify met `this.array = [...this.array]` voor zekerheid bij oude Alpine-versies die nested mutations soms missen. Werkt voor élke SortableJS-Alpine-combinatie (toekomstige Categories-orderbar, Pages-orderbar, Family-Members-orderbar).
+
 ## Werkstijl voor Claude
 
 - Iteratief, stap voor stap. Niet alles in één keer.
@@ -380,20 +405,16 @@ Diagnose-truc: lint de gecompileerde view met `php -l` op het bestand in `storag
 - Waarschuw bij secrets in chat. Adviseer roteren.
 - Bestandsnamen exact in casing (Git en Pest zijn case-sensitive).
 
-## Volgende concrete actie — Stap 4.7: Comment-moderatie
+## Volgende concrete actie — Stap 4.9: Subscribers + import/export
 
-Stap 4.6 is afgerond (TipTap image-picker + projectbrede browse + post-eigen upload + 25 nieuwe
-Pest-tests). De totale Post-stack staat nu op 61 groene tests.
+Stap 4.8 is afgerond (Routes + Waypoints CRUD, SVG-thumbnail, Leaflet-preview, 24 nieuwe Pest-tests). Totale test-suite groeit gestaag richting ~280 tests.
 
-Stap 4.7 pakt de modereerflow op de `comments`-tabel uit Fase 3: lijst van pending-reacties,
-goedkeuren/afkeuren/spam-markeren, optioneel inline-bewerking, RBAC via `comments.moderate`. Eerste
-module met een puur state-machine-flow (geen rich text, geen media) — voorzien als kleine stap
-(2-3 dagen).
+Stap 4.9 pakt de `subscribers`-tabel uit Fase 3: lijst van nieuwsbrief-abonnees, handmatig toevoegen, importeren uit CSV, exporteren naar CSV, status-overzicht (confirmed/unconfirmed/unsubscribed). Voorbereiding voor 4.10 (Newsletter compose & dispatch) — Newsletter heeft een gevulde Subscriber-lijst nodig.
 
 Open vragen voor vooraf:
-1. Index-layout — tabel of cards? (Tabel ligt voor de hand: status-kolom + bulk-acties zijn
-   tabel-natuurlijk. Cards passen niet bij scannable moderatie-werk.)
-2. Bulk-acties — JA/NEE in deze stap, of pas in 4.13 erover na?
-3. Antwoord-flow — heeft een admin de mogelijkheid om als beheerder direct te antwoorden (een
-   threaded reply), of is dat bewust uit scope tot Fase 5?
-4. Spam-detectie — alleen handmatig markeren, of een lichte Honeypot/keyword-check vooraf?
+
+1. Import-formaat — alleen CSV, of ook XLSX? CSV is simpel (League\Csv staat al klaar als Pest 4 dependency), XLSX vraagt PhpSpreadsheet. Voor familieblog met ~50-200 abonnees lijkt CSV genoeg.
+2. Dubbele import-detectie — silent skip op bestaand e-mailadres, of error-rapport per regel? Lean: silent skip met aggregaat-melding ("12 nieuw, 3 al bekend, 0 ongeldig").
+3. Status-conventies — Fase 3 heeft `confirmed_at` (datetime nullable) + `unsubscribe_token`. Nog niet `unsubscribed_at`. Een import van een al-uitgeschreven adres → terug op uitgeschreven, of opnieuw uitnodigen?
+4. Admin handmatig add — geeft die direct `confirmed_at = now()` (admin-import = vertrouwd), of vereist 'ie ook double-opt-in?
+5. Index-layout — tabel (consistent met andere lijst-modules) of cards (zoals FamilyMembers)? Lean: tabel.
