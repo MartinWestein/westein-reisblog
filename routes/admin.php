@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\PostInlineImageController;
 use App\Http\Controllers\Admin\RouteController;
+use App\Http\Controllers\Admin\SubscriberController;
 use App\Http\Controllers\Admin\TagController;
 use Illuminate\Support\Facades\Route;
 
@@ -54,3 +55,18 @@ Route::patch('reacties/{comment}/goedkeuren', [CommentController::class, 'approv
 Route::patch('reacties/{comment}/afkeuren', [CommentController::class, 'reject'])->name('comments.reject');
 Route::patch('reacties/{comment}/spam', [CommentController::class, 'spam'])->name('comments.spam');
 Route::delete('reacties/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+
+// Subscribers
+Route::get('abonnees/export', [SubscriberController::class, 'export'])->name('subscribers.export');
+Route::get('abonnees/import-template', [SubscriberController::class, 'importTemplate'])->name('subscribers.import-template');
+Route::get('abonnees/import-fouten/{token}', [SubscriberController::class, 'downloadErrorReport'])
+    ->name('subscribers.import-errors');
+Route::post('abonnees/import', [SubscriberController::class, 'import'])->name('subscribers.import');
+Route::post('abonnees/{subscriber}/stuur-bevestiging', [SubscriberController::class, 'sendConfirmation'])
+    ->name('subscribers.send-confirmation');
+Route::post('abonnees/stuur-bevestigingen', [SubscriberController::class, 'sendBulkConfirmations'])
+    ->name('subscribers.send-bulk-confirmations');
+Route::resource('abonnees', SubscriberController::class)
+    ->parameters(['abonnees' => 'subscriber'])
+    ->names('subscribers')
+    ->except(['show']);

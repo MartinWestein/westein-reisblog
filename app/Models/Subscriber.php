@@ -14,6 +14,12 @@ class Subscriber extends Model
     /** @use HasFactory<SubscriberFactory> */
     use HasFactory;
 
+    public const STATUS_PENDING = 'pending';
+
+    public const STATUS_ACTIVE = 'active';
+
+    public const STATUS_UNSUBSCRIBED = 'unsubscribed';
+
     protected $fillable = [
         'email',
         'name',
@@ -37,6 +43,10 @@ class Subscriber extends Model
             if (empty($subscriber->unsubscribe_token)) {
                 $subscriber->unsubscribe_token = Str::random(64);
             }
+
+            if (empty($subscriber->confirmation_token) && empty($subscriber->confirmed_at)) {
+                $subscriber->confirmation_token = Str::random(64);
+            }
         });
     }
 
@@ -55,6 +65,11 @@ class Subscriber extends Model
         return $query->whereNull('confirmed_at')->whereNull('unsubscribed_at');
     }
 
+    public function scopeUnsubscribed(Builder $query): Builder
+    {
+        return $query->whereNotNull('unsubscribed_at');
+    }
+
     public function isConfirmed(): bool
     {
         return ! is_null($this->confirmed_at);
@@ -63,5 +78,14 @@ class Subscriber extends Model
     public function isUnsubscribed(): bool
     {
         return ! is_null($this->unsubscribed_at);
+    }
+
+    public function status(): string
+    {
+        return match (true) {
+            $this->isUnsubscribed() => self::STATUS_UNSUBSCRIBED,
+            $this->isConfirmed() => self::STATUS_ACTIVE,
+            default => self::STATUS_PENDING,
+        };
     }
 }

@@ -89,11 +89,13 @@ test('waypoint cascade-verwijdert bij route delete', function () {
     expect(RouteWaypoint::where('route_id', $route->id)->count())->toBe(0);
 });
 
-test('zelfde location kan niet twee keer in dezelfde route', function () {
+it('staat dezelfde location twee keer toe in dezelfde route (revisits)', function () {
     $route = Route::factory()->create();
     $loc = Location::factory()->create();
-    $route->locations()->attach($loc->id, ['order' => 1]);
 
-    expect(fn () => $route->locations()->attach($loc->id, ['order' => 2]))
-        ->toThrow(QueryException::class);
+    $route->locations()->attach($loc->id, ['order' => 1]);
+    $route->locations()->attach($loc->id, ['order' => 2]);
+
+    expect($route->locations()->count())->toBe(2)
+        ->and($route->locations()->get()->pluck('id')->all())->toBe([$loc->id, $loc->id]);
 });

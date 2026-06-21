@@ -7,6 +7,17 @@
     @endif
 @endforeach
 
+@if (session('flash_action_url') && session('flash_action_label'))
+    <div class="admin-flash admin-flash--action">
+        <i class="bi bi-download"></i>
+        <div>
+            <a href="{{ session('flash_action_url') }}" class="btn btn-sm btn-outline-secondary">
+                {{ session('flash_action_label') }}
+            </a>
+        </div>
+    </div>
+@endif
+
 @if ($errors->any() && ! $errors->has('_form'))
     @php $hasFieldErrors = collect($errors->keys())->contains(fn($k) => $k !== '_form'); @endphp
     @if ($hasFieldErrors)

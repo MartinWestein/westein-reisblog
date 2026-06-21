@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 17 juni 2026 — Fase 4 in uitvoering (Stap 4.8 afgerond)
+**Laatst bijgewerkt:** 21 juni 2026 — Fase 4 in uitvoering (Stap 4.9 afgerond)
 **Masterplan:** zie `westein-reisblog-masterplan.md` voor volledige architectuur
 **Bouwplannen:** Fase 2 staat vast in `fase-2-bouwplan.md`. Fase 4 wordt na afronding vastgelegd in `fase-4-bouwplan.md`.
 
@@ -125,6 +125,17 @@ Een schaalbare, veilige Laravel-reisblog voor familievakanties van de familie We
 37. **Routes index-thumbnail = server-side SVG-polylijn (`<x-admin.route-thumb>`).** Lat/lng-bounds → genormaliseerde viewBox → inline SVG. Geen Leaflet-init per rij, geen tile-fetches. Upgrade-pad naar mini-Leaflet bij rij blijft open voor stap 9.X als de SVG visueel te karig blijkt — geen migratie nodig om te switchen.
 38. **Routes Form Request = abstract base `RouteRequest` (Posts-patroon).** Aanvankelijk leunde ik naar Pages-patroon (twee onafhankelijke Requests). Tijdens uitwerken bleek dat vier stukken logica gedeeld moeten worden: `prepareForValidation()` (waypoints-JSON-decode), `withValidator()` (§3.4-equivalent: waypoints binnen bestemming), `publicationData()` (publication-state-derivatie), `messages()`. Drempel uit Posts-beslissing #25 wordt gehaald — abstract base levert hier echte DRY-winst. Verschil tussen Store en Update zit alleen in `authorize()` en `slugRules()`.
 39. **Routes location-revisits = toegestaan.** Fase 3 voegde een `unique(route_id, location_id)`-constraint toe op `route_waypoints`, vermoedelijk by-default zonder bewuste afweging. In 4.8 gedropt via migratie omdat fly-in/fly-out roadtrips (Rome → Florence → Venetië → Rome) een echt use case zijn voor familiereizen. Geen vervangende index nodig (FK's dekken query-performance). Leaflet rendert revisit-routes prima als polylijn-loops.
+40. **`Paginator::useBootstrapFive()` project-breed sinds Stap 4.9.** Latente bug sinds Fase 1 die nooit opviel omdat geen index >25 items had. Toegevoegd aan `AppServiceProvider::boot()` naast `Gate::before`. JSON-vertaling van `Showing/to/of/results` via `lang/nl.json` (HTML-entities voor `«`/`»` — leerpunt #49).
+
+41. **Subscribers status afgeleid uit timestamps, geen status-kolom.** `pending|active|unsubscribed` via `Subscriber::status()`-methode op basis van `confirmed_at`/`unsubscribed_at`. Eén bron-van-waarheid, geen kolom-vs-timestamp-inconsistentie. Status-scopes (`pending()`, `active()`, `unsubscribed()`) leveren queries; constants `STATUS_PENDING|ACTIVE|UNSUBSCRIBED` voor matchen in code en views.
+
+42. **Subscribers double-opt-in altijd, ook bij admin-add.** Geen "vertrouwd-shortcut" bij single create. AVG-zuiver. CSV-import landt expliciet op pending **zonder** automatische mail-dispatch — admin verstuurt later via per-rij of bulk-actie. Bewuste scheiding tussen import en mail-flow voorkomt 200-mail-tsunami's bij grote imports en geeft admin controle over timing.
+
+43. **Uitgeschreven abonnees bij re-import silent gehonoreerd (geen reactivate).** Telt apart in aggregaat ("X eerder uitgeschreven") voor transparantie maar reset `unsubscribed_at` niet. AVG-conform: opt-out is een definitieve keuze tenzij de abonnee zich actief opnieuw aanmeldt via het publieke formulier.
+
+44. **CSV-import + foutrapport-CSV via League\Csv.** Aggregaat-flash met vier tellers ('X nieuw · Y al bekend · Z eerder uitgeschreven · N ongeldig'). Foutregels in tijdelijke CSV op `local`-disk onder `imports/subscriber-errors/{ulid}.csv`, ULID-token in flash. Generieke flash-partial-uitbreiding: `flash_action_url` + `flash_action_label` keys voor herbruikbare 'Download foutrapport'-knop in alle toekomstige import/export-tools. Auto-purge na 24u uitgesteld naar Fase 6 (cron-config).
+
+45. **Geen `dns`-rule op Subscriber email-validatie.** Bewust `email:rfc` zonder `dns` in zowel `StoreSubscriberRequest` als `UpdateSubscriberRequest` (consistent met de import-flow uit beslissing 42). Drie redenen: DNS-check is langzaam (50-200ms per request), flaky bij offline ontwikkeling en in test-environments, en de bounce van een confirmation-mail vangt non-existing domains sowieso af — als de mail niet aankomt blijft de abonnee gewoon pending.
 
 ## Conventies — werk altijd zo
 
@@ -213,7 +224,7 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 | **4.6**   | TipTap image-picker modal                                                               | ✅ afgerond |
 | **4.7**   | Comment-moderatie (state-machine, verb-route, avatar-refactor)                          | ✅ afgerond |
 | **4.8**   | Routes + Waypoints CRUD                                                                 | ✅ afgerond |
-| **4.9**   | Subscribers + import/export                                                             | ⏳          |
+| **4.9**   | Subscribers + import/export                                                             | ✅ afgerond |
 | **4.10**  | Newsletter compose & dispatch                                                           | ⏳          |
 | **4.11**  | `/admin/media` browser                                                                  | ⏳          |
 | **4.12**  | `/admin/prullenbak`                                                                     | ⏳          |
@@ -285,6 +296,13 @@ tests groen (RBAC-matrix incl. own/any, CRUD met relatie-sync, §3.4-consistenti
 - **`routeWaypoints` Alpine-factory** (Stap 4.8) — beheert een dynamische lijst van waypoints met `location_id` + `notes`, SortableJS-binding voor drag-reorder, live-filter op bestemming, JSON-serialisatie naar hidden field. Patroon: DOM-revert in SortableJS `onEnd` gevolgd door Alpine-array-mutation + force-notify via spread → voorkomt desync tussen DOM en model. Cross-component coördinatie met de Leaflet-preview-modal: `openMapPreview()` luistert op `shown.bs.modal` om kaart te instantiëren, `hidden.bs.modal` om op te ruimen.
 - **`RouteController` + `RoutePolicy` + abstract `RouteRequest` met Store/Update-subklassen** (Stap 4.8) — eerste module die de Posts-Form-Request-architectuur uitbreidt voor een ander datadomein. `syncWaypoints()` delete-then-recreate, geen upsert. `handleHero()` consistent met Destination-patroon.
 - **Leaflet-integratie in admin** (Stap 4.8) — `import L from 'leaflet'` + `import 'leaflet/dist/leaflet.css'` in `resources/js/admin.js`, plus standaard marker-icon-fix (`L.Icon.Default.mergeOptions({...})` met expliciete PNG-imports). `window.L = L` voor Alpine-factory-toegang. Klaar voor hergebruik in Fase 5 op publieke route-detail- en fotogalerij-pagina's.
+- **Subscribers CRUD + CSV import/export** (`/admin/abonnees`) — eerste module met SMTP-mail-dispatch én eerste CSV-import-flow. Tabel-index met collapsible row-details (chevron-toggle via Alpine voor confirmation-token + timestamps), drie statusbadges (Wacht op bevestiging / Actief / Uitgeschreven) afgeleid uit timestamps, server-side filter/sort/paginate. Single create via `<x-admin.form-layout>` met dispatch van `SubscriberConfirmationMail` (Markdown, queued, double-opt-in) via `SendConfirmationMailAction`. Per-rij en bulk-acties ("Stuur naar alle X pending") als verb-routes, gerouteerd vóór `Route::resource()`. CSV-import via `league/csv` + `ImportSubscribersAction` met aggregaat-flash ('3 nieuw · 1 al bekend · 2 eerder uitgeschreven · 0 ongeldig') en download-knop voor foutrapport-CSV op `local`-disk via ULID-token. Generieke flash-partial-uitbreiding (`flash_action_url` + `flash_action_label`) voor herbruikbare download-knoppen in toekomstige import/export-tools. CSV-export respecteert status- en zoekfilter, kolom-shape identiek aan import-template zodat round-trip werkt. **Geen soft-delete** (AVG: opt-out is definitief). 37 Pest-tests (20 management + 17 import/export). Totaal nu **361 groene tests**.
+
+Subzij-effecten in deze stap die het hele project raken:
+- `Paginator::useBootstrapFive()` toegevoegd aan AppServiceProvider — eerste keer dat een index >25 rijen had, gat sinds Fase 1
+- `lang/nl.json` aangemaakt voor JSON-translations (Showing/to/of/results — via HTML-entities voor `«`/`»`)
+- Eerste `app/Mail/`-class in het project: `SubscriberConfirmationMail` met Markdown-template (`emails/subscribers/confirmation.blade.php`)
+- Eerste werkende `queue:work` in dev — onthulde dat oude Spatie image-conversion jobs in de queue stonden (Fase 6 dev-config-pass)
 
 ## Leerpunten Fase 4 — bewaar voor volgende keer
 
@@ -391,6 +409,12 @@ Diagnose-truc: lint de gecompileerde view met `php -l` op het bestand in `storag
 
 47. **SortableJS + Alpine sync-pattern: revert DOM, re-render uit model.** SortableJS muteert DOM direct bij drag-end, wat desync veroorzaakt met de Alpine `x-for`-render (Alpine ziet de DOM-mutatie als out-of-band, snapt 'm niet, en bij volgende update herschikt 'ie alles fout). Patroon in `onEnd`-callback: eerst de DOM-mutatie terugdraaien door het item op `event.oldIndex` terug te plaatsen, DAN de Alpine-array herordenen via splice → triggert `x-for` herrender vanaf het model, beide weer in sync. Force-notify met `this.array = [...this.array]` voor zekerheid bij oude Alpine-versies die nested mutations soms missen. Werkt voor élke SortableJS-Alpine-combinatie (toekomstige Categories-orderbar, Pages-orderbar, Family-Members-orderbar).
 
+48. **Framework-defaults uit eerdere fasen falen stil tot een nieuwe module ze triggert.** Paginatie >1 pagina toonde pas in Stap 4.9 (Abonnees was eerste 25+ rij-module) dat `Paginator::useBootstrapFive()` ontbrak — zat al sinds Fase 1 als latente bug. Eerste keer `queue:work` draaien toonde dat 2 weken aan Spatie image-conversion jobs in de queue stonden te wachten. Patroon-zwager van leerpunt #45 (route_waypoints unique constraint). Bij elke nieuwe module: niet alleen module-specifieke gaten checken, ook of de nieuwe schaal/data-volume framework-defaults eindelijk onthult. Mogelijke kandidaten voor toekomstige modules: cache-invalidatie op grote response-cache, soft-delete >30 dagen scenario, e-mail attachment-size in Mailable, fulltext-search bij grote post-aantallen.
+
+49. **Non-ASCII in PowerShell here-strings = mojibake door console-codepage.** `«`/`»`/`é`/`'` direct plakken in een PowerShell here-string wordt door de Windows-console gemangeld vóór de data in een variabele belandt — `WriteAllText` schrijft daarna keurig UTF-8 van al-corrupte bytes. Drie werkende routes: (a) gebruik HTML-entities (`&laquo;`/`&raquo;`) — sowieso wenselijk voor lang-bestanden zodat ze ASCII-only blijven; (b) edit direct in VS Code waar encoding-controle wel werkbaar is; (c) JSON-files lossen 't sowieso op (JSON-delimiters zijn ASCII). Voor langere PHP/Blade-bestanden die in chats geconstrueerd worden: bouw 't bestand direct in VS Code op via copy-paste, niet via PowerShell here-string — die struikelt regelmatig over speciale tekens of subtiele whitespace en cap't bestanden mid-file (zoals gebeurde bij `SubscriberManagementTest.php` op regel 222). Patroon-uitbreiding van leerpunt #39.
+
+50. **Cryptische "Call to a member function all() on array" treedt op bij URL-mismatch in `assertRedirect()`, niet alleen bij ontbrekende Accept-header (#28).** Wanneer een Form Request validatie faalt EN de actual redirect-URL niet matched met de URL in `assertRedirect(...)`, probeert Laravel intern een nuttige foutmelding op te bouwen waarbij 't struikelt over de session-error-bag-structuur. Diagnose-aanpak: `$response->dumpSession()->dump()` toont onmiddellijk of validatie faalt + waar de redirect heen ging. Zonder die dump interpreteer je 't symptoom als infrastructuur-issue terwijl 't gewoon een validatie-error is. Specifiek triggert dit bij `email:rfc,dns`-validatie op domeinen zonder MX-records — in tests is DNS-resolving niet altijd beschikbaar, dus tests met handgemaakte e-mails moeten test-safe domains gebruiken (`example.com` via RFC2606), of de Form Request laat `dns` weg (zie beslissing 45).
+
 ## Werkstijl voor Claude
 
 - Iteratief, stap voor stap. Niet alles in één keer.
@@ -405,16 +429,16 @@ Diagnose-truc: lint de gecompileerde view met `php -l` op het bestand in `storag
 - Waarschuw bij secrets in chat. Adviseer roteren.
 - Bestandsnamen exact in casing (Git en Pest zijn case-sensitive).
 
-## Volgende concrete actie — Stap 4.9: Subscribers + import/export
+## Volgende concrete actie — Stap 4.10: Newsletter compose & dispatch
 
-Stap 4.8 is afgerond (Routes + Waypoints CRUD, SVG-thumbnail, Leaflet-preview, 24 nieuwe Pest-tests). Totale test-suite groeit gestaag richting ~280 tests.
+Stap 4.9 is afgerond (Subscribers CRUD + CSV import/export, 37 nieuwe Pest-tests, project-brede paginator-fix). Subscriber-lijst is nu gevuld → Newsletter heeft een doelgroep om naar te dispatchen.
 
-Stap 4.9 pakt de `subscribers`-tabel uit Fase 3: lijst van nieuwsbrief-abonnees, handmatig toevoegen, importeren uit CSV, exporteren naar CSV, status-overzicht (confirmed/unconfirmed/unsubscribed). Voorbereiding voor 4.10 (Newsletter compose & dispatch) — Newsletter heeft een gevulde Subscriber-lijst nodig.
+Stap 4.10 pakt de `newsletters`-tabel uit Fase 3: TipTap-simple compose-editor (zelfde profiel als Pages, beslissing 5), drie vaste templates (`announcement`, `digest`, `plain` — beslissing 8), Emogrifier voor inline CSS, batch-50 queued dispatch via Laravel queue. Newsletter-Send-status per Subscriber zodat 'n nieuwsbrief twee keer naar dezelfde persoon dispatchen niet mogelijk is (de `unique(newsletter_id, subscriber_id)`-constraint op `newsletter_sends` uit Fase 3 is hier wél terecht — zie leerpunt #45/#48 over wanneer constraints uit eerdere fasen wel/niet kloppen).
 
 Open vragen voor vooraf:
 
-1. Import-formaat — alleen CSV, of ook XLSX? CSV is simpel (League\Csv staat al klaar als Pest 4 dependency), XLSX vraagt PhpSpreadsheet. Voor familieblog met ~50-200 abonnees lijkt CSV genoeg.
-2. Dubbele import-detectie — silent skip op bestaand e-mailadres, of error-rapport per regel? Lean: silent skip met aggregaat-melding ("12 nieuw, 3 al bekend, 0 ongeldig").
-3. Status-conventies — Fase 3 heeft `confirmed_at` (datetime nullable) + `unsubscribe_token`. Nog niet `unsubscribed_at`. Een import van een al-uitgeschreven adres → terug op uitgeschreven, of opnieuw uitnodigen?
-4. Admin handmatig add — geeft die direct `confirmed_at = now()` (admin-import = vertrouwd), of vereist 'ie ook double-opt-in?
-5. Index-layout — tabel (consistent met andere lijst-modules) of cards (zoals FamilyMembers)? Lean: tabel.
+1. **Compose-editor scope** — TipTap simple is de bedoeling (consistent met Pages). Maar Newsletters hebben mogelijk image-embedding nodig (header-banner, foto van laatste reis). Wel image-picker zoals Posts (Stap 4.6), niet, of alleen via een aparte 'header_image'-veld op het Newsletter-model?
+2. **Templates** — drie templates uit beslissing 8. Hoe configureerbaar moet de admin ze maken? Hardcoded Blade-files (KISS), of database-driven met preview? Lean: hardcoded Blade voor v1, later DB-driven als er behoefte komt.
+3. **Test-modus** — kan de admin een test-mail naar zichzelf sturen vóór de echte dispatch? Of komt dat in v2?
+4. **Audit-trail** — `newsletter_sends`-tabel houdt timestamps bij per dispatch. Toon de admin een 'aankomstrapport' (X verzonden, Y gebounced, Z geopend)? Of alleen verzonden-status? Lean: alleen verzonden voor v1, opens/clicks vereisen tracking-pixels die we sowieso uitstellen.
+5. **Pre-dispatch confirmation** — vraagt de UI om bevestiging vóór 'n nieuwsbrief naar 200+ abonnees gaat? Lean: ja, modale bevestiging met aantal recipients.
