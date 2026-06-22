@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 21 juni 2026 — Fase 4 in uitvoering (Stap 4.9 afgerond)
+**Laatst bijgewerkt:** 22 juni 2026 — Fase 4 in uitvoering (Stap 4.10 in uitvoering)
 **Masterplan:** zie `westein-reisblog-masterplan.md` voor volledige architectuur
 **Bouwplannen:** Fase 2 staat vast in `fase-2-bouwplan.md`. Fase 4 wordt na afronding vastgelegd in `fase-4-bouwplan.md`.
 

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\FamilyMemberController;
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\MediaController;
 use App\Http\Controllers\Admin\MediaPickerController;
+use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\PostInlineImageController;
@@ -70,3 +71,12 @@ Route::resource('abonnees', SubscriberController::class)
     ->parameters(['abonnees' => 'subscriber'])
     ->names('subscribers')
     ->except(['show']);
+
+// Newsletters
+Route::post('nieuwsbrieven/{newsletter}/stuur-test', [NewsletterController::class, 'sendTest'])
+    ->name('newsletters.send-test');
+Route::post('nieuwsbrieven/{newsletter}/verzenden', [NewsletterController::class, 'dispatchSend'])
+    ->name('newsletters.dispatch');
+Route::resource('nieuwsbrieven', NewsletterController::class)
+    ->parameters(['nieuwsbrieven' => 'newsletter'])
+    ->names('newsletters');
