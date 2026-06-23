@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 22 juni 2026 — Fase 4 in uitvoering (Stap 4.10 in uitvoering)
+**Laatst bijgewerkt:** 23 juni 2026 — Fase 4 in uitvoering (Stap 4.10 blok a-d afgerond)
 **Masterplan:** zie `westein-reisblog-masterplan.md` voor volledige architectuur
 **Bouwplannen:** Fase 2 staat vast in `fase-2-bouwplan.md`. Fase 4 wordt na afronding vastgelegd in `fase-4-bouwplan.md`.
 
@@ -94,18 +94,12 @@ Een schaalbare, veilige Laravel-reisblog voor familievakanties van de familie We
     - Reserved slugs centraal in `config/westein.php`, gevalideerd via `App\Rules\NotReservedSlug` (alleen in StoreRequest; UpdateRequest heeft slug niet in rules)
     - Publicatie via toggle `is_published` (form-helper, geen kolom) + datetime-local-veld → genormaliseerd via `publicationData()`-methode op de FormRequest
     - Hero-image bewust uitgesteld naar v2: model heeft `hero`-collectie al, maar UI-veld is nog niet ontsloten (isoleerde TipTap + Purifier risico)
-20. **Generieke media-endpoints met eigenaar-gebaseerde autorisatie.** `MediaController` met
-    drie routes: `POST media/upload`, `PATCH media/reorder`, `DELETE media/{media}`. Autorisatie
-    via `$this->authorize('update', $media->model)` — erft van het bovenliggende model, geen
-    losse media-permission. Client-side model-type via whitelist in `config/westein.php`
+20. **Generieke media-endpoints met eigenaar-gebaseerde autorisatie.** `MediaController` met drie routes: `POST media/upload`, `PATCH media/reorder`, `DELETE media/{media}`. Autorisatie
+    via `$this->authorize('update', $media->model)` — erft van het bovenliggende model, geen losse media-permission. Client-side model-type via whitelist in `config/westein.php`
     (`gallery_models`) — nooit rauwe class-strings van client vertrouwen.
-21. **Gallery-flow:** AJAX direct opslaan (upload + reorder + delete), los van form-submit.
-    Reorder via SortableJS + `Media::setNewOrder()` met volledige id-lijst uit DOM-volgorde.
-    Component (`<x-admin.gallery-upload>`) hoort op de EDIT-pagina; "store→edit"-redirect zorgt
-    dat een net aangemaakt model direct een werkpagina krijgt voor de galerij.
-22. **Locations: volledig genest** onder Destinations (`/admin/bestemmingen/{destination}/locaties/{location}`)
-    met Laravel `scoped()`-binding (`->scoped(['location' => 'slug'])`). Cross-destination-aanroepen
-    geven automatisch 404. Locations hebben geen hero, alleen `gallery`-collectie; eerste foto
+21. **Gallery-flow:** AJAX direct opslaan (upload + reorder + delete), los van form-submit. Reorder via SortableJS + `Media::setNewOrder()` met volledige id-lijst uit DOM-volgorde.
+    Component (`<x-admin.gallery-upload>`) hoort op de EDIT-pagina; "store→edit"-redirect zorgt dat een net aangemaakt model direct een werkpagina krijgt voor de galerij.
+22. **Locations: volledig genest** onder Destinations (`/admin/bestemmingen/{destination}/locaties/{location}`) met Laravel `scoped()`-binding (`->scoped(['location' => 'slug'])`). Cross-destination-aanroepen geven automatisch 404. Locations hebben geen hero, alleen `gallery`-collectie; eerste foto
     dient als thumbnail in de index-cards.
 22. **Posts status-flow:** dropdown met 4 statussen; `published_at` datetime-local verschijnt bij `scheduled`. UI verbergt `published`/`scheduled` voor wie geen `posts.publish` heeft; Form Request handhaaft dezelfde regel server-side via `Rule::in($this->allowedStatuses())`. Permissief in beide richtingen: `archived` is vrij voor iedereen met update-recht (een auteur mag z'n eigen werk archiveren), alleen het *publiek-maken* (`scheduled`/`published`) vraagt extra recht.
 23. **Posts §3.4-validatie:** locatie↔bestemming-match altijd verplicht; bestemming verplicht *tenzij* de post de Tips-categorie heeft. Permissieve uitzondering: Tips-post **mag** een bestemming hebben (masterplan-conform). Anker-slug `tips` zit in `config/westein.php` (`general_tips_category_slug`), nooit hardcoded.
@@ -126,16 +120,19 @@ Een schaalbare, veilige Laravel-reisblog voor familievakanties van de familie We
 38. **Routes Form Request = abstract base `RouteRequest` (Posts-patroon).** Aanvankelijk leunde ik naar Pages-patroon (twee onafhankelijke Requests). Tijdens uitwerken bleek dat vier stukken logica gedeeld moeten worden: `prepareForValidation()` (waypoints-JSON-decode), `withValidator()` (§3.4-equivalent: waypoints binnen bestemming), `publicationData()` (publication-state-derivatie), `messages()`. Drempel uit Posts-beslissing #25 wordt gehaald — abstract base levert hier echte DRY-winst. Verschil tussen Store en Update zit alleen in `authorize()` en `slugRules()`.
 39. **Routes location-revisits = toegestaan.** Fase 3 voegde een `unique(route_id, location_id)`-constraint toe op `route_waypoints`, vermoedelijk by-default zonder bewuste afweging. In 4.8 gedropt via migratie omdat fly-in/fly-out roadtrips (Rome → Florence → Venetië → Rome) een echt use case zijn voor familiereizen. Geen vervangende index nodig (FK's dekken query-performance). Leaflet rendert revisit-routes prima als polylijn-loops.
 40. **`Paginator::useBootstrapFive()` project-breed sinds Stap 4.9.** Latente bug sinds Fase 1 die nooit opviel omdat geen index >25 items had. Toegevoegd aan `AppServiceProvider::boot()` naast `Gate::before`. JSON-vertaling van `Showing/to/of/results` via `lang/nl.json` (HTML-entities voor `«`/`»` — leerpunt #49).
-
 41. **Subscribers status afgeleid uit timestamps, geen status-kolom.** `pending|active|unsubscribed` via `Subscriber::status()`-methode op basis van `confirmed_at`/`unsubscribed_at`. Eén bron-van-waarheid, geen kolom-vs-timestamp-inconsistentie. Status-scopes (`pending()`, `active()`, `unsubscribed()`) leveren queries; constants `STATUS_PENDING|ACTIVE|UNSUBSCRIBED` voor matchen in code en views.
-
 42. **Subscribers double-opt-in altijd, ook bij admin-add.** Geen "vertrouwd-shortcut" bij single create. AVG-zuiver. CSV-import landt expliciet op pending **zonder** automatische mail-dispatch — admin verstuurt later via per-rij of bulk-actie. Bewuste scheiding tussen import en mail-flow voorkomt 200-mail-tsunami's bij grote imports en geeft admin controle over timing.
-
 43. **Uitgeschreven abonnees bij re-import silent gehonoreerd (geen reactivate).** Telt apart in aggregaat ("X eerder uitgeschreven") voor transparantie maar reset `unsubscribed_at` niet. AVG-conform: opt-out is een definitieve keuze tenzij de abonnee zich actief opnieuw aanmeldt via het publieke formulier.
-
 44. **CSV-import + foutrapport-CSV via League\Csv.** Aggregaat-flash met vier tellers ('X nieuw · Y al bekend · Z eerder uitgeschreven · N ongeldig'). Foutregels in tijdelijke CSV op `local`-disk onder `imports/subscriber-errors/{ulid}.csv`, ULID-token in flash. Generieke flash-partial-uitbreiding: `flash_action_url` + `flash_action_label` keys voor herbruikbare 'Download foutrapport'-knop in alle toekomstige import/export-tools. Auto-purge na 24u uitgesteld naar Fase 6 (cron-config).
-
 45. **Geen `dns`-rule op Subscriber email-validatie.** Bewust `email:rfc` zonder `dns` in zowel `StoreSubscriberRequest` als `UpdateSubscriberRequest` (consistent met de import-flow uit beslissing 42). Drie redenen: DNS-check is langzaam (50-200ms per request), flaky bij offline ontwikkeling en in test-environments, en de bounce van een confirmation-mail vangt non-existing domains sowieso af — als de mail niet aankomt blijft de abonnee gewoon pending.
+46. **Newsletter beeld = `header_image`-veld via Media Library, geen inline-images.** Body blijft puur TipTap-simple zoals Pages — geen image-picker, geen inline `<img>` in de body. Eén `header`-collectie (single) op het Newsletter-model met WebP-conversies (thumb 400, medium 800). Reden: email-rendering is een mijnenveld, Outlook is berucht voor inline-images uit TipTap-HTML, en één vaste header-banner dekt 95% van de visuele behoefte. Inline-foto-galerijen verwijzen liever naar een Post via een link dan ze in de mail te embedden. Beslissing herzienbaar in v2 wanneer een concrete use case zich aandient.
+47. **Newsletter-templates hardcoded als Blade-files.** Drie templates in `resources/views/emails/newsletter/templates/`: `announcement.blade.php`, `digest.blade.php`, `plain.blade.php`. `template`-kolom op `newsletters`-tabel (string, default `plain`). Compose-form heeft dropdown met de drie opties. Geen DB-driven template-beheer — drie templates is klein en stabiel, leven onder version control, code-review op visuele wijzigingen via Git-commits. Migratiepad naar DB blijft open (A→B via seeder mogelijk) maar voorlopig YAGNI.
+48. **Newsletter test-modus = "Stuur naar mezelf"-knop, geen vrij invulveld.** Testmail-knop in compose/edit-form stuurt naar `auth()->user()->email`, subject krijgt `[TEST]`-prefix, geen `newsletter_sends`-row aangemaakt. Reden: browser-preview is onbetrouwbaar voor email-rendering (Outlook ≠ Gmail ≠ Chrome), maar vrij-invulbare adressen brengen abuse- en typfoutrisico's mee. Cross-mailclient-QA via persoonlijke forward, niet via een feature.
+49. **Newsletter audit-trail = alleen sent + per-subscriber timestamp.** Detailpagina toont aantal verzonden + lijst `newsletter_sends`-rijen met `sent_at` per ontvanger. Geen tracking-pixel (AVG-discipline voor familieblog zonder commerciële basis), geen bounce-tracking (vereist provider-webhooks die Hostnet-SMTP niet levert). De `newsletter_sends.bounced_at`/`opened_at`-kolommen blijven leeg in v1 — schema laat ze al toe zonder migratie wanneer v2 deze stack uitbreidt.
+50. **Newsletter dispatch vereist modale confirmation.** "Verzend nu"-knop opent modal met expliciete recipient-count ("Verzenden naar N bevestigde abonnees?") + subject ter herinnering, twee knoppen (Annuleren / Ja-verzend). Pas bij de tweede klik gaat de batch-queue lopen. Reden: een nieuwsbrief is onomkeerbaar zodra in queue, één enter-typo of verkeerde template moet niet 200+ inboxen raken. Consistent met `<x-admin.delete-button>`-patroon voor andere onomkeerbare acties.
+51. **Newsletter scheduling uitgesteld naar v2.** `scheduled_at`-kolom + status-enum-waarde `scheduled` blijven in tabel/model staan voor schema-stabiliteit, `scopeScheduled()` + factory-`scheduled()` blijven actief voor Fase-3-tests. Geen UI-pad: status-flow v1 = `draft → sending → sent`. Concept-opslaan dekt de praktische behoefte ("klaar zetten voor zondagavond"); cron-driven scheduled-dispatch komt terug in Fase 6 wanneer running queue:work + Laravel Scheduler als supervised services draaien.
+52. **Spatie Media Library conversies project-breed `->nonQueued()`.** `RegistersMediaConversions::registerWebpConversion()` flipte tijdens Stap 4.10d van `->queued()` naar `->nonQueued()`. Reden: in dev draait er geen permanent `queue:work`; conversies stapelden zich op in de `jobs`-tabel en `generated_conversions` bleef `[]` zodat `getFirstMediaUrl('header', 'medium')` terugviel op de originele JPG. Voor een familieblog met handvol uploads per week is synchrone conversie (één WebP-resize per upload, ~70ms) praktischer dan een Windows-task-scheduled queue-worker. Geldt voor élk model dat de trait gebruikt (Post, FamilyMember, Destination, Location, User, Newsletter). Queue-driven conversies kunnen terug in Fase 6 als productie-hosting een supervised queue-worker krijgt. `MediaCollectionsTest::"Upload op Post featured ..."` verifieert het non-queued gedrag expliciet via `Queue::assertNotPushed()`.
+
 
 ## Conventies — werk altijd zo
 
@@ -415,6 +412,14 @@ Diagnose-truc: lint de gecompileerde view met `php -l` op het bestand in `storag
 
 50. **Cryptische "Call to a member function all() on array" treedt op bij URL-mismatch in `assertRedirect()`, niet alleen bij ontbrekende Accept-header (#28).** Wanneer een Form Request validatie faalt EN de actual redirect-URL niet matched met de URL in `assertRedirect(...)`, probeert Laravel intern een nuttige foutmelding op te bouwen waarbij 't struikelt over de session-error-bag-structuur. Diagnose-aanpak: `$response->dumpSession()->dump()` toont onmiddellijk of validatie faalt + waar de redirect heen ging. Zonder die dump interpreteer je 't symptoom als infrastructuur-issue terwijl 't gewoon een validatie-error is. Specifiek triggert dit bij `email:rfc,dns`-validatie op domeinen zonder MX-records — in tests is DNS-resolving niet altijd beschikbaar, dus tests met handgemaakte e-mails moeten test-safe domains gebruiken (`example.com` via RFC2606), of de Form Request laat `dns` weg (zie beslissing 45).
 
+51. **PHP-lexer parseert `'('.6 .')'` als float-literal `6.` gevolgd door syntax-fout.** Asymmetrische spacing rond de concat-`.` activeert de float-parse-pad: `'('` → concat → token `6` met trailing space-`.` wordt FloatLiteral, parser verwacht daarna een `,` of `)`. Veilige alternatieven: `'(6)'` direct concatenated óf `sprintf('(%d)', $count)` waar de variabele dynamisch is. Triggert vooral in `assertSee()`-helpers en gegenereerde labels waar je een count tussen haakjes wil tonen.
+
+52. **Controller-method `dispatch` botst met Laravel/PHP-helpers.** De globale `dispatch()` helper, `Bus::dispatch()`, en de event-pipeline `->dispatch()` claimen die methodnaam in mentale ruimte én autocompletion. Een controller-method die letterlijk `dispatch()` heet, kan stille IDE-bugs en sub-trait-overrides geven. Convention bij Stap 4.10: methodnaam `dispatchSend()` voor de newsletter-verzendactie. De route-name mag wél `*.dispatch` blijven want die wordt naar method-binding gemapt via verb-route (`Route::post(..., [Controller::class, 'dispatchSend'])->name('newsletters.dispatch')`).
+
+53. **`Alpine.raw(this.editor)` is verplicht voor ÁLLE TipTap-commands, niet alleen state-syncs.** ProseMirror's `applyInner()` doet `tr.before.eq(state.doc)` identity-check; Alpine's Vue-reactivity-Proxy om de editor-instance faalt op die check met `RangeError: Applying a mismatched transaction`. Patroon was al toegepast in `tiptap-rich.js` voor `insertImage`/`setImageAlign`/`deleteImage` (zie leerpunt #34) maar `tiptap-simple.js` had het alleen in `syncState`. Toolbar-buttons (toggleBold, setHeading, etc.) reproduceerden de bug zodra je ze daadwerkelijk gebruikte. Fix in Stap 4.10d: centrale `chain()`-helper op de factory die `Alpine.raw(this.editor).chain().focus()` returnt; alle commands routeren via `this.chain().toggleBold().run()`. Patroon-uitbreiding van #34: élke methode op `this.editor` (chain-commands, getAttributes, isActive, view.*) moet via Alpine.raw — niet alleen die-met-side-effects.
+
+54. **`storage/media-library/temp/` hoort in `.gitignore`.** Spatie schrijft per-upload tijdelijke kopieën onder random hash-paden (`storage/media-library/temp/{32-char-hash}/{16-char-hash}{conversion}.jpg`) tijdens conversion-werk. Bij synchroon-non-queued draait alles binnen één request en wordt het opgeruimd; bij crashes, killed queue-workers, of `->queued()` zonder running worker blijven die bestanden liggen — soms tientallen MB's. Niet committen: voeg `/storage/media-library/` toe aan `.gitignore`. Vergelijkbare temp-paden mogelijk in toekomstige Spatie-packages (PDFs, Image-Optimizer) — wees alert op `storage/`-subfolders die door packages worden aangemaakt.
+
 ## Werkstijl voor Claude
 
 - Iteratief, stap voor stap. Niet alles in één keer.
@@ -429,16 +434,27 @@ Diagnose-truc: lint de gecompileerde view met `php -l` op het bestand in `storag
 - Waarschuw bij secrets in chat. Adviseer roteren.
 - Bestandsnamen exact in casing (Git en Pest zijn case-sensitive).
 
-## Volgende concrete actie — Stap 4.10: Newsletter compose & dispatch
+## Volgende concrete actie — Stap 4.10: Newsletter blok e
 
-Stap 4.9 is afgerond (Subscribers CRUD + CSV import/export, 37 nieuwe Pest-tests, project-brede paginator-fix). Subscriber-lijst is nu gevuld → Newsletter heeft een doelgroep om naar te dispatchen.
+**Stap 4.10 vordering:** blokken a–d afgerond, drie commits + één housekeeping op `main` (lokaal, nog niet gepusht).
 
-Stap 4.10 pakt de `newsletters`-tabel uit Fase 3: TipTap-simple compose-editor (zelfde profiel als Pages, beslissing 5), drie vaste templates (`announcement`, `digest`, `plain` — beslissing 8), Emogrifier voor inline CSS, batch-50 queued dispatch via Laravel queue. Newsletter-Send-status per Subscriber zodat 'n nieuwsbrief twee keer naar dezelfde persoon dispatchen niet mogelijk is (de `unique(newsletter_id, subscriber_id)`-constraint op `newsletter_sends` uit Fase 3 is hier wél terecht — zie leerpunt #45/#48 over wanneer constraints uit eerdere fasen wel/niet kloppen).
+- [x] **Blok a** — datalaag + composer + model + factory + migratie `template`-veld (4 tests)
+- [x] **Blok b** — `NewsletterPolicy` + 4 Form Requests (`Store`/`Update`/`SendTest`/`Dispatch`) (6 RBAC-tests)
+- [x] **Blok c** — routes + `NewsletterController::index` + index-view (11 tests)
+- [x] **Blok d** — `create`/`store`/`edit`/`update`/`destroy` + compose-form + `RegistersMediaConversions` flip naar `->nonQueued()` + `tiptap-simple` Alpine.raw-fix (12 tests)
+- [ ] **Blok e** — Mailable + 3 template-Blades + base-email-layout + Emogrifier-wrapper + `sendTest()`-controller-method + testmail-knop in compose-UI
+- [ ] **Blok f** — `DispatchAction` + Job + `dispatchSend()`-controller-method + modale confirm-UI + integration-tests (queue-faking + dedup)
+- [ ] **Blok g** — Show-pagina (audit-trail voor sent newsletters: recipient-count, `sent_at` per ontvanger)
+- [ ] **Blok h** — CLAUDE.md final update + push naar `origin/main`
 
-Open vragen voor vooraf:
+**Tests-status:** 349 groen (337 vóór blok d + 12 nieuw).
 
-1. **Compose-editor scope** — TipTap simple is de bedoeling (consistent met Pages). Maar Newsletters hebben mogelijk image-embedding nodig (header-banner, foto van laatste reis). Wel image-picker zoals Posts (Stap 4.6), niet, of alleen via een aparte 'header_image'-veld op het Newsletter-model?
-2. **Templates** — drie templates uit beslissing 8. Hoe configureerbaar moet de admin ze maken? Hardcoded Blade-files (KISS), of database-driven met preview? Lean: hardcoded Blade voor v1, later DB-driven als er behoefte komt.
-3. **Test-modus** — kan de admin een test-mail naar zichzelf sturen vóór de echte dispatch? Of komt dat in v2?
-4. **Audit-trail** — `newsletter_sends`-tabel houdt timestamps bij per dispatch. Toon de admin een 'aankomstrapport' (X verzonden, Y gebounced, Z geopend)? Of alleen verzonden-status? Lean: alleen verzonden voor v1, opens/clicks vereisen tracking-pixels die we sowieso uitstellen.
-5. **Pre-dispatch confirmation** — vraagt de UI om bevestiging vóór 'n nieuwsbrief naar 200+ abonnees gaat? Lean: ja, modale bevestiging met aantal recipients.
+**Architecturale wijziging in blok d:** `RegistersMediaConversions` flipte van `->queued()` naar `->nonQueued()` (beslissing #52). Niet-newsletter regression-tests blijven groen na `Queue::assertNotPushed`-omdraai in `MediaCollectionsTest`. Bestaande media regenereerd via `php artisan media-library:regenerate`.
+
+**Blok e in volgorde:**
+1. Base-email-layout (`resources/views/emails/newsletter/_layout.blade.php`) — header-image slot, body slot, footer met unsubscribe-link
+2. Drie template-Blades — extenden base-layout met module-specifieke structuur (`announcement` = formele kop + body + CTA; `digest` = lijst van recente posts + intro + footer; `plain` = minimalistisch)
+3. `NewsletterMail` Mailable + Emogrifier-wrapper voor CSS-inlining vóór verzending
+4. `NewsletterController::sendTest()` met `SendTestNewsletterRequest` — bouwt Mailable met huidige form-state (subject/body/header/template) + `[TEST]`-prefix, verstuurt naar `auth()->user()->email`
+5. "Stuur testmail"-knop in `_form.blade.php` (verschijnt alleen bij edit, niet bij create — newsletter moet eerst opgeslagen zijn)
+6. Tests: testmail-RBAC (alleen draft, status-guard via policy), Mail-faking met `Mail::assertSent(NewsletterMail::class)`, Emogrifier-output inspectie (inline CSS aanwezig)
