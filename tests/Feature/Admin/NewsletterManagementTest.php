@@ -122,3 +122,140 @@ it('pagineert op 20 per pagina', function () {
     // Paginatielink naar pagina 2 moet bestaan
     $response->assertSee('page=2', false);
 });
+it('toont het create-formulier voor editor', function () {
+    $this->actingAs($this->editor)
+        ->get(route('admin.newsletters.create'))
+        ->assertOk()
+        ->assertSee(__('Onderwerp'))
+        ->assertSee(__('Sjabloon'))
+        ->assertSee(__('Bericht'));
+});
+
+it('weigert create voor lid', function () {
+    $lid = User::factory()->create();
+    $lid->assignRole('lid');
+
+    $this->actingAs($lid)
+        ->get(route('admin.newsletters.create'))
+        ->assertForbidden();
+});
+
+it('slaat een nieuwe concept-nieuwsbrief op en redirect naar edit', function () {
+    $payload = [
+        'subject' => 'Zomerse groeten uit Toscane',
+        'template' => Newsletter::TEMPLATE_DIGEST,
+        'body' => '<p>Beste lezer, lees onze laatste avonturen!</p>',
+    ];
+
+    $response = $this->actingAs($this->editor)
+        ->post(route('admin.newsletters.store'), $payload);
+
+    $newsletter = Newsletter::query()->latest('id')->first();
+
+    $response->assertRedirect(route('admin.newsletters.edit', $newsletter));
+
+    expect($newsletter->subject)->toBe('Zomerse groeten uit Toscane')
+        ->and($newsletter->template)->toBe(Newsletter::TEMPLATE_DIGEST)
+        ->and($newsletter->status)->toBe(Newsletter::STATUS_DRAFT)
+        ->and($newsletter->user_id)->toBe($this->editor->id)
+        ->and($newsletter->body)->toContain('Beste lezer');
+});
+
+it('valideert verplichte velden bij store', function () {
+    $this->actingAs($this->editor)
+        ->post(route('admin.newsletters.store'), [])
+        ->assertSessionHasErrors(['subject', 'template', 'body']);
+});
+
+it('weigert een ongeldig template bij store', function () {
+    $this->actingAs($this->editor)
+        ->post(route('admin.newsletters.store'), [
+            'subject' => 'Test',
+            'template' => 'spam-template',
+            'body' => '<p>Body</p>',
+        ])
+        ->assertSessionHasErrors('template');
+});
+
+it('saneert HTML in body via simple Purifier-profiel', function () {
+    $this->actingAs($this->editor)
+        ->post(route('admin.newsletters.store'), [
+            'subject' => 'Sanitize test',
+            'template' => Newsletter::TEMPLATE_PLAIN,
+            'body' => '<p>Veilig</p><script>alert("xss")</script>',
+        ]);
+
+    $newsletter = Newsletter::query()->latest('id')->first();
+
+    expect($newsletter->body)->toContain('Veilig')
+        ->and($newsletter->body)->not->toContain('<script>');
+});
+
+it('toont het edit-formulier voor een draft', function () {
+    $newsletter = Newsletter::factory()->for($this->editor, 'author')->create([
+        'subject' => 'Bestaande draft',
+    ]);
+
+    $this->actingAs($this->editor)
+        ->get(route('admin.newsletters.edit', $newsletter))
+        ->assertOk()
+        ->assertSee('Bestaande draft');
+});
+
+it('weigert edit voor een sent nieuwsbrief (editor wordt geblokkeerd door status-guard)', function () {
+    $newsletter = Newsletter::factory()->for($this->editor, 'author')->sent(50)->create();
+
+    $this->actingAs($this->editor)
+        ->get(route('admin.newsletters.edit', $newsletter))
+        ->assertForbidden();
+});
+
+it('werkt een draft bij via update', function () {
+    $newsletter = Newsletter::factory()->for($this->editor, 'author')->create([
+        'subject' => 'Oud onderwerp',
+    ]);
+
+    $response = $this->actingAs($this->editor)
+        ->put(route('admin.newsletters.update', $newsletter), [
+            'subject' => 'Nieuw onderwerp',
+            'template' => Newsletter::TEMPLATE_ANNOUNCEMENT,
+            'body' => '<p>Nieuwe tekst</p>',
+        ]);
+
+    $response->assertRedirect(route('admin.newsletters.index'));
+
+    expect($newsletter->fresh()->subject)->toBe('Nieuw onderwerp')
+        ->and($newsletter->fresh()->template)->toBe(Newsletter::TEMPLATE_ANNOUNCEMENT);
+});
+
+it('blokkeert update op een sent nieuwsbrief (editor)', function () {
+    $newsletter = Newsletter::factory()->for($this->editor, 'author')->sent(50)->create();
+
+    $this->actingAs($this->editor)
+        ->put(route('admin.newsletters.update', $newsletter), [
+            'subject' => 'Stiekem wijzigen',
+            'template' => Newsletter::TEMPLATE_PLAIN,
+            'body' => '<p>x</p>',
+        ])
+        ->assertForbidden();
+});
+
+it('verwijdert een draft hard', function () {
+    $newsletter = Newsletter::factory()->for($this->editor, 'author')->create();
+
+    $this->actingAs($this->editor)
+        ->delete(route('admin.newsletters.destroy', $newsletter))
+        ->assertRedirect(route('admin.newsletters.index'));
+
+    expect(Newsletter::query()->find($newsletter->id))->toBeNull();
+});
+
+it('blokkeert destroy op sent nieuwsbrief (editor)', function () {
+    $newsletter = Newsletter::factory()->for($this->editor, 'author')->sent(50)->create();
+
+    $this->actingAs($this->editor)
+        ->delete(route('admin.newsletters.destroy', $newsletter))
+        ->assertForbidden();
+
+    expect(Newsletter::query()->find($newsletter->id))->not->toBeNull();
+});

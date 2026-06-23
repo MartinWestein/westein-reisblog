@@ -87,13 +87,14 @@ test('Multi-file collectie behoudt meerdere uploads', function () {
     expect($location->getMedia('gallery'))->toHaveCount(3);
 });
 
-test('Upload op Post featured dispatcht conversie-jobs naar de queue', function () {
+test('Upload op Post featured draait conversies synchroon (non-queued, beslissing 4.10)', function () {
     $post = Post::factory()->create();
-
     $post->addMedia(UploadedFile::fake()->image('foto.jpg', 1200, 800))
         ->toMediaCollection('featured');
 
-    Queue::assertPushed(PerformConversionsJob::class);
+    // Per RegistersMediaConversions::registerWebpConversion() → ->nonQueued()
+    // Conversies draaien direct in dezelfde request en gaan NIET via de queue.
+    Queue::assertNotPushed(PerformConversionsJob::class);
 });
 
 test('Niet-toegestane MIME-type wordt geweigerd', function () {

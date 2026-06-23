@@ -3,8 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Newsletters\StoreNewsletterRequest;
+use App\Http\Requests\Admin\Newsletters\UpdateNewsletterRequest;
 use App\Models\Newsletter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Mews\Purifier\Facades\Purifier;
 
 class NewsletterController extends Controller
 {
@@ -57,5 +61,85 @@ class NewsletterController extends Controller
             'sort',
             'direction'
         ));
+    }
+
+    public function create()
+    {
+        $this->authorize('create', Newsletter::class);
+
+        return view('admin.newsletters.create');
+    }
+
+    public function store(StoreNewsletterRequest $request)
+    {
+        // Authorization via StoreNewsletterRequest::authorize()
+        $data = $request->validated();
+
+        // Niet-kolommen apart afhandelen
+        $headerFile = $request->file('header');
+        $data = Arr::except($data, ['header']);
+
+        // Body saneren via mews/purifier 'simple'-profiel (consistent met Pages)
+        $data['body'] = Purifier::clean($data['body'], 'simple');
+
+        // Auteur = ingelogde gebruiker
+        $data['user_id'] = $request->user()->id;
+
+        $newsletter = Newsletter::create($data);
+
+        // Header-image (single) — meegestuurd vanaf het create-formulier
+        if ($headerFile) {
+            $newsletter->addMediaFromRequest('header')->toMediaCollection('header');
+        }
+
+        return redirect()
+            ->route('admin.newsletters.edit', $newsletter)
+            ->with('success', __('Concept aangemaakt.'));
+    }
+
+    public function edit(Newsletter $newsletter)
+    {
+        $this->authorize('update', $newsletter);
+
+        $newsletter->load('media');
+
+        return view('admin.newsletters.edit', compact('newsletter'));
+    }
+
+    public function update(UpdateNewsletterRequest $request, Newsletter $newsletter)
+    {
+        // Authorization via UpdateNewsletterRequest::authorize() → NewsletterPolicy
+        $data = $request->validated();
+
+        $hasHeaderFile = $request->hasFile('header');
+        $removeHeader = $request->boolean('remove_header');
+        $data = Arr::except($data, ['header', 'remove_header']);
+
+        $data['body'] = Purifier::clean($data['body'], 'simple');
+
+        $newsletter->update($data);
+
+        if ($hasHeaderFile) {
+            $newsletter->clearMediaCollection('header');
+            $newsletter->addMediaFromRequest('header')->toMediaCollection('header');
+        } elseif ($removeHeader) {
+            $newsletter->clearMediaCollection('header');
+        }
+
+        return redirect()
+            ->route('admin.newsletters.index')
+            ->with('success', __('Nieuwsbrief bijgewerkt.'));
+    }
+
+    public function destroy(Newsletter $newsletter)
+    {
+        $this->authorize('delete', $newsletter);
+
+        // Hard delete — Newsletter is geen core content, geen trash-module-deelnemer
+        $newsletter->delete();
+
+        return redirect()
+            ->route('admin.newsletters.index')
+            ->with('success', __('Nieuwsbrief verwijderd.'));
     }
 }

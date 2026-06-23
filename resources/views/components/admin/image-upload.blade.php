@@ -8,6 +8,7 @@
     'maxMb' => 8,
     'minWidth' => 300,
     'minHeight' => 300,
+    'removeLabel' => null,
 ])
 
 @php
@@ -111,7 +112,7 @@
                 value="1"
                 x-model="markedForRemoval"
             >
-            <span class="text-danger">{{ __('Portret verwijderen bij opslaan') }}</span>
+            <<span class="text-danger">{{ $removeLabel ?? __('Portret verwijderen bij opslaan') }}</span>
         </label>
     </div>
 

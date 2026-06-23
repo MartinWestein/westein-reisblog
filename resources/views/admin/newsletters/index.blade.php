@@ -11,7 +11,13 @@
 @section('content')
     <x-admin.page-header
         :title="__('Nieuwsbrieven')"
-        :subtitle="__('Stel nieuwsbrieven samen en verstuur ze naar actieve abonnees.')" />
+        :subtitle="__('Stel nieuwsbrieven samen en verstuur ze naar actieve abonnees.')">
+        <x-slot:actions>
+            <a href="{{ route('admin.newsletters.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i> {{ __('Nieuw') }}
+            </a>
+        </x-slot:actions>
+    </x-admin.page-header>
 
     <x-admin.card>
         <form method="GET" action="{{ route('admin.newsletters.index') }}"
@@ -80,6 +86,7 @@
                                 <x-admin.sort-link sort="created_at" :current-sort="$sort" :current-direction="$direction">
                                     {{ __('Aangemaakt') }}
                                 </x-admin.sort-link>
+                                <th class="text-end">{{ __('Acties') }}</th>
                             </th>
                         </tr>
                     </thead>
@@ -113,6 +120,20 @@
                                 </td>
                                 <td class="text-muted small">
                                     {{ $newsletter->created_at->isoFormat('D MMM YYYY') }}
+                                </td>
+                                <td class="text-end">
+                                    @if ($newsletter->isEditable())
+                                        <a href="{{ route('admin.newsletters.edit', $newsletter) }}"
+                                           class="btn btn-sm btn-outline-secondary"
+                                           title="{{ __('Bewerken') }}">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <x-admin.delete-button
+                                            :action="route('admin.newsletters.destroy', $newsletter)"
+                                            :label="__('Verwijderen')" />
+                                    @else
+                                        <span class="text-muted small">{{ __('Read-only') }}</span>
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach

@@ -33,7 +33,7 @@ trait RegistersMediaConversions
             ->format('webp')
             ->fit(Fit::Max, $width, $width * 2)  // Hoogte max 2x breedte; voorkomt extreme verticale crops
             ->quality(82)
-            ->queued();
+            ->nonqueued();
 
         if ($collectionName !== null) {
             $conversion->performOnCollections($collectionName);
