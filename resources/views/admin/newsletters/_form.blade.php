@@ -131,6 +131,26 @@
                 </dl>
             </x-admin.form-section>
         @endif
+
+        @if ($isEdit && $newsletter->isEditable() && auth()->user()->can('sendTest', $newsletter))
+            <x-admin.form-section title="Testmail">
+                <p class="admin-field__hint mb-3">
+                    {{ __('Verzendt deze nieuwsbrief alleen naar jouw eigen e-mailadres (:email) met de prefix [TEST] in het onderwerp.', ['email' => auth()->user()->email]) }}
+                </p>
+                <form
+                    method="POST"
+                    action="{{ route('admin.newsletters.send-test', $newsletter) }}"
+                    class="d-grid"
+                >
+                    @csrf
+                    <button type="submit" class="btn btn-outline-secondary">
+                        <i class="bi bi-envelope-paper"></i>
+                        {{ __('Stuur testmail naar mezelf') }}
+                    </button>
+                </form>
+            </x-admin.form-section>
+        @endif
+        
     </x-slot:side>
 
     {{-- ===== ACTIE-KNOPPEN ===== --}}

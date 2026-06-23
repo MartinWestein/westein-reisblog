@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Newsletters\SendTestNewsletterRequest;
 use App\Http\Requests\Admin\Newsletters\StoreNewsletterRequest;
 use App\Http\Requests\Admin\Newsletters\UpdateNewsletterRequest;
+use App\Mail\NewsletterMail;
 use App\Models\Newsletter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Mail;
 use Mews\Purifier\Facades\Purifier;
 
 class NewsletterController extends Controller
@@ -141,5 +144,25 @@ class NewsletterController extends Controller
         return redirect()
             ->route('admin.newsletters.index')
             ->with('success', __('Nieuwsbrief verwijderd.'));
+    }
+
+    public function sendTest(SendTestNewsletterRequest $request, Newsletter $newsletter)
+    {
+        // Autorisatie via SendTestNewsletterRequest::authorize() -> NewsletterPolicy::sendTest()
+        // Beslissing #48: testmail naar auth()->user()->email, [TEST]-prefix in subject,
+        // geen NewsletterSend-row aangemaakt. Niet-klikbare unsubscribe-token houdt de
+        // testmail visueel identiek aan een echte mail zonder abuse-vector.
+        $placeholderUnsubscribeUrl = url('/nieuwsbrief/uitschrijven/'.str_repeat('0', 64));
+
+        Mail::to($request->user()->email)
+            ->send(new NewsletterMail(
+                newsletter: $newsletter,
+                unsubscribeUrl: $placeholderUnsubscribeUrl,
+                isTest: true,
+            ));
+
+        return redirect()
+            ->route('admin.newsletters.edit', $newsletter)
+            ->with('success', __('Testmail verzonden naar :email.', ['email' => $request->user()->email]));
     }
 }
