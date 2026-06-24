@@ -91,8 +91,14 @@ it('filtert op status', function () {
 });
 
 it('zoekt op email', function () {
-    Subscriber::factory()->create(['email' => 'jansen@voorbeeld.nl']);
-    Subscriber::factory()->create(['email' => 'devries@voorbeeld.nl']);
+    Subscriber::factory()->create([
+        'email' => 'jansen@voorbeeld.nl',
+        'name' => 'Piet Bakker',
+    ]);
+    Subscriber::factory()->create([
+        'email' => 'devries@voorbeeld.nl',
+        'name' => 'Kees Mulder',
+    ]);
 
     $editor = User::factory()->create();
     $editor->assignRole('editor');
