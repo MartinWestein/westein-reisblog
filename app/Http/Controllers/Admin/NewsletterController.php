@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Newsletter\DispatchNewsletterAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Newsletters\DispatchNewsletterRequest;
 use App\Http\Requests\Admin\Newsletters\SendTestNewsletterRequest;
 use App\Http\Requests\Admin\Newsletters\StoreNewsletterRequest;
 use App\Http\Requests\Admin\Newsletters\UpdateNewsletterRequest;
@@ -164,5 +166,22 @@ class NewsletterController extends Controller
         return redirect()
             ->route('admin.newsletters.edit', $newsletter)
             ->with('success', __('Testmail verzonden naar :email.', ['email' => $request->user()->email]));
+    }
+
+    public function dispatchSend(DispatchNewsletterRequest $request, Newsletter $newsletter, DispatchNewsletterAction $action)
+    {
+        // Autorisatie + zero-subscribers-guard via DispatchNewsletterRequest.
+        // Status-guard via NewsletterPolicy::dispatch() (vereist isEditable() = draft).
+        $count = $action->execute($newsletter);
+
+        return redirect()
+            ->route('admin.newsletters.index')
+            ->with('success', __(
+                'Nieuwsbrief wordt verzonden naar :count :unit.',
+                [
+                    'count' => $count,
+                    'unit' => trans_choice('{1} abonnee|[2,*] abonnees', $count),
+                ]
+            ));
     }
 }
