@@ -150,7 +150,28 @@
                 </form>
             </x-admin.form-section>
         @endif
-        
+
+        @if ($isEdit && $newsletter->isEditable() && auth()->user()->can('dispatch', $newsletter))
+            <x-admin.form-section title="Verzenden">
+                <p class="admin-field__hint mb-3">
+                    {{ __('Verzendt deze nieuwsbrief naar alle :count actieve abonnees. Onomkeerbaar zodra in de wachtrij.', [
+                        'count' => $activeSubscriberCount,
+                    ]) }}
+                </p>
+                <div class="d-grid">
+                    <button
+                        type="button"
+                        class="btn btn-danger"
+                        data-bs-toggle="modal"
+                        data-bs-target="#newsletterDispatchModal"
+                        @disabled($activeSubscriberCount === 0)
+                    >
+                        <i class="bi bi-send"></i>
+                        {{ __('Verzend nieuwsbrief') }}
+                    </button>
+                </div>
+            </x-admin.form-section>
+        @endif
     </x-slot:side>
 
     {{-- ===== ACTIE-KNOPPEN ===== --}}
@@ -164,3 +185,72 @@
         </button>
     </x-slot:actions>
 </x-admin.form-layout>
+
+@if ($isEdit && $newsletter->isEditable() && auth()->user()->can('dispatch', $newsletter))
+    @push('modals')
+        <div
+            class="modal fade"
+            id="newsletterDispatchModal"
+            tabindex="-1"
+            aria-labelledby="newsletterDispatchModalLabel"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title h5" id="newsletterDispatchModalLabel">
+                            {{ __('Nieuwsbrief verzenden?') }}
+                        </h2>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="{{ __('Sluiten') }}"
+                        ></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <dl class="row small mb-3">
+                            <dt class="col-4 text-muted">{{ __('Onderwerp') }}</dt>
+                            <dd class="col-8 fw-medium">{{ $newsletter->subject }}</dd>
+
+                            <dt class="col-4 text-muted">{{ __('Sjabloon') }}</dt>
+                            <dd class="col-8">{{ $templateLabels[$newsletter->template] ?? $newsletter->template }}</dd>
+
+                            <dt class="col-4 text-muted">{{ __('Ontvangers') }}</dt>
+                            <dd class="col-8">
+                                {{ trans_choice(
+                                    '{1} :count actieve abonnee|[2,*] :count actieve abonnees',
+                                    $activeSubscriberCount,
+                                    ['count' => $activeSubscriberCount]
+                                ) }}
+                            </dd>
+                        </dl>
+
+                        <div class="alert alert-warning small mb-0" role="alert">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            {{ __('Verzending start direct na bevestiging en is niet meer in te trekken. Test de nieuwsbrief eerst met de "Stuur testmail naar mezelf"-knop.') }}
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-link text-muted" data-bs-dismiss="modal">
+                            {{ __('Annuleren') }}
+                        </button>
+                        <form
+                            method="POST"
+                            action="{{ route('admin.newsletters.dispatch', $newsletter) }}"
+                            class="d-inline"
+                        >
+                            @csrf
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-send"></i>
+                                {{ __('Ja, verzend nu') }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endpush
+@endif
