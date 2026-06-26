@@ -75,10 +75,7 @@ class DispatchNewsletterAction
             Bus::batch($jobs)
                 ->name("newsletter:{$newsletter->id}")
                 ->finally(function (Batch $batch) use ($newsletter): void {
-                    $newsletter->update([
-                        'status' => Newsletter::STATUS_SENT,
-                        'sent_at' => now(),
-                    ]);
+                    app(FinaliseNewsletterDispatchAction::class)->execute($newsletter);
                 })
                 ->dispatch();
 
