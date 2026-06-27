@@ -94,7 +94,9 @@
                         @foreach ($newsletters as $newsletter)
                             <tr>
                                 <td>
-                                    <span class="text-decoration-none">{{ $newsletter->subject }}</span>
+                                    <a href="{{ route('admin.newsletters.show', $newsletter) }}" class="text-decoration-none">
+                                        {{ $newsletter->subject }}
+                                    </a>
                                 </td>
                                 <td>{{ $newsletter->author?->name ?? '—' }}</td>
                                 <td>

@@ -12,6 +12,7 @@ use App\Mail\NewsletterMail;
 use App\Models\Newsletter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Mews\Purifier\Facades\Purifier;
 
@@ -166,6 +167,68 @@ class NewsletterController extends Controller
         return redirect()
             ->route('admin.newsletters.edit', $newsletter)
             ->with('success', __('Testmail verzonden naar :email.', ['email' => $request->user()->email]));
+    }
+
+    public function show(Request $request, Newsletter $newsletter)
+    {
+        $this->authorize('view', $newsletter);
+
+        $newsletter->load('author');
+
+        // KPI-aggregaat â€” Ã©Ã©n query met conditionele sums (goedkoper dan 4x count())
+        $stats = DB::table('newsletter_sends')
+            ->where('newsletter_id', $newsletter->id)
+            ->selectRaw('
+                COUNT(*) as total,
+                COALESCE(SUM(CASE WHEN sent_at IS NOT NULL THEN 1 ELSE 0 END), 0) as delivered,
+                COALESCE(SUM(CASE WHEN failed_at IS NOT NULL THEN 1 ELSE 0 END), 0) as failed,
+                COALESCE(SUM(CASE WHEN sent_at IS NULL AND failed_at IS NULL THEN 1 ELSE 0 END), 0) as pending
+            ')
+            ->first();
+
+        // Cast naar int (SUM levert string/null op MySQL bij lege resultset)
+        $stats = (object) [
+            'total' => (int) $stats->total,
+            'delivered' => (int) $stats->delivered,
+            'failed' => (int) $stats->failed,
+            'pending' => (int) $stats->pending,
+        ];
+
+        // Send-lijst â€” server-side filter + sort + paginatie
+        $statusFilter = $request->string('status', 'all')->value();
+        if (! in_array($statusFilter, ['all', 'delivered', 'failed', 'pending'], true)) {
+            $statusFilter = 'all';
+        }
+
+        $query = $newsletter->sends()->with('subscriber');
+
+        if ($statusFilter === 'delivered') {
+            $query->whereNotNull('sent_at');
+        } elseif ($statusFilter === 'failed') {
+            $query->whereNotNull('failed_at');
+        } elseif ($statusFilter === 'pending') {
+            $query->whereNull('sent_at')->whereNull('failed_at');
+        }
+
+        $sort = $request->string('sort', 'created_at')->value();
+        if (! in_array($sort, ['sent_at', 'failed_at', 'created_at'], true)) {
+            $sort = 'created_at';
+        }
+        $direction = $request->string('direction', 'desc')->value() === 'asc' ? 'asc' : 'desc';
+
+        $sends = $query->orderBy($sort, $direction)
+            ->orderBy('id', 'desc')
+            ->paginate(25)
+            ->withQueryString();
+
+        return view('admin.newsletters.show', compact(
+            'newsletter',
+            'stats',
+            'sends',
+            'statusFilter',
+            'sort',
+            'direction'
+        ));
     }
 
     public function dispatchSend(DispatchNewsletterRequest $request, Newsletter $newsletter, DispatchNewsletterAction $action)
