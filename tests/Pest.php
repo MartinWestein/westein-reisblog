@@ -20,6 +20,20 @@ pest()->extend(TestCase::class)
 
 /*
 |--------------------------------------------------------------------------
+| Test environment overrides
+|--------------------------------------------------------------------------
+|
+| Spatie's image-optimizer roept ProcessBuilder-pipelines aan (jpegoptim,
+| pngquant) en houdt GD-imagery vast — dat stapelt memory cumulatief over
+| een hele suite met UploadedFile::fake()->image()-calls. In tests is dat
+| dood gewicht; uitschakelen scheelt zowel memory als runtime.
+|
+*/
+uses()->beforeEach(function () {
+    config(['media-library.image_optimizers' => []]);
+})->in('Feature');
+/*
+|--------------------------------------------------------------------------
 | Expectations
 |--------------------------------------------------------------------------
 |
