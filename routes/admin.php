@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DestinationController;
 use App\Http\Controllers\Admin\FamilyMemberController;
 use App\Http\Controllers\Admin\LocationController;
+use App\Http\Controllers\Admin\MediaBrowserController;
 use App\Http\Controllers\Admin\MediaController;
 use App\Http\Controllers\Admin\MediaPickerController;
 use App\Http\Controllers\Admin\NewsletterController;
@@ -33,6 +34,7 @@ Route::resource('bestemmingen', DestinationController::class)
     ->names('destinations');
 Route::post('media/upload', [MediaController::class, 'upload'])->name('media.upload');
 Route::patch('media/reorder', [MediaController::class, 'reorder'])->name('media.reorder');
+Route::get('media', [MediaBrowserController::class, 'index'])->name('media.index');
 Route::delete('media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
 Route::resource('bestemmingen.locaties', LocationController::class)
     ->parameters(['bestemmingen' => 'destination', 'locaties' => 'location'])

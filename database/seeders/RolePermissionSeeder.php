@@ -27,7 +27,7 @@ class RolePermissionSeeder extends Seeder
             'content.manage',
 
             // Media
-            'media.upload', 'media.delete',
+            'media.upload', 'media.delete', 'media.browse',
 
             // Routes (NIEUW)
             'routes.manage',
@@ -63,7 +63,7 @@ class RolePermissionSeeder extends Seeder
             'posts.publish',
             'comments.moderate', 'comments.delete',
             'content.manage',
-            'media.upload', 'media.delete',
+            'media.upload', 'media.delete', 'media.browse',
             'routes.manage',
             'newsletters.manage', 'subscribers.manage',
             'pages.manage',
