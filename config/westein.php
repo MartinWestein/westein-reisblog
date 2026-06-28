@@ -2,6 +2,9 @@
 
 use App\Models\Destination;
 use App\Models\Location;
+use App\Models\Newsletter;
+use App\Models\Post;
+use App\Models\Route;
 
 return [
 
@@ -32,6 +35,24 @@ return [
     'gallery_models' => [
         'destination' => Destination::class,
         'location' => Location::class,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Browsable media — toegestane eigenaarsmodellen
+    |--------------------------------------------------------------------------
+    | Mapt de owner_type-querystring-key in /admin/media (Stap 4.11) op de
+    | echte modelklasse. Bron-van-waarheid voor de owner_type-dropdown én
+    | de server-side validatie. Bewust losgekoppeld van 'gallery_models' —
+    | die laatste beheert upload-doelen, dit beheert browse-bron.
+    | NOOIT rauwe class-strings van de client vertrouwen.
+    */
+    'browsable_media_owners' => [
+        'destination' => Destination::class,
+        'location' => Location::class,
+        'post' => Post::class,
+        'route' => Route::class,
+        'newsletter' => Newsletter::class,
     ],
 
     // Slug van de algemene 'Tips'-categorie — heft de bestemming-verplichting op bij Posts (masterplan §3.4)
