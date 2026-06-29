@@ -12,6 +12,10 @@
     --admin-active: rgba(30, 144, 255, 0.12);
 }
 
+[x-cloak] {
+    display: none !important;
+}
+
 .admin-shell {
     display: flex;
     min-height: 100vh;
