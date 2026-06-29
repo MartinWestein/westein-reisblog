@@ -72,8 +72,9 @@
     @else
         <div class="row g-3">
             @foreach($media as $item)
-                <div class="col-6 col-md-3 col-xl-2">
-                    <div class="card h-100 media-card">
+                <div class="col-6 col-md-3 col-xl-2 media-card-wrapper">
+                    <div class="card h-100 media-card" style="position: relative">
+                        <x-admin.media-delete-overlay :media-id="$item->id" />
                         <div class="media-card__thumb ratio ratio-4x3 bg-light">
                             <img src="{{ $item->hasGeneratedConversion('thumb') ? $item->getUrl('thumb') : $item->getUrl() }}"
                                  alt="{{ $item->getCustomProperty('alt', $item->name) }}"
