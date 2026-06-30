@@ -35,6 +35,7 @@ Route::resource('bestemmingen', DestinationController::class)
 Route::post('media/upload', [MediaController::class, 'upload'])->name('media.upload');
 Route::patch('media/reorder', [MediaController::class, 'reorder'])->name('media.reorder');
 Route::get('media', [MediaBrowserController::class, 'index'])->name('media.index');
+Route::post('media/bulk-delete', [MediaBrowserController::class, 'bulkDelete'])->name('media.bulk-delete');
 Route::delete('media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
 Route::resource('bestemmingen.locaties', LocationController::class)
     ->parameters(['bestemmingen' => 'destination', 'locaties' => 'location'])

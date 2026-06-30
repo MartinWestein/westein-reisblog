@@ -269,3 +269,31 @@
     color: var(--admin-text-muted);
     font-size: 0.9375rem;
 }
+
+// Stap 4.11.c — media-bulk-selectie
+.media-card {
+    &--selected {
+        outline: 2px solid var(--bs-primary, #0d6efd);
+        outline-offset: -2px;
+    }
+}
+
+.media-action-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030; // boven Bootstrap navbar (1020), onder modal (1050+)
+    background: #fff;
+    border-top: 1px solid var(--bs-border-color, #dee2e6);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+    padding: 0.75rem 1.5rem;
+
+    &__inner {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+}
