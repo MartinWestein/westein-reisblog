@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 27 juni 2026 — Stap 4.10 compleet, suite 401 groen, klaar voor Stap 4.11
+**Laatst bijgewerkt:** 30 juni 2026 — Stap 4.11 (`/admin/media` browser) volledig afgerond, suite 422 groen, klaar voor push.
 **Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
 **Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → wordt na 4.14 vastgelegd in `fase-4-bouwplan.md`.
 
@@ -10,13 +10,27 @@ Briefing voor Claude bij elke sessie. Lees dit eerst.
 
 ## Status
 
-Fase 4 in uitvoering. **Stap 4.10 (Newsletter) volledig afgerond** — alle acht blokken (a t/m h) klaar, 88 Newsletter-specifieke tests toegevoegd over de hele Stap. Lokaal **17 commits ahead van `origin/main`** — staat op het punt gepusht te worden als laatste actie van blok h. Testsuite **401 groen, deterministisch**.
+Fase 4 in uitvoering. Stap 4.11 (`/admin/media` browser) volledig afgerond in vier sub-blokken (4.11.a.1 + 4.11.a.2 + 4.11.b + 4.11.c) plus twee chores onderweg (`chore(test-infra)` en `refactor(scss)` voor x-cloak-verhuizing). Lokaal **6 commits ahead van `origin/main`** — push staat gepland aan einde van deze sessie. Testsuite **422 groen, deterministisch**.
 
-## Volgende concrete actie — Stap 4.11
+## Volgende concrete actie — Stap 4.12: `/admin/prullenbak`
 
-Newsletter-module (4.10) is in z'n geheel functioneel én getest. Volgende: **Stap 4.11 — `/admin/media` browser**.
+Stap 4.11 afgerond (zie commits 5cb106d t/m 7e3baff). Volgende module = Stap 4.12 prullenbak, volgens roadmap.
 
-Wat ik bij die sessie als eerste doe: state-check (`git log --oneline -10` + `php artisan test` + bestaande media-routes/views inventariseren), daarna de scope uitwerken aan de hand van het masterplan (geen detailspec in `fase-4-bouwplan.md` nog — dat document wordt na 4.14 ingevuld). Verwacht: een paginated grid-view over alle Media Library-items met filter op collection-type (`gallery` / `hero` / `featured` / `inline_images` — avatars + portraits uitsluiten, conform F4-12). Pluk inspiratie uit de bestaande `<x-admin.image-picker-modal>` van 4.6 — die heeft een vergelijkbare browse-flow.
+Voorbereiding op te focussen vóór ontwerp-vragen:
+- Soft-delete-scope: F4-4 zegt soft-deletes op Posts, Destinations, Locations, Routes, Pages — vijf modules met eigen `restore`/`forceDelete`-flows.
+- Auto-purge 30d: cron-config is Fase-6-territory; v1 prullenbak toont alleen handmatige acties.
+- Filter-patroon: vermoedelijk model-type-dropdown (vergelijkbaar met owner_type uit 4.11) + datumrange.
+- Permission: `trash.manage` (Admin + Editor?). Te bevestigen in F4-T1 als eerste design-vraag.
+
+Beslissingen voor Stap 4.12 worden geprefixt `F4-T1, F4-T2, …` (T voor Trash).
+
+---
+
+### Twee loose ends uit Stap 4.11 die meegaan naar latere sessie
+
+1. **Legacy `media.upload` / `media.delete` permissions in `RolePermissionSeeder`.** Niet gebruikt door enige policy (F4-9 zegt expliciet "geen losse media-permission — eigenaar-policy via `$media->model`"). Onschadelijk maar onnetjes. Mini-cleanup-commit waardig, bijvoorbeeld tijdens Stap 4.13 (Users + rollen beheer) wanneer de seeder toch grondig geraakt wordt.
+
+2. **Sidebar-leakage project-breed.** `<x-admin.nav-link>` doet alleen `Route::has()`-existence-check, geen `@can`-permission-check. Auteur ziet links naar Familie, Pagina's, Media, Prullenbak, Gebruikers die naar 403 leiden. Geen 4.11-probleem — patroon zit door de hele sidebar. Fix: component extenden met optionele `:can`-prop, álle items in één pass retrofitten. Geschikt voor Stap 4.13.
 
 **Stap 4.10 vordering (definitief):**
 - [x] Blok a — datalaag + composer + model + factory + `template`-veld
@@ -175,6 +189,21 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 - F4-N17. Newsletter Show-pagina is status-dashboard-stijl: vier KPI-cards (Totaal / Bezorgd / Mislukt / In wachtrij) bovenaan, gepagineerde tabel van alle `newsletter_sends`-rijen daaronder met statusfilter + sort op `sent_at`/`failed_at`/`created_at`. KPI's via één `DB::table()`-query met conditionele `SUM(CASE WHEN...)` + `COALESCE` + `(int)`-cast.
 - F4-N18. Show-pagina werkt op alle drie statussen: bij `draft` info-alert "nog niet verzonden", bij `sending`/`sent` het KPI+tabel-overzicht. Geen redirect of 404 — admin kan elke status openen om context te zien.
 
+### Fase 4 — Media browser (Stap 4.11)
+- F4-M1. Scope = volledige v1: read-only browser + per-item delete + bulk-selectie + bulk-delete via confirm-modal. Geen upload-flow in v1 (blijft via eigenaar-modellen, conform masterplan-#7).
+- F4-M2. RBAC = aparte permission `media.browse`, toegekend aan Admin (via `Gate::before`) + Editor. Auteur en Lid hebben geen toegang. Per-item-eigenaar-policy bij delete blijft staan (F4-9), maar het policy-mix-scenario binnen bulk-delete is in productie-rollen-matrix niet realistisch (Editor heeft via `content.manage` + `posts.update.any` overal toegang) — getest met custom test-rol `media-browser-only`.
+- F4-M3. Filters: collectie + eigenaar-modeltype + bestandsnaam-zoek + sort (kolommen `created_at`/`name`/`size`, default `created_at` desc). Filter-state in querystring (F4-2). Owner-type-filter via nieuwe config-key `browsable_media_owners` (5 modellen: destination, location, post, route, newsletter) — bewust losgekoppeld van `gallery_models` (upload-doelen vs browse-bron). Geen eigenaar-instance-filter in v1 — natuurlijker thuis op eigenaar-edit-pagina via deeplink in latere ronde.
+- F4-M4. Layout = grid van thumbs (6/4/2/1 kolommen responsive), niet tabel. Thumb-image is primair visueel signaal bij media-beheer; sortable headers boven het grid behouden tabel-functionaliteit zonder visuele opoffering. Geen view-toggle.
+- F4-M5. Per-item delete = inline-confirm-toggle in een grid-specifieke overlay-component (`<x-admin.media-delete-overlay>`), niet via `<x-admin.delete-button>` (form-gebaseerd, past niet bij AJAX-flow in grid-context). Modals blijven voorbehouden aan zwaargewicht-mutaties (bulk + newsletter-dispatch) — signaalwerking van risico-schaal.
+- F4-M6. Bulk-selectie = pagina-scoped (1a). "Selecteer alle zichtbare"-control boven het grid; geen "selecteer alle X resultaten op filter"-feature. `POST admin/media/bulk-delete` met `ids[]`-payload (max 100), `DB::transaction` met harde rollback bij élke policy-fail (geen best-effort-delete UX).
+- F4-M7. Implementatie-opdeling = drie sub-blokken (4.11.a foundation + browser, 4.11.b per-item delete, 4.11.c bulk-flow), conform Stap 4.10's commit-discipline.
+- F4-M8. Action-bar locatie = sticky-bottom (Gmail-stijl). Scrollvolgend, dichtbij waar selectie plaatsvindt op grid-onderkant, geen overlap met top-content. `z-index: 1030` (boven navbar, onder modal).
+- F4-M9. Action-bar inhoud = minimaal: counter + Selectie wissen + Verwijderen. Geen "X van M geselecteerd"-formulering (cognitive load), geen disabled-placeholders voor v2-features.
+
+**Gedeelde infrastructuur uit 4.11:**
+- `App\Services\Media\MediaQueryBuilder` — centrale query-laag voor browse-scope, gedeeld door `MediaPickerController` (4.6) en `MediaBrowserController` (4.11). Public consts `ALLOWED_COLLECTIONS` en `ALLOWED_SORT_COLUMNS`. Statische `contextLabel(Media $m)`-helper met cases voor alle vijf eigenaar-modellen (Route + Newsletter waren ontbrekend in de 4.6-versie, meegelift in de extractie).
+- `Admin\MediaBrowserController` — naast bestaande `MediaController` (4.4 gallery-AJAX) en `MediaPickerController` (4.6 picker-JSON). Drie controllers, drie verantwoordelijkheden.
+- `Alpine.store('mediaSelection', ...)` — eerste store i.p.v. data-factory in het project. Reden: `@push('modals')`-blok rendert op `</body>`-niveau, buiten elke component-scope; store is cross-scope bereikbaar via `$store`.
 ---
 
 ## Herbruikbare admin-componenten
@@ -198,6 +227,8 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - **`App\Rules\NotReservedSlug`** — validatieregel voor top-level routes (Pages, etc.).
 - **`tagPills`** Alpine-factory — multi-value input via hidden komma-string + autocomplete + keyboard-handling.
 - **`routeWaypoints`** Alpine-factory — SortableJS + JSON-serialisatie. DOM-revert in `onEnd` → Alpine-array-mutation pattern.
+- **`<x-admin.media-delete-overlay>`** (Stap 4.11.b) — grid-specifieke per-item delete met inline confirm-toggle (vuilnisbak → check/cross). Alpine `x-data` met AJAX-fetch naar `DELETE admin/media/{media}`, DOM-remove op success. Geen form-tag (anders dan `<x-admin.delete-button>`); past in grid-overlay-context met `position: absolute`. Props: `:media-id`.
+- **`Alpine.store('mediaSelection', ...)`** (Stap 4.11.c) — eerste Alpine-store in project (i.p.v. data-factory). Beheert bulk-selectie-state pagina-scoped: `selected: Set`, `toggle(id)`, `selectAllVisible()`, `clear()`, `count()`, `hasSelection()`, `allVisibleSelected()`, `destroy()`. Cross-scope bereikbaar via `$store.mediaSelection.*` — vereist wanneer state gedeeld moet worden tussen view-body en `@push('modals')`-content.
 
 ---
 
@@ -211,6 +242,8 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - **Custom attribute via `Extension.extend({ addAttributes() })`** met `parseHTML` uit class-attribuut, `renderHTML` terug naar class. Geen inline `style` — Purifier-allowlist blijft strikt op `[class]` + `Attr.AllowedClasses`.
 - **Alpine factory: gedestructureerde argumenten staan NIET automatisch op `this`.** Elk genoemd argument moet ook in de `return { ... }`. Symptoom: `this.locations` is `undefined`, getter-methods stil-falen.
 - **Alpine roept `init()` automatisch aan.** Een component met zowel `x-data="factory()"` ALS `x-init="init()"` triggert dubbele initialisatie. Defensief: `if (this.editor) return;` als eerste regel in `init()`.
+- **Alpine `x-show` + Bootstrap display-utility (`d-flex`, `d-block`, etc.) op hetzelfde element = onzichtbaar conflict.** Bootstrap's `display: X !important` overschrijft Alpine's inline `style.display = 'none'`. Element blijft zichtbaar ondanks correcte `x-show`-evaluatie. Fix: wrap in een extra `<div>` met de `x-show`-directive; zet de Bootstrap utility op het kind. Geldt niet voor `visibility`/`opacity`-utilities (geen `display`-property). Geconstateerd op `media-delete-overlay`'s check+cross-knoppen in 4.11.b.
+- **`[x-cloak] { display: none !important; }` moet globaal staan, niet form-scoped.** Tot 4.11.b was deze CSS-regel scoped onder `_forms.scss` (matched alleen `[x-cloak]` binnen `<form>`-context). Componenten buiten een form — sidebar-dropdown, image-picker, gallery-upload, en straks media-overlays — matchten niet, met flash-of-unconfirmed-content tot Alpine de initial state had toegepast. Verplaatst naar `_layout.scss` in eigen commit (0ab2d2d). Hint voor toekomstige SCSS-edits: globale Alpine-helpers (`[x-cloak]`, `[x-transition]`-resets, etc.) horen in `_layout.scss`, niet in domein-specifieke partials.
 
 ### Tests (Pest + Laravel)
 - **`assertRedirect(route('login'))` faalt voor `getJson()`/`postJson()`-requests.** Laravel honoreert de `Accept: application/json`-header en stuurt 401 JSON, geen 302 redirect. Gebruik `->assertUnauthorized()`.
@@ -252,6 +285,8 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - **Check component-prop-namen door de component-bron op te zoeken**, niet door te gokken uit CLAUDE.md-vermeldingen. `<x-admin.sort-link>` = `sort`-prop (niet `column`); `<x-admin.delete-button>` heeft géén `:confirm`-prop. Reflex: `Get-Content -LiteralPath resources\views\components\admin\{naam}.blade.php` zodra je 'n component gebruikt waarvan je de signature niet recent hebt gezien.
 - **Geneste apostrofs/quotes mixen in Blade-attributen.** `:title="__('Pagina\'s')"` triggert ParseError. Drop de `:`-prefix voor hardcoded NL: `title="Pagina's"`. Binnen `{{ ... }}` werkt escape wél (geen attribuut-context).
 - **Geneste resource-routes met `scoped(['child' => 'slug'])`** valideren parent↔child-relatie automatisch (404 bij cross-parent). Test expliciet met `assertNotFound()`.
+- **`@push('modals')`-blokken vereisen een `x-data`-marker op de modal-root.** Modals die via `@push('modals')` op `</body>`-niveau renderen vallen buiten elke component-scope. Alpine processed de subtree niet automatisch — `@click`-attributen en andere directives binden niet (`_x_attributeCleanups: false`). Fix: voeg `x-data` (leeg) toe aan de modal-root-`<div>`. `$store`-toegang van binnenin werkt dan ongewijzigd. Symptoom dat dit uitwijst: knop reageert nergens op, geen JS-error, attribuut zit gewoon in DOM. Geldt voor élke pushed-modal die Alpine-directives gebruikt (geconstateerd op `mediaBulkDeleteModal` in 4.11.c — newsletter-dispatch-modal had het toevallig al door andere modal-content).
+- **`<x-admin.nav-link>` doet géén `@can`-check.** Alleen `Route::has()`. Sidebar toont items waarvoor rollen geen toegang hebben → klik → 403. Geen 4.11-probleem (patroon project-breed), wel relevant bij Stap 4.13 (Users + rollen beheer) wanneer de component geretrofit moet worden met een optionele `:can`-prop.
 
 ### Leaflet (Vite)
 - **Marker-iconen** vereisen `delete L.Icon.Default.prototype._getIconUrl` + `L.Icon.Default.mergeOptions({...})` met PNG's via Vite-imports.
@@ -292,7 +327,7 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 | **4.8**   | Routes + Waypoints CRUD (SortableJS, Leaflet, SVG-thumbnail)                        | 26    | ✅     |
 | **4.9**   | Subscribers + import/export (CSV, double-opt-in, error-CSV)                         | 37    | ✅     |
 | **4.10**  | Newsletter compose & dispatch (a-h, alle blokken ✅)                                | 88    | ✅     |
-| **4.11**  | `/admin/media` browser                                                              |       | ⏳     |
+| **4.11**  | `/admin/media` browser                                                              |       | ✅     |
 | **4.12**  | `/admin/prullenbak` + auto-purge 30d                                                |       | ⏳     |
 | **4.13**  | Users + rollen beheer + bulk-acties                                                 |       | ⏳     |
 | **4.14**  | Eindcheck (Pint, Pest, fase-4-bouwplan.md, commit + push)                           |       | ⏳     |
