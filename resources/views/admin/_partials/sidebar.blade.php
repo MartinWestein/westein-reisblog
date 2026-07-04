@@ -31,7 +31,9 @@
             <x-admin.nav-link route="admin.categories.index" icon="bi-tag" label="Categorieën" />
             <x-admin.nav-link route="admin.tags.index" icon="bi-tags" label="Tags" />
             <x-admin.nav-link route="admin.media.index" icon="bi-images" label="Media" />
-            <x-admin.nav-link route="admin.trash.index" icon="bi-trash" label="Prullenbak" />
+            @can('trash.manage')
+                <x-admin.nav-link route="admin.trash.index" icon="bi-trash" label="Prullenbak" />
+            @endcan
             <x-admin.nav-link route="admin.users.index" icon="bi-person-gear" label="Gebruikers" />
         </div>
     </nav>

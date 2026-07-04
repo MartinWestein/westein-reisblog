@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\PostInlineImageController;
 use App\Http\Controllers\Admin\RouteController;
 use App\Http\Controllers\Admin\SubscriberController;
 use App\Http\Controllers\Admin\TagController;
+use App\Http\Controllers\Admin\TrashController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', DashboardController::class)->name('home');
@@ -83,3 +84,8 @@ Route::post('nieuwsbrieven/{newsletter}/verzenden', [NewsletterController::class
 Route::resource('nieuwsbrieven', NewsletterController::class)
     ->parameters(['nieuwsbrieven' => 'newsletter'])
     ->names('newsletters');
+
+// Prullenbak (stap 4.12)
+Route::get('prullenbak', [TrashController::class, 'index'])
+    ->middleware('can:trash.manage')
+    ->name('trash.index');
