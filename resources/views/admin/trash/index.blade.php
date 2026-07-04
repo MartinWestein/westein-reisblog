@@ -56,6 +56,7 @@
                             <th>{{ __('Titel') }}</th>
                             <th style="width: 130px;">{{ __('Type') }}</th>
                             <th style="width: 200px;">{{ __('Verwijderd') }}</th>
+                            <th class="text-end" style="width: 100px;">{{ __('Acties') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -74,6 +75,23 @@
                                 </td>
                                 <td class="text-muted small">
                                     {{ $item->deleted_at->diffForHumans() }}
+                                </td>
+                                <td class="text-end">
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.trash.restore', ['type' => $item->type, 'id' => $item->id]) }}"
+                                        class="d-inline"
+                                    >
+                                        @csrf
+                                        <button
+                                            type="submit"
+                                            class="btn btn-sm btn-outline-success"
+                                            title="{{ __('Herstellen') }}"
+                                        >
+                                            <i class="bi bi-arrow-counterclockwise"></i>
+                                        </button>
+                                    </form>
+                                    {{-- Definitief verwijderen: 4.12.b.2 --}}
                                 </td>
                             </tr>
                         @endforeach

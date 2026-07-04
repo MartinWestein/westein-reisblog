@@ -89,3 +89,7 @@ Route::resource('nieuwsbrieven', NewsletterController::class)
 Route::get('prullenbak', [TrashController::class, 'index'])
     ->middleware('can:trash.manage')
     ->name('trash.index');
+    Route::post('prullenbak/{type}/{id}/herstel', [TrashController::class, 'restore'])
+    ->middleware('can:trash.manage')
+    ->where(['type' => 'post|destination|location|route|page', 'id' => '[0-9]+'])
+    ->name('trash.restore');

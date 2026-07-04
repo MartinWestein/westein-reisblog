@@ -146,3 +146,166 @@ test('toont empty state met type-hint als type-filter geen resultaten heeft', fu
         ->assertOk()
         ->assertSee('Geen verwijderde items van dit type.');
 });
+
+test('restore herstelt een post zonder soft-deleted parents', function () {
+    $destination = \App\Models\Destination::factory()->create();
+    $post = \App\Models\Post::factory()->for($destination)->create();
+    $post->delete();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.trash.restore', ['type' => 'post', 'id' => $post->id]))
+        ->assertRedirect(route('admin.trash.index'));
+
+    expect($post->fresh()->trashed())->toBeFalse();
+});
+
+test('restore van post cascadeert omhoog naar soft-deleted destination', function () {
+    $destination = \App\Models\Destination::factory()->create();
+    $post = \App\Models\Post::factory()->for($destination)->create();
+    $post->delete();
+    $destination->delete();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.trash.restore', ['type' => 'post', 'id' => $post->id]))
+        ->assertRedirect(route('admin.trash.index'))
+        ->assertSessionHas('success');
+
+    expect($post->fresh()->trashed())->toBeFalse();
+    expect($destination->fresh()->trashed())->toBeFalse();
+});
+
+test('restore van post cascadeert door location naar destination', function () {
+    $destination = \App\Models\Destination::factory()->create();
+    $location = \App\Models\Location::factory()->for($destination)->create();
+    $post = \App\Models\Post::factory()
+        ->for($destination)
+        ->for($location)
+        ->create();
+
+    $post->delete();
+    $location->delete();
+    $destination->delete();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.trash.restore', ['type' => 'post', 'id' => $post->id]))
+        ->assertRedirect(route('admin.trash.index'));
+
+    expect($post->fresh()->trashed())->toBeFalse();
+    expect($location->fresh()->trashed())->toBeFalse();
+    expect($destination->fresh()->trashed())->toBeFalse();
+});
+
+test('restore van location cascadeert naar soft-deleted destination', function () {
+    $destination = \App\Models\Destination::factory()->create();
+    $location = \App\Models\Location::factory()->for($destination)->create();
+    $location->delete();
+    $destination->delete();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.trash.restore', ['type' => 'location', 'id' => $location->id]))
+        ->assertRedirect(route('admin.trash.index'));
+
+    expect($location->fresh()->trashed())->toBeFalse();
+    expect($destination->fresh()->trashed())->toBeFalse();
+});
+
+test('restore van location laat levende destination met rust', function () {
+    $destination = \App\Models\Destination::factory()->create();
+    $location = \App\Models\Location::factory()->for($destination)->create();
+    $location->delete();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.trash.restore', ['type' => 'location', 'id' => $location->id]))
+        ->assertRedirect(route('admin.trash.index'));
+
+    expect($location->fresh()->trashed())->toBeFalse();
+    expect($destination->fresh()->trashed())->toBeFalse();
+});
+
+test('restore werkt voor destination, route en page', function (string $type, string $factory) {
+    $model = $factory::factory()->create();
+    $model->delete();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.trash.restore', ['type' => $type, 'id' => $model->id]))
+        ->assertRedirect(route('admin.trash.index'));
+
+    expect($model->fresh()->trashed())->toBeFalse();
+})->with([
+    ['destination', \App\Models\Destination::class],
+    ['route', \App\Models\Route::class],
+    ['page', \App\Models\Page::class],
+]);
+
+test('restore van niet-trashed item returnt 404', function () {
+    $post = \App\Models\Post::factory()->create();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.trash.restore', ['type' => 'post', 'id' => $post->id]))
+        ->assertNotFound();
+});
+
+test('restore van niet-bestaand id returnt 404', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.trash.restore', ['type' => 'post', 'id' => 99999]))
+        ->assertNotFound();
+});
+
+test('bad type in restore-URL botst tegen route-constraint 404', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.trash.restore', ['type' => 'hackattempt', 'id' => 1]))
+        ->assertNotFound();
+});
+
+test('auteur krijgt 403 op restore-endpoint', function () {
+    $post = \App\Models\Post::factory()->create();
+    $post->delete();
+
+    $user = User::factory()->create();
+    $user->assignRole('auteur');
+
+    $this->actingAs($user)
+        ->post(route('admin.trash.restore', ['type' => 'post', 'id' => $post->id]))
+        ->assertForbidden();
+
+    expect($post->fresh()->trashed())->toBeTrue();
+});
+
+test('lid krijgt 403 op restore-endpoint', function () {
+    $post = \App\Models\Post::factory()->create();
+    $post->delete();
+
+    $user = User::factory()->create();
+    $user->assignRole('lid');
+
+    $this->actingAs($user)
+        ->post(route('admin.trash.restore', ['type' => 'post', 'id' => $post->id]))
+        ->assertForbidden();
+});

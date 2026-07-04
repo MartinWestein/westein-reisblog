@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\Trash\TrashBrowser;
+use App\Actions\Trash\RestoreTrashItemAction;
 use Illuminate\Http\Request;
 
 class TrashController extends Controller
@@ -25,4 +26,18 @@ class TrashController extends Controller
             'types' => TrashBrowser::TYPES,
         ]);
     }
+
+    public function restore(string $type, int $id, RestoreTrashItemAction $action)
+        {
+            try {
+                $result = $action->execute($type, $id);
+            } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+                abort(404);
+            }
+
+            session()->flash('success', $result->flashMessage());
+
+            return redirect()->route('admin.trash.index');
+        }
+
 }
