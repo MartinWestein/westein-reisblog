@@ -13,34 +13,32 @@ class RolePermissionSeeder extends Seeder
     {
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
+        // Legacy permissies opruimen: media.upload/media.delete werden nooit door een policy
+        // gebruikt (F4-9: eigenaar-policy via $media->model). Idempotent voor bestaande DBs.
+        Permission::whereIn('name', ['media.upload', 'media.delete'])->delete();
+
         $permissions = [
             // Posts
             'posts.viewAny', 'posts.view', 'posts.create',
             'posts.update.own', 'posts.update.any',
             'posts.delete.own', 'posts.delete.any',
             'posts.publish',
-
             // Comments
             'comments.moderate', 'comments.delete',
-
             // Content (destinations, locations, categories, tags)
             'content.manage',
-
             // Media
-            'media.upload', 'media.delete', 'media.browse',
-
-            // Routes (NIEUW)
+            'media.browse',
+            // Routes
             'routes.manage',
-
             // Newsletter
             'newsletters.manage', 'subscribers.manage',
-
-            // Pages (NIEUW)
+            // Pages
             'pages.manage',
-
-            // Family members (NIEUW)
+            // Family members
             'family.manage',
-
+            // Prullenbak (Stap 4.12)
+            'trash.manage',
             // Users & roles
             'users.manage', 'roles.manage',
         ];
@@ -63,17 +61,17 @@ class RolePermissionSeeder extends Seeder
             'posts.publish',
             'comments.moderate', 'comments.delete',
             'content.manage',
-            'media.upload', 'media.delete', 'media.browse',
+            'media.browse',
             'routes.manage',
             'newsletters.manage', 'subscribers.manage',
             'pages.manage',
             'family.manage',
+            'trash.manage',
         ]);
 
         $author->syncPermissions([
             'posts.viewAny', 'posts.view', 'posts.create',
             'posts.update.own', 'posts.delete.own',
-            'media.upload',
             'routes.manage',
         ]);
 
