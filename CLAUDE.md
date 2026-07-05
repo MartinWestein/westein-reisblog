@@ -29,7 +29,8 @@ Beslissingen voor Stap 4.13 worden geprefixt `F4-U1, F4-U2, …` (U voor Users).
 
 1. **Sidebar `<x-admin.nav-link>` doet géén `@can`-check.** Alleen `Route::has()`. Auteur ziet links naar Familie, Pagina's, Media, Gebruikers die naar 403 leiden. Fix: component extenden met optionele `:can`-prop, álle items in één pass retrofitten. Prullenbak-link kreeg in 4.12 al ad-hoc `@can('trash.manage')`-wrap — vergelijkbaar patroon voor de rest.
 
-2. **Dode `admin.locaties.index`-sidebar-link.** Route bestaat niet meer sinds 4.4 (Locations zijn genest onder Destinations, alleen `admin.destinations.locations.index` bestaat). `<x-admin.nav-link>`'s bestaande `Route::has()`-check zorgt dat de link stil disabled is, maar visueel wel aanwezig. Bij de `@can`-retrofit meteen dropen.
+2. **Dode `admin.locaties.index`-sidebar-link.** Route bestaat niet meer sinds 4.4 (Locations zijn genest onder Destinations; alleen `admin.destinations.locations.index` bestaat, en die vereist een `{destination}`-parameter dus is nooit een geldige top-level nav-link). `<x-admin.nav-link>`'s `Route::has()`-check zorgt dat de link stil disabled is, maar visueel wel aanwezig. Bij de `@can`-retrofit **regel dropen** — niet omdopen naar `admin.locations.index` want die bestaat óók niet.
+
 ---
 
 ### Twee loose ends uit Stap 4.11 die meegaan naar latere sessie
