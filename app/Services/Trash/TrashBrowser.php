@@ -72,6 +72,7 @@ class TrashBrowser
                 'title' => $p->title,
                 'context' => $p->author?->name ? "door {$p->author->name}" : null,
                 'deleted_at' => $p->deleted_at,
+                'blocked_reason' => null,
             ]);
     }
 
@@ -80,16 +81,28 @@ class TrashBrowser
         return Destination::onlyTrashed()
             ->withCount(['locations' => fn ($q) => $q->withTrashed()])
             ->get()
-            ->map(fn (Destination $d) => (object) [
-                'id' => $d->id,
-                'type' => 'destination',
-                'type_label' => 'Bestemming',
-                'title' => $d->name,
-                'context' => $d->locations_count > 0
-                    ? "{$d->locations_count} " . ($d->locations_count === 1 ? 'locatie' : 'locaties')
-                    : null,
-                'deleted_at' => $d->deleted_at,
-            ]);
+            ->map(function (Destination $d) {
+                $count = (int) $d->locations_count;
+                $blocked = $count > 0
+                    ? sprintf(
+                        '%d %s hangt hieronder — verwijder of herstel die eerst.',
+                        $count,
+                        $count === 1 ? 'locatie' : 'locaties'
+                    )
+                    : null;
+
+                return (object) [
+                    'id' => $d->id,
+                    'type' => 'destination',
+                    'type_label' => 'Bestemming',
+                    'title' => $d->name,
+                    'context' => $count > 0
+                        ? sprintf('%d %s', $count, $count === 1 ? 'locatie' : 'locaties')
+                        : null,
+                    'deleted_at' => $d->deleted_at,
+                    'blocked_reason' => $blocked,
+                ];
+            });
     }
 
     private function fetchLocations(): Collection
@@ -104,6 +117,7 @@ class TrashBrowser
                 'title' => $l->name,
                 'context' => $l->destination?->name,
                 'deleted_at' => $l->deleted_at,
+                'blocked_reason' => null,
             ]);
     }
 
@@ -118,6 +132,7 @@ class TrashBrowser
                 'title' => $r->name,
                 'context' => null,
                 'deleted_at' => $r->deleted_at,
+                'blocked_reason' => null,
             ]);
     }
 
@@ -132,6 +147,7 @@ class TrashBrowser
                 'title' => $p->title,
                 'context' => null,
                 'deleted_at' => $p->deleted_at,
+                'blocked_reason' => null,
             ]);
     }
 }

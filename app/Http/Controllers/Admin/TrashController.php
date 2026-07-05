@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Services\Trash\TrashBrowser;
 use App\Actions\Trash\RestoreTrashItemAction;
+use App\Actions\Trash\ForceDeleteTrashItemAction;
+use RuntimeException;
 use Illuminate\Http\Request;
 
 class TrashController extends Controller
@@ -28,16 +30,33 @@ class TrashController extends Controller
     }
 
     public function restore(string $type, int $id, RestoreTrashItemAction $action)
-        {
-            try {
-                $result = $action->execute($type, $id);
-            } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
-                abort(404);
-            }
+    {
+        try {
+            $result = $action->execute($type, $id);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+            abort(404);
+        }
 
-            session()->flash('success', $result->flashMessage());
+        session()->flash('success', $result->flashMessage());
+
+        return redirect()->route('admin.trash.index');
+    }
+
+    public function forceDelete(string $type, int $id, ForceDeleteTrashItemAction $action)
+    {
+        try {
+            $action->execute($type, $id);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+            abort(404);
+        } catch (RuntimeException $e) {
+            session()->flash('error', $e->getMessage());
 
             return redirect()->route('admin.trash.index');
         }
+
+        session()->flash('success', __('Item definitief verwijderd.'));
+
+        return redirect()->route('admin.trash.index');
+    }
 
 }

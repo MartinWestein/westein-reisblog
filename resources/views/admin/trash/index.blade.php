@@ -91,7 +91,13 @@
                                             <i class="bi bi-arrow-counterclockwise"></i>
                                         </button>
                                     </form>
-                                    {{-- Definitief verwijderen: 4.12.b.2 --}}
+
+                                    <x-admin.delete-button
+                                        :action="route('admin.trash.force-delete', ['type' => $item->type, 'id' => $item->id])"
+                                        label="Definitief verwijderen"
+                                        :disabled="(bool) $item->blocked_reason"
+                                        :disabled-reason="$item->blocked_reason"
+                                    />
                                 </td>
                             </tr>
                         @endforeach

@@ -309,3 +309,138 @@ test('lid krijgt 403 op restore-endpoint', function () {
         ->post(route('admin.trash.restore', ['type' => 'post', 'id' => $post->id]))
         ->assertForbidden();
 });
+
+test('force-delete verwijdert een post definitief', function () {
+    $post = \App\Models\Post::factory()->create();
+    $post->delete();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->delete(route('admin.trash.force-delete', ['type' => 'post', 'id' => $post->id]))
+        ->assertRedirect(route('admin.trash.index'))
+        ->assertSessionHas('success');
+
+    expect(\App\Models\Post::withTrashed()->find($post->id))->toBeNull();
+});
+
+test('force-delete werkt voor location, route en page zonder blokkade', function (string $type, string $factory) {
+    $model = $factory::factory()->create();
+    $model->delete();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->delete(route('admin.trash.force-delete', ['type' => $type, 'id' => $model->id]))
+        ->assertRedirect(route('admin.trash.index'));
+
+    expect($factory::withTrashed()->find($model->id))->toBeNull();
+})->with([
+    ['location', \App\Models\Location::class],
+    ['route', \App\Models\Route::class],
+    ['page', \App\Models\Page::class],
+]);
+
+test('force-delete van destination met levende location wordt geblokkeerd', function () {
+    $destination = \App\Models\Destination::factory()->create();
+    \App\Models\Location::factory()->for($destination)->create();
+    $destination->delete();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->delete(route('admin.trash.force-delete', ['type' => 'destination', 'id' => $destination->id]))
+        ->assertRedirect(route('admin.trash.index'))
+        ->assertSessionHas('error');
+
+    expect(\App\Models\Destination::withTrashed()->find($destination->id))->not->toBeNull();
+});
+
+test('force-delete van destination met soft-deleted location wordt geblokkeerd', function () {
+    $destination = \App\Models\Destination::factory()->create();
+    $location = \App\Models\Location::factory()->for($destination)->create();
+    $location->delete();
+    $destination->delete();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->delete(route('admin.trash.force-delete', ['type' => 'destination', 'id' => $destination->id]))
+        ->assertRedirect(route('admin.trash.index'))
+        ->assertSessionHas('error');
+
+    expect(\App\Models\Destination::withTrashed()->find($destination->id))->not->toBeNull();
+});
+
+test('force-delete van kinderloze destination gaat door', function () {
+    $destination = \App\Models\Destination::factory()->create();
+    $destination->delete();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->delete(route('admin.trash.force-delete', ['type' => 'destination', 'id' => $destination->id]))
+        ->assertRedirect(route('admin.trash.index'))
+        ->assertSessionHas('success');
+
+    expect(\App\Models\Destination::withTrashed()->find($destination->id))->toBeNull();
+});
+
+test('force-delete van niet-trashed item returnt 404', function () {
+    $post = \App\Models\Post::factory()->create();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->delete(route('admin.trash.force-delete', ['type' => 'post', 'id' => $post->id]))
+        ->assertNotFound();
+
+    expect(\App\Models\Post::find($post->id))->not->toBeNull();
+});
+
+test('auteur krijgt 403 op force-delete-endpoint', function () {
+    $post = \App\Models\Post::factory()->create();
+    $post->delete();
+
+    $user = User::factory()->create();
+    $user->assignRole('auteur');
+
+    $this->actingAs($user)
+        ->delete(route('admin.trash.force-delete', ['type' => 'post', 'id' => $post->id]))
+        ->assertForbidden();
+
+    expect(\App\Models\Post::withTrashed()->find($post->id))->not->toBeNull();
+});
+
+test('lid krijgt 403 op force-delete-endpoint', function () {
+    $post = \App\Models\Post::factory()->create();
+    $post->delete();
+
+    $user = User::factory()->create();
+    $user->assignRole('lid');
+
+    $this->actingAs($user)
+        ->delete(route('admin.trash.force-delete', ['type' => 'post', 'id' => $post->id]))
+        ->assertForbidden();
+});
+
+test('geblokkeerde destination in tabel toont disabled delete-knop', function () {
+    $destination = \App\Models\Destination::factory()->create();
+    \App\Models\Location::factory()->for($destination)->create();
+    $destination->delete();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->get(route('admin.trash.index'))
+        ->assertOk()
+        ->assertSee('hangt hieronder')
+        ->assertSee('disabled', false);
+});
