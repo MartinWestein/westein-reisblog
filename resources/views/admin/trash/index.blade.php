@@ -48,11 +48,28 @@
             </p>
         </div>
     @else
+        {{-- Reset de store bij elke page-load (analoog aan mediaSelection) --}}
+        <div x-init="$store.trashSelection.reset()" class="d-none"></div>
+
+        {{-- "Selecteer alle zichtbare"-control --}}
+        <div class="mb-2">
+            <label class="d-inline-flex align-items-center gap-2 small text-muted">
+                <input
+                    type="checkbox"
+                    class="form-check-input m-0"
+                    :checked="$store.trashSelection.allVisibleSelected()"
+                    @change="$event.target.checked ? $store.trashSelection.selectAllVisible() : $store.trashSelection.clear()"
+                >
+                <span>{{ __('Selecteer alle zichtbare') }} ({{ $items->count() }})</span>
+            </label>
+        </div>
+
         <div class="card">
             <div class="table-responsive">
                 <table class="table table-hover mb-0 align-middle">
                     <thead class="table-light">
                         <tr>
+                            <th style="width: 40px;"></th>
                             <th>{{ __('Titel') }}</th>
                             <th style="width: 130px;">{{ __('Type') }}</th>
                             <th style="width: 200px;">{{ __('Verwijderd') }}</th>
@@ -61,7 +78,15 @@
                     </thead>
                     <tbody>
                         @foreach ($items as $item)
-                            <tr>
+                            <tr data-trash-key="{{ $item->type }}:{{ $item->id }}">
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        class="form-check-input"
+                                        :checked="$store.trashSelection.isSelected('{{ $item->type }}', {{ $item->id }})"
+                                        @change="$store.trashSelection.toggle('{{ $item->type }}', {{ $item->id }})"
+                                    >
+                                </td>
                                 <td>
                                     <div class="fw-medium">{{ $item->title }}</div>
                                     @if ($item->context)
@@ -91,7 +116,6 @@
                                             <i class="bi bi-arrow-counterclockwise"></i>
                                         </button>
                                     </form>
-
                                     <x-admin.delete-button
                                         :action="route('admin.trash.force-delete', ['type' => $item->type, 'id' => $item->id])"
                                         label="Definitief verwijderen"
@@ -109,5 +133,91 @@
         <div class="mt-3">
             {{ $items->withQueryString()->links() }}
         </div>
+
+        {{-- Sticky-bottom action bar --}}
+        <div
+            x-show="$store.trashSelection.hasSelection()"
+            x-cloak
+            x-transition.opacity
+            class="media-action-bar"
+        >
+            <div class="media-action-bar__inner">
+                <span class="text-muted">
+                    <span x-text="$store.trashSelection.count()"></span>
+                    <span x-text="$store.trashSelection.count() === 1 ? 'item' : 'items'"></span> {{ __('geselecteerd') }}
+                </span>
+                <div class="d-flex gap-2 ms-auto">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" @click="$store.trashSelection.clear()">
+                        {{ __('Selectie wissen') }}
+                    </button>
+                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#trashBulkRestoreModal">
+                        <i class="bi bi-arrow-counterclockwise"></i> {{ __('Herstellen') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {{-- Hidden form voor bulk-restore submit --}}
+        <form
+            id="trash-bulk-restore-form"
+            method="POST"
+            action="{{ route('admin.trash.bulk-restore') }}"
+            class="d-none"
+        >
+            @csrf
+            <input type="hidden" name="items" value="">
+        </form>
+
+        {{-- Confirm-modal via @push('modals') (F4-N16) --}}
+        @push('modals')
+            <div
+                class="modal fade"
+                id="trashBulkRestoreModal"
+                tabindex="-1"
+                aria-labelledby="trashBulkRestoreModalLabel"
+                aria-hidden="true"
+                x-data
+            >
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 class="modal-title h5" id="trashBulkRestoreModalLabel">
+                                {{ __('Items herstellen?') }}
+                            </h2>
+                            <button
+                                type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="{{ __('Sluiten') }}"
+                            ></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <p class="mb-2">
+                                <span x-text="$store.trashSelection.count()"></span>
+                                {{ __('items terugzetten uit de prullenbak?') }}
+                            </p>
+
+                            <div class="alert alert-info small mb-0" role="alert">
+                                {{ __('Als een geselecteerd item een verwijderde bestemming of locatie als ouder heeft, wordt die automatisch teruggezet.') }}
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                {{ __('Annuleren') }}
+                            </button>
+                            <button
+                                type="button"
+                                class="btn btn-success"
+                                @click="$store.trashSelection.destroy()"
+                            >
+                                <i class="bi bi-arrow-counterclockwise"></i> {{ __('Herstellen') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endpush
     @endif
 @endsection

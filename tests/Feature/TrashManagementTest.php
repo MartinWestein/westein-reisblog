@@ -444,3 +444,154 @@ test('geblokkeerde destination in tabel toont disabled delete-knop', function ()
         ->assertSee('hangt hieronder')
         ->assertSee('disabled', false);
 });
+
+test('bulk-restore herstelt heterogene selectie in één transactie', function () {
+    $post = \App\Models\Post::factory()->create();
+    $destination = \App\Models\Destination::factory()->create();
+    $page = \App\Models\Page::factory()->create();
+
+    $post->delete();
+    $destination->delete();
+    $page->delete();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.trash.bulk-restore'), [
+            'items' => [
+                ['type' => 'post', 'id' => $post->id],
+                ['type' => 'destination', 'id' => $destination->id],
+                ['type' => 'page', 'id' => $page->id],
+            ],
+        ])
+        ->assertRedirect(route('admin.trash.index'))
+        ->assertSessionHas('success');
+
+    expect($post->fresh()->trashed())->toBeFalse();
+    expect($destination->fresh()->trashed())->toBeFalse();
+    expect($page->fresh()->trashed())->toBeFalse();
+});
+
+test('bulk-restore cascadeert ancestors dedup per unieke parent', function () {
+    $destination = \App\Models\Destination::factory()->create();
+    $location = \App\Models\Location::factory()->for($destination)->create();
+    $post1 = \App\Models\Post::factory()->for($destination)->for($location)->create();
+    $post2 = \App\Models\Post::factory()->for($destination)->for($location)->create();
+
+    $post1->delete();
+    $post2->delete();
+    $location->delete();
+    $destination->delete();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.trash.bulk-restore'), [
+            'items' => [
+                ['type' => 'post', 'id' => $post1->id],
+                ['type' => 'post', 'id' => $post2->id],
+            ],
+        ])
+        ->assertRedirect(route('admin.trash.index'));
+
+    expect($post1->fresh()->trashed())->toBeFalse();
+    expect($post2->fresh()->trashed())->toBeFalse();
+    expect($location->fresh()->trashed())->toBeFalse();
+    expect($destination->fresh()->trashed())->toBeFalse();
+});
+
+test('bulk-restore van niet-bestaand item wordt silent overgeslagen', function () {
+    $post = \App\Models\Post::factory()->create();
+    $post->delete();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.trash.bulk-restore'), [
+            'items' => [
+                ['type' => 'post', 'id' => $post->id],
+                ['type' => 'post', 'id' => 99999],
+            ],
+        ])
+        ->assertRedirect(route('admin.trash.index'))
+        ->assertSessionHas('success');
+
+    expect($post->fresh()->trashed())->toBeFalse();
+});
+
+test('bulk-restore weigert lege items-array', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.trash.bulk-restore'), ['items' => []])
+        ->assertSessionHasErrors('items');
+});
+
+test('bulk-restore weigert meer dan 100 items', function () {
+    $items = array_map(fn ($i) => ['type' => 'post', 'id' => $i], range(1, 101));
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.trash.bulk-restore'), ['items' => $items])
+        ->assertSessionHasErrors('items');
+});
+
+test('bulk-restore weigert ongeldige types', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.trash.bulk-restore'), [
+            'items' => [['type' => 'hackattempt', 'id' => 1]],
+        ])
+        ->assertSessionHasErrors('items.0.type');
+});
+
+test('bulk-restore accepteert JSON-string als items-payload', function () {
+    $post = \App\Models\Post::factory()->create();
+    $post->delete();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.trash.bulk-restore'), [
+            'items' => json_encode([['type' => 'post', 'id' => $post->id]]),
+        ])
+        ->assertRedirect(route('admin.trash.index'));
+
+    expect($post->fresh()->trashed())->toBeFalse();
+});
+
+test('auteur krijgt 403 op bulk-restore-endpoint', function () {
+    $post = \App\Models\Post::factory()->create();
+    $post->delete();
+
+    $user = User::factory()->create();
+    $user->assignRole('auteur');
+
+    $this->actingAs($user)
+        ->post(route('admin.trash.bulk-restore'), [
+            'items' => [['type' => 'post', 'id' => $post->id]],
+        ])
+        ->assertForbidden();
+
+    expect($post->fresh()->trashed())->toBeTrue();
+});
+
+test('lid krijgt 403 op bulk-restore-endpoint', function () {
+    $user = User::factory()->create();
+    $user->assignRole('lid');
+
+    $this->actingAs($user)
+        ->post(route('admin.trash.bulk-restore'), [
+            'items' => [['type' => 'post', 'id' => 1]],
+        ])
+        ->assertForbidden();
+});

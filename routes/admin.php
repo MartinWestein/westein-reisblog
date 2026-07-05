@@ -97,3 +97,6 @@ Route::delete('prullenbak/{type}/{id}', [TrashController::class, 'forceDelete'])
     ->middleware('can:trash.manage')
     ->where(['type' => 'post|destination|location|route|page', 'id' => '[0-9]+'])
     ->name('trash.force-delete');
+Route::post('prullenbak/bulk-herstel', [TrashController::class, 'bulkRestore'])
+    ->middleware('can:trash.manage')
+    ->name('trash.bulk-restore');

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Services\Trash\TrashBrowser;
 use App\Actions\Trash\RestoreTrashItemAction;
 use App\Actions\Trash\ForceDeleteTrashItemAction;
+use App\Actions\Trash\BulkRestoreTrashItemsAction;
+use App\Http\Requests\Admin\Trash\BulkRestoreRequest;
 use RuntimeException;
 use Illuminate\Http\Request;
 
@@ -55,6 +57,15 @@ class TrashController extends Controller
         }
 
         session()->flash('success', __('Item definitief verwijderd.'));
+
+        return redirect()->route('admin.trash.index');
+    }
+
+    public function bulkRestore(BulkRestoreRequest $request, BulkRestoreTrashItemsAction $action)
+    {
+        $result = $action->execute($request->validated('items'));
+
+        session()->flash('success', $result->flashMessage());
 
         return redirect()->route('admin.trash.index');
     }
