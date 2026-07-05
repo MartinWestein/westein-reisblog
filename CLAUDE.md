@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 30 juni 2026 — Stap 4.11 (`/admin/media` browser) volledig afgerond, suite 422 groen, klaar voor push.
+**Laatst bijgewerkt:** 5 juli 2026 — Stap 4.12 (`/admin/prullenbak`) volledig afgerond op branch `stap-4.12-prullenbak`, suite 465 groen, klaar voor merge + push.
 **Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
 **Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → wordt na 4.14 vastgelegd in `fase-4-bouwplan.md`.
 
@@ -10,20 +10,26 @@ Briefing voor Claude bij elke sessie. Lees dit eerst.
 
 ## Status
 
-Fase 4 in uitvoering. Stap 4.11 (`/admin/media` browser) volledig afgerond in vier sub-blokken (4.11.a.1 + 4.11.a.2 + 4.11.b + 4.11.c) plus twee chores onderweg (`chore(test-infra)` en `refactor(scss)` voor x-cloak-verhuizing). Lokaal **6 commits ahead van `origin/main`** — push staat gepland aan einde van deze sessie. Testsuite **422 groen, deterministisch**.
+Fase 4 in uitvoering. Stap 4.12 (`/admin/prullenbak`) volledig afgerond op feature-branch `stap-4.12-prullenbak` in zes sub-blokken (chore(sidebar-extractie) + 4.12.a.2 RBAC + chore(seeder) + 4.12.a.3 data-laag + 4.12.b.1 restore + 4.12.b.2 force-delete + 4.12.c bulk-restore). Lokaal **7 commits ahead van `origin/main`** — merge + push staat gepland zodra deze CLAUDE.md-update commit'd is. Testsuite **465 groen, deterministisch**. 43 nieuwe tests specifiek voor Trash-module in `TrashManagementTest.php`.
 
-## Volgende concrete actie — Stap 4.12: `/admin/prullenbak`
+## Volgende concrete actie — Stap 4.13: Users + rollen beheer
 
-Stap 4.11 afgerond (zie commits 5cb106d t/m 7e3baff). Volgende module = Stap 4.12 prullenbak, volgens roadmap.
+Stap 4.12 afgerond, negen beslissingen (F4-T1 t/m F4-T9) vastgelegd. Volgende module = Stap 4.13 Users + rollen beheer, volgens roadmap.
 
 Voorbereiding op te focussen vóór ontwerp-vragen:
-- Soft-delete-scope: F4-4 zegt soft-deletes op Posts, Destinations, Locations, Routes, Pages — vijf modules met eigen `restore`/`forceDelete`-flows.
-- Auto-purge 30d: cron-config is Fase-6-territory; v1 prullenbak toont alleen handmatige acties.
-- Filter-patroon: vermoedelijk model-type-dropdown (vergelijkbaar met owner_type uit 4.11) + datumrange.
-- Permission: `trash.manage` (Admin + Editor?). Te bevestigen in F4-T1 als eerste design-vraag.
+- User CRUD (index, create, edit) — F4-8 hint naar `deactivated_at` + `deactivation_reason` als schema-uitbreiding (geen hard-delete via UI). Migratie waarschijnlijk al nodig.
+- Rollen-toewijzing per user (Spatie multi-role, F2-4).
+- Wachtwoord-reset door admin (Fortify-integratie).
+- 2FA-status inspectie/reset.
+- Bulk-acties (activatie/deactivatie/rol-toewijzing).
 
-Beslissingen voor Stap 4.12 worden geprefixt `F4-T1, F4-T2, …` (T voor Trash).
+Beslissingen voor Stap 4.13 worden geprefixt `F4-U1, F4-U2, …` (U voor Users).
 
+### Loose ends om in 4.13 mee te nemen
+
+1. **Sidebar `<x-admin.nav-link>` doet géén `@can`-check.** Alleen `Route::has()`. Auteur ziet links naar Familie, Pagina's, Media, Gebruikers die naar 403 leiden. Fix: component extenden met optionele `:can`-prop, álle items in één pass retrofitten. Prullenbak-link kreeg in 4.12 al ad-hoc `@can('trash.manage')`-wrap — vergelijkbaar patroon voor de rest.
+
+2. **Dode `admin.locaties.index`-sidebar-link.** Route bestaat niet meer sinds 4.4 (Locations zijn genest onder Destinations, alleen `admin.destinations.locations.index` bestaat). `<x-admin.nav-link>`'s bestaande `Route::has()`-check zorgt dat de link stil disabled is, maar visueel wel aanwezig. Bij de `@can`-retrofit meteen dropen.
 ---
 
 ### Twee loose ends uit Stap 4.11 die meegaan naar latere sessie
@@ -31,16 +37,6 @@ Beslissingen voor Stap 4.12 worden geprefixt `F4-T1, F4-T2, …` (T voor Trash).
 1. **Legacy `media.upload` / `media.delete` permissions in `RolePermissionSeeder`.** Niet gebruikt door enige policy (F4-9 zegt expliciet "geen losse media-permission — eigenaar-policy via `$media->model`"). Onschadelijk maar onnetjes. Mini-cleanup-commit waardig, bijvoorbeeld tijdens Stap 4.13 (Users + rollen beheer) wanneer de seeder toch grondig geraakt wordt.
 
 2. **Sidebar-leakage project-breed.** `<x-admin.nav-link>` doet alleen `Route::has()`-existence-check, geen `@can`-permission-check. Auteur ziet links naar Familie, Pagina's, Media, Prullenbak, Gebruikers die naar 403 leiden. Geen 4.11-probleem — patroon zit door de hele sidebar. Fix: component extenden met optionele `:can`-prop, álle items in één pass retrofitten. Geschikt voor Stap 4.13.
-
-**Stap 4.10 vordering (definitief):**
-- [x] Blok a — datalaag + composer + model + factory + `template`-veld
-- [x] Blok b — `NewsletterPolicy` + 4 Form Requests
-- [x] Blok c — routes + `NewsletterController::index` + index-view
-- [x] Blok d — CRUD + compose-form + `RegistersMediaConversions` flip naar `->nonQueued()` + `tiptap-simple` Alpine.raw-fix
-- [x] Blok e — `NewsletterMail` + 3 templates + base-layout + `InlineCss`-service (Emogrifier) + `sendTest()` + testmail-knop + 11 tests
-- [x] Blok f — `DispatchNewsletterAction` + `SendNewsletterJob` + `FinaliseNewsletterDispatchAction` + `dispatchSend()` + Bootstrap-modal-confirm + 28 tests (5+5+9+6+3 over zes sub-commits f.1 t/m f.5c)
-- [x] Blok g — Show-pagina met KPI-dashboard + paginated `newsletter_sends`-tabel met filter/sort + index-link + 13 tests
-- [x] Blok h — CLAUDE.md final update + `git push origin main`
 
 ---
 
@@ -189,6 +185,24 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 - F4-N17. Newsletter Show-pagina is status-dashboard-stijl: vier KPI-cards (Totaal / Bezorgd / Mislukt / In wachtrij) bovenaan, gepagineerde tabel van alle `newsletter_sends`-rijen daaronder met statusfilter + sort op `sent_at`/`failed_at`/`created_at`. KPI's via één `DB::table()`-query met conditionele `SUM(CASE WHEN...)` + `COALESCE` + `(int)`-cast.
 - F4-N18. Show-pagina werkt op alle drie statussen: bij `draft` info-alert "nog niet verzonden", bij `sending`/`sent` het KPI+tabel-overzicht. Geen redirect of 404 — admin kan elke status openen om context te zien.
 
+### Fase 4 — Prullenbak (Stap 4.12)
+- F4-T1. RBAC: Admin + Editor via nieuwe permission `trash.manage`. Auteur/Lid geen toegang. Parallel met 4.11's `media.browse`. Per-model policies (PostPolicy etc.) blijven voor de daadwerkelijke restore/force-actie; `trash.manage` gate't alleen de browser.
+- F4-T2. Layout: **unified single index** met model-type-filter (4.11-patroon). Eén `TrashController@index`, één view, heterogene rijen genormaliseerd naar (titel + type-badge + context-subline + verwijderd-datum + acties). Geen tabs, geen sub-pagina's.
+- F4-T3. Audit-trail: **geen** `deleted_by`-tracking. Alleen `deleted_at`. YAGNI voor familieblog-schaal (vrijwel altijd één admin). Later toevoegen als concreet gemist.
+- F4-T4. Force-delete cascade: **blokkeren** zolang zelfstandige-content-children bestaan (levend óf soft-deleted). In v1 raakt dat alleen Destination → Locations. Voor Route → waypoints (pivot) en Post → comments/inline_images (media-children) geen blokkade — die tellen niet als zelfstandige inhoud. Communicatie: pre-computed blocked_reason in DTO, `<x-admin.delete-button>` pre-disabled met Bootstrap-tooltip.
+- F4-T5. Restore-cascade: **omhoog** door de keten (Post → Location → Destination) in één transactie, met expliciete flash-melding die alle mee-hersteld items noemt. Asymmetrisch met T4 en bewust: destructie krijgt wrijving als veiligheid, herstel krijgt smoothness als admin-intentie.
+- F4-T6. Bulk-acties: **alleen bulk-restore**, geen bulk-force-delete. Bulk-restore is safe (T5 werkt lineair per item); bulk-force-delete voegt destructief risico toe met beperkte waarde voor familieblog-schaal. Sticky action-bar toont één knop.
+- F4-T7. Per-item UX: **beide inline**. Herstel = simpele form-POST-knop. Definitief = `<x-admin.delete-button>`-patroon met pre-disabled bij children > 0. Geen modal per rij (T4-B haalt cascade-info-behoefte al weg — force-delete klikbaar alleen als item "alleen" staat).
+- F4-T8. Filters: **minimaal**. Alleen type-filter, sort fixed op `deleted_at desc`. Geen tekst-zoek, datum-range of sort-toggle. Match schaal (0-10 items typisch) met scope.
+- F4-T9. Sessie-scope: seeder-cleanup meepakken (legacy `media.upload`/`media.delete` verwijderd) + ad-hoc `@can('trash.manage')` rond alleen de nieuwe Prullenbak-link. Volledige `<x-admin.nav-link>`-retrofit uitgesteld naar 4.13. Auto-purge = **Fase 6** (cron), niet 4.12 — v1 is puur handmatig.
+
+**Gedeelde infrastructuur uit 4.12:**
+- `App\Services\Trash\TrashBrowser` — per-model `onlyTrashed()`-queries mergen tot Collection, sort op `deleted_at` desc, paginate via `LengthAwarePaginator`. Public `const TYPES` als whitelist voor type-filter. Heterogene DTOs (stdClass) met `type`, `type_label`, `title`, `context`, `deleted_at`, `blocked_reason`. Pre-computed children-count voor Destination via `withCount + withTrashed()`-closure.
+- `App\Actions\Trash\RestoreTrashItemAction` — `match($type)` → `onlyTrashed()->find()`, `collectAncestors()` traverseert Post → Location → Destination met dedup (dubbele Destination-paden via Post FK én Location). Wrap in `DB::transaction`. `RestoreResult` DTO met ancestors-first array + `flashMessage()`.
+- `App\Actions\Trash\ForceDeleteTrashItemAction` — `blockingReason()` gate't. Throw `RuntimeException` met exact zelfde tekst als tooltip, controller converteert naar error-flash.
+- `App\Actions\Trash\BulkRestoreTrashItemsAction` — leunt op single-action, silent-skip op `ModelNotFoundException` (bijv. race met force-delete), ancestor-dedup op `type:title`-key over de hele batch. `BulkRestoreResult` DTO met tri-count (primary/ancestor/failed).
+- `App\Http\Requests\Admin\Trash\BulkRestoreRequest` — max:100 cap, `Rule::in(...)` op type, `prepareForValidation()` decode't JSON-string payload.
+
 ### Fase 4 — Media browser (Stap 4.11)
 - F4-M1. Scope = volledige v1: read-only browser + per-item delete + bulk-selectie + bulk-delete via confirm-modal. Geen upload-flow in v1 (blijft via eigenaar-modellen, conform masterplan-#7).
 - F4-M2. RBAC = aparte permission `media.browse`, toegekend aan Admin (via `Gate::before`) + Editor. Auteur en Lid hebben geen toegang. Per-item-eigenaar-policy bij delete blijft staan (F4-9), maar het policy-mix-scenario binnen bulk-delete is in productie-rollen-matrix niet realistisch (Editor heeft via `content.manage` + `posts.update.any` overal toegang) — getest met custom test-rol `media-browser-only`.
@@ -217,7 +231,7 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - **`<x-admin.gallery-upload>`** — multi-image galerij met AJAX upload/reorder/delete. Hoort op EDIT-pagina.
 - **`<x-admin.tiptap-editor>`** — simple-profiel met toolbar. Initial content uit hidden field (`this.$refs.hidden.value`), niet via x-data-argument.
 - **`<x-admin.image-picker-modal>`** — twee-tabs (browse + upload) voor TipTap rich. Coördinatie via `Alpine.store('imagePicker')`. Upload-tab disabled op create-view.
-- **`<x-admin.delete-button>`** — inline delete-confirm voor tabelrijen. Geen `:confirm`-prop — confirm zit ingebakken via `x-data="{ confirming: false }"`.
+- **`<x-admin.delete-button>`** — inline delete-confirm voor tabelrijen. Geen `:confirm`-prop — confirm zit ingebakken via `x-data="{ confirming: false }"`. Sinds 4.12.b.2 uitgebreid met optionele `:disabled` + `:disabled-reason` props. Disabled-branch wrapt de knop in een `<span data-bs-toggle="tooltip">` met `pointer-events: none` op de button — vereist omdat Bootstrap-tooltips niet direct op disabled elementen werken.
 - **`<x-admin.card-actions-menu>`** — driepuntsmenu (⋮) met Bewerken + inline delete-confirm voor cards.
 - **`<x-admin.avatar-initials>`** — portret of initialen-fallback met deterministische accent-kleur (`crc32(id) % palette`). Prop = `subject`. Werkt op FamilyMember + User.
 - **`<x-admin.sort-link>`** — kolom-header met sorteer-toggle. Prop = `sort` (kolom-id), niet `column`.
@@ -229,6 +243,8 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - **`routeWaypoints`** Alpine-factory — SortableJS + JSON-serialisatie. DOM-revert in `onEnd` → Alpine-array-mutation pattern.
 - **`<x-admin.media-delete-overlay>`** (Stap 4.11.b) — grid-specifieke per-item delete met inline confirm-toggle (vuilnisbak → check/cross). Alpine `x-data` met AJAX-fetch naar `DELETE admin/media/{media}`, DOM-remove op success. Geen form-tag (anders dan `<x-admin.delete-button>`); past in grid-overlay-context met `position: absolute`. Props: `:media-id`.
 - **`Alpine.store('mediaSelection', ...)`** (Stap 4.11.c) — eerste Alpine-store in project (i.p.v. data-factory). Beheert bulk-selectie-state pagina-scoped: `selected: Set`, `toggle(id)`, `selectAllVisible()`, `clear()`, `count()`, `hasSelection()`, `allVisibleSelected()`, `destroy()`. Cross-scope bereikbaar via `$store.mediaSelection.*` — vereist wanneer state gedeeld moet worden tussen view-body en `@push('modals')`-content.
+- **`Alpine.store('trashSelection', ...)`** (Stap 4.12.c) — tweede Alpine-store in project, parallel aan `mediaSelection` maar met **composite keys** (`"{type}:{id}"`) omdat trash-IDs niet globally uniek zijn (Post.1 ≠ Destination.1). API: `reset()` leest visible keys uit `[data-trash-key]` attributes, `isSelected(type, id)`, `toggle(type, id)`, `selectAllVisible()`, `clear()`, `count()`, `hasSelection()`, `allVisibleSelected()`, `destroy()` serialiseert selection naar hidden form-input + submit. Naam `destroy()` is bewust API-parity met mediaSelection maar semantisch misleidend hier — betekent "voer bulk-actie uit" = bulk-**restore**. Comment in code legt uit.
+- **`resources/views/admin/_partials/sidebar.blade.php`** (chore vóór 4.12) — sidebar-markup verhuisd uit `layouts/admin.blade.php` naar aparte partial. Vindbaarheid: `Get-ChildItem *sidebar*` returnde niets omdat het in de layout zat. Parallel met bestaande `admin._partials.flash`-conventie. Bevat alle nav-groepen (Content/Engagement/Beheer) plus mobile-backdrop-div. Alpine-context (`mobileOpen`, `toggleCollapse`) blijft werken omdat `@include` server-side templating is, geen JS-boundary.
 
 ---
 
@@ -268,12 +284,15 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
   - BOM-vrij schrijven: `[System.IO.File]::WriteAllText($path, $content, [System.Text.UTF8Encoding]::new($false))`.
   - Verifieer met `Format-Hex $path | Select-Object -First 3` — eerste drie bytes moeten content zijn, niet `EF BB BF`. PowerShell 7+ schrijft default zonder BOM, maar Herd-stacks draaien op 5.1.
 - **Non-ASCII in PowerShell here-strings = mojibake door console-codepage.** `«`/`»`/`é`/`'` direct plakken wordt door de console gemangeld vóór de data in een variabele belandt. Routes: (a) HTML-entities voor lang-files (`&laquo;`/`&raquo;`); (b) direct in VS Code editen; (c) JSON (delimiters zijn ASCII). Langere PHP/Blade-bestanden vanuit chats: bouw direct in VS Code, niet via PowerShell here-string.
+- **VS Code als git-editor vereist `.cmd`-suffix op Windows.** Git slaat `core.editor` op als raw string. Als je pad in `%PATH%` naar `code` (zonder suffix) verwijst, faalt `git commit` (zonder `-m`) met `No such file or directory`. Fix: `git config --global core.editor '"C:\Users\<user>\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd" --wait'`. Alternatief: `git config --global core.editor notepad`. Voor éénmalige commit met multi-line message: temp-file-pattern met `git commit -F` (BOM-vrij via `[System.IO.File]::WriteAllText(..., UTF8Encoding(false))`, zie landmine hierboven).
 - **Multi-paragraph `git commit -m` met meerdere `-m`-flags faalt bij lege `-m ""` ertussen.** PowerShell + backtick-continuation laat git de volgende string als pathspec interpreteren. Patroon: schrijf de message naar `.git\COMMIT_EDITMSG_TEMP.txt` (BOM-vrij, zie hierboven) en commit met `git commit -F path` — meteen idiomatisch én leesbaar.
 - **OPcache + Blade view-cache op Windows:** `Remove-Item storage\framework\views\*.php -Force` soms nodig wanneer `view:clear` alleen niet werkt.
 - **`@php($x = ...)` Blade shorthand compileert stuk** naar `<?php($x = ...)` zonder spatie — ongeldige PHP, geeft misleidende error op regel 1. Diagnose: `php -l storage\framework\views\*.php`. Altijd blok-vorm voor assignments: `@php $x = ...; @endphp`.
+- **`@@extends`-mojibake compileert tot letterlijke `@extends`-output.** Blade behandelt `@@` als escape voor letterlijk `@`. Als je bij het plakken van een view per ongeluk een dubbele `@` op regel 1 krijgt (VS Code Blade-autocomplete + shift-select-fouten), rendert de hele view als plaintext — je krijgt geen layout, geen extends, gewoon de source-code als HTTP-response. Diagnose: `Format-Hex path\view.blade.php | Select-Object -First 2` — eerste bytes moeten `40 65` zijn (@e), niet `40 40 65` (@@e). Fix: verwijder de extra `@`. Kan óók gebeuren in `@section`, `@include` etc.
 
 ### Spatie + framework-defaults
 - **`storage/media-library/`** hoort in `.gitignore`. Spatie schrijft tijdelijke conversion-kopieën onder random hash-paden; bij crashes of `->queued()` zonder running worker blijven die liggen.
+- **Flash-key-shape moet matchen wat `admin._partials.flash.blade.php` verwacht.** De partial leest `session('success')`, `session('error')`, `session('info')`, `session('warning')` als top-level strings — géén nested `session('flash')` met `['type' => ..., 'message' => ...]`-payload. Als je een controller schrijft die `session()->flash('flash', [...])` doet, slaagt `assertSessionHas('flash')` in tests wél maar de admin ziet niks in de browser. Diagnose: browser-sanity na een test-groene action. Fix: `session()->flash('success', $message)` (of `error`/`info`/`warning`). Optionele download-link via `flash_action_url` + `flash_action_label` (uit 4.9).
 - **Framework-defaults uit eerdere fasen falen stil tot een nieuwe module ze triggert.** `Paginator::useBootstrapFive()` ontbrak sinds Fase 1 maar viel pas in 4.9 op (eerste index >25 rijen). `queue:work` onthulde 2 weken Spatie image-conversion jobs. Bij elke nieuwe module: niet alleen module-specifieke gaten checken, ook of de nieuwe schaal/data-volume framework-defaults eindelijk onthult.
 - **Check Fase-3-`unique`-constraints tegen actueel module-gebruik vóór een CRUD opent.** `route_waypoints.unique(route_id, location_id)` werd in Fase 3 by-default toegevoegd, conflicteerde in 4.8 met revisit-roadtrips. Dropping via migratie — Eloquent dwingt identiteit-via-PK al af.
 
@@ -311,25 +330,25 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 
 ### Fase 4 — overzicht
 
-| Stap      | Inhoud                                                                              | Tests | Status |
-| --------- | ----------------------------------------------------------------------------------- | ----- | ------ |
-| **4.0**   | Fundament: soft deletes, users opruimen + `deactivated_at`, Post `inline_images`    |       | ✅     |
+| Stap      | Inhoud                                                                               | Tests | Status |
+| --------- | ------------------------------------------------------------------------------------ | ----- | ------ |
+| **4.0**   | Fundament: soft deletes, users opruimen + `deactivated_at`, Post `inline_images`     |       | ✅     |
 | **4.1**   | Admin-layout: inklapbare sidebar, gegroepeerde nav, topbar, flash + form-componenten |       | ✅     |
-| **4.2**   | Dashboard met 6 KPI-cards + activity feed. Rename `Post::user()` → `Post::author()` |       | ✅     |
-| **4.3.1** | Categories CRUD                                                                     |       | ✅     |
-| **4.3.2** | Tags CRUD (morphedByMany op Posts)                                                  |       | ✅     |
-| **4.3.3** | FamilyMembers CRUD — eerste cards-layout + eerste media-upload                      | 15    | ✅     |
-| **4.3.4** | Pages CRUD — eerste TipTap simple + HTMLPurifier                                    | 18    | ✅     |
-| **4.4**   | Destinations + Locations CRUD + generieke gallery-component                         | 42    | ✅     |
-| **4.5**   | Posts CRUD + TipTap rich + own/any-policy + abstract `PostRequest`                  | 33    | ✅     |
-| **4.6**   | TipTap image-picker modal (browse + upload, alignment-classes)                      | 25    | ✅     |
-| **4.7**   | Comment-moderatie (state-machine, verb-routes, avatar-refactor)                     | 16    | ✅     |
-| **4.8**   | Routes + Waypoints CRUD (SortableJS, Leaflet, SVG-thumbnail)                        | 26    | ✅     |
-| **4.9**   | Subscribers + import/export (CSV, double-opt-in, error-CSV)                         | 37    | ✅     |
-| **4.10**  | Newsletter compose & dispatch (a-h, alle blokken ✅)                                | 88    | ✅     |
-| **4.11**  | `/admin/media` browser                                                              |       | ✅     |
-| **4.12**  | `/admin/prullenbak` + auto-purge 30d                                                |       | ⏳     |
-| **4.13**  | Users + rollen beheer + bulk-acties                                                 |       | ⏳     |
-| **4.14**  | Eindcheck (Pint, Pest, fase-4-bouwplan.md, commit + push)                           |       | ⏳     |
+| **4.2**   | Dashboard met 6 KPI-cards + activity feed. Rename `Post::user()` → `Post::author()`  |       | ✅     |
+| **4.3.1** | Categories CRUD                                                                      |       | ✅     |
+| **4.3.2** | Tags CRUD (morphedByMany op Posts)                                                   |       | ✅     |
+| **4.3.3** | FamilyMembers CRUD — eerste cards-layout + eerste media-upload                       | 15    | ✅     |
+| **4.3.4** | Pages CRUD — eerste TipTap simple + HTMLPurifier                                     | 18    | ✅     |
+| **4.4**   | Destinations + Locations CRUD + generieke gallery-component                          | 42    | ✅     |
+| **4.5**   | Posts CRUD + TipTap rich + own/any-policy + abstract `PostRequest`                   | 33    | ✅     |
+| **4.6**   | TipTap image-picker modal (browse + upload, alignment-classes)                       | 25    | ✅     |
+| **4.7**   | Comment-moderatie (state-machine, verb-routes, avatar-refactor)                      | 16    | ✅     |
+| **4.8**   | Routes + Waypoints CRUD (SortableJS, Leaflet, SVG-thumbnail)                         | 26    | ✅     |
+| **4.9**   | Subscribers + import/export (CSV, double-opt-in, error-CSV)                          | 37    | ✅     |
+| **4.10**  | Newsletter compose & dispatch (a-h, alle blokken groen)                              | 88    | ✅     |
+| **4.11**  | `/admin/media` browser                                                               |       | ✅     |
+| **4.12**  | `/admin/prullenbak` (handmatig; auto-purge naar Fase 6                               |       | ✅     |
+| **4.13**  | Users + rollen beheer + bulk-acties                                                  |       | ⏳     |
+| **4.14**  | Eindcheck (Pint, Pest, fase-4-bouwplan.md, commit + push)                            |       | ⏳     |
 
-**Totaal suite-status:** 401 groen.
+**Totaal suite-status:** 465 groen.
