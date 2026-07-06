@@ -91,7 +91,7 @@ class RestoreTrashItemAction
     private function alreadyInChain(Model $model, array $chain): bool
     {
         foreach ($chain as $entry) {
-            if ($entry['model']::class === $model::class && $entry['model']->getKey() === $model->getKey()) {
+            if ($model::class === $entry['model']::class && $entry['model']->getKey() === $model->getKey()) {
                 return true;
             }
         }

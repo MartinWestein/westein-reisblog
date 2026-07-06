@@ -5,16 +5,15 @@ namespace App\Actions\Trash;
 class BulkRestoreResult
 {
     /**
-     * @param int $primaryCount Aantal expliciet-geselecteerde items dat is hersteld
-     * @param int $ancestorCount Aantal ancestors dat cascade-omhoog is meegenomen (uniek)
-     * @param int $failedCount Aantal items dat niet meer gevonden werd (silent skip)
+     * @param  int  $primaryCount  Aantal expliciet-geselecteerde items dat is hersteld
+     * @param  int  $ancestorCount  Aantal ancestors dat cascade-omhoog is meegenomen (uniek)
+     * @param  int  $failedCount  Aantal items dat niet meer gevonden werd (silent skip)
      */
     public function __construct(
         public readonly int $primaryCount,
         public readonly int $ancestorCount,
         public readonly int $failedCount,
-    ) {
-    }
+    ) {}
 
     public function flashMessage(): string
     {
@@ -33,6 +32,6 @@ class BulkRestoreResult
             $parts[] = sprintf('%d %s overgeslagen (niet meer gevonden)', $this->failedCount, $failedNoun);
         }
 
-        return implode('. ', $parts) . '.';
+        return implode('. ', $parts).'.';
     }
 }

@@ -7,12 +7,10 @@ use Illuminate\Support\Facades\DB;
 
 class BulkRestoreTrashItemsAction
 {
-    public function __construct(private readonly RestoreTrashItemAction $singleAction)
-    {
-    }
+    public function __construct(private readonly RestoreTrashItemAction $singleAction) {}
 
     /**
-     * @param array<int, array{type: string, id: int}> $items
+     * @param  array<int, array{type: string, id: int}>  $items
      */
     public function execute(array $items): BulkRestoreResult
     {

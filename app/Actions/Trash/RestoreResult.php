@@ -5,12 +5,10 @@ namespace App\Actions\Trash;
 class RestoreResult
 {
     /**
-     * @param array<int, array{type: string, type_label: string, title: string}> $restored
-     *   Volgorde: ancestors eerst, primary (aangeklikt item) laatst.
+     * @param  array<int, array{type: string, type_label: string, title: string}>  $restored
+     *                                                                                        Volgorde: ancestors eerst, primary (aangeklikt item) laatst.
      */
-    public function __construct(public readonly array $restored)
-    {
-    }
+    public function __construct(public readonly array $restored) {}
 
     public function primary(): array
     {

@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\RouteController;
 use App\Http\Controllers\Admin\SubscriberController;
 use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\TrashController;
+use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', DashboardController::class)->name('home');
@@ -100,3 +101,11 @@ Route::delete('prullenbak/{type}/{id}', [TrashController::class, 'forceDelete'])
 Route::post('prullenbak/bulk-herstel', [TrashController::class, 'bulkRestore'])
     ->middleware('can:trash.manage')
     ->name('trash.bulk-restore');
+
+// Gebruikers (stap 4.13)
+Route::middleware('can:users.manage')->group(function () {
+    Route::resource('gebruikers', UserController::class)
+        ->parameters(['gebruikers' => 'user'])
+        ->names('users')
+        ->except(['show', 'destroy']);
+});

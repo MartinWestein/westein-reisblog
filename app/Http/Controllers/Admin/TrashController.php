@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
-use App\Services\Trash\TrashBrowser;
-use App\Actions\Trash\RestoreTrashItemAction;
-use App\Actions\Trash\ForceDeleteTrashItemAction;
 use App\Actions\Trash\BulkRestoreTrashItemsAction;
+use App\Actions\Trash\ForceDeleteTrashItemAction;
+use App\Actions\Trash\RestoreTrashItemAction;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Trash\BulkRestoreRequest;
-use RuntimeException;
+use App\Services\Trash\TrashBrowser;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use RuntimeException;
 
 class TrashController extends Controller
 {
@@ -35,7 +36,7 @@ class TrashController extends Controller
     {
         try {
             $result = $action->execute($type, $id);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+        } catch (ModelNotFoundException) {
             abort(404);
         }
 
@@ -48,7 +49,7 @@ class TrashController extends Controller
     {
         try {
             $action->execute($type, $id);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+        } catch (ModelNotFoundException) {
             abort(404);
         } catch (RuntimeException $e) {
             session()->flash('error', $e->getMessage());
@@ -69,5 +70,4 @@ class TrashController extends Controller
 
         return redirect()->route('admin.trash.index');
     }
-
 }

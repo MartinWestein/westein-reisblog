@@ -1,5 +1,10 @@
 <?php
 
+use App\Models\Destination;
+use App\Models\Location;
+use App\Models\Page;
+use App\Models\Post;
+use App\Models\Route;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
@@ -61,11 +66,11 @@ test('guest wordt naar login geredirect', function () {
 });
 
 test('toont soft-deleted items uit alle vijf types', function () {
-    $post = \App\Models\Post::factory()->create();
-    $destination = \App\Models\Destination::factory()->create();
-    $location = \App\Models\Location::factory()->for($destination)->create();
-    $route = \App\Models\Route::factory()->create();
-    $page = \App\Models\Page::factory()->create();
+    $post = Post::factory()->create();
+    $destination = Destination::factory()->create();
+    $location = Location::factory()->for($destination)->create();
+    $route = Route::factory()->create();
+    $page = Page::factory()->create();
 
     $post->delete();
     $destination->delete();
@@ -87,8 +92,8 @@ test('toont soft-deleted items uit alle vijf types', function () {
 });
 
 test('type-filter toont alleen items van gekozen type', function () {
-    $post = \App\Models\Post::factory()->create();
-    $destination = \App\Models\Destination::factory()->create();
+    $post = Post::factory()->create();
+    $destination = Destination::factory()->create();
     $post->delete();
     $destination->delete();
 
@@ -103,7 +108,7 @@ test('type-filter toont alleen items van gekozen type', function () {
 });
 
 test('bad type-filter valt silent terug op alle types', function () {
-    $post = \App\Models\Post::factory()->create();
+    $post = Post::factory()->create();
     $post->delete();
 
     $admin = User::factory()->create();
@@ -116,8 +121,8 @@ test('bad type-filter valt silent terug op alle types', function () {
 });
 
 test('sorteert op deleted_at descending', function () {
-    $oldPost = \App\Models\Post::factory()->create(['title' => 'Oud verhaal']);
-    $newPost = \App\Models\Post::factory()->create(['title' => 'Nieuw verhaal']);
+    $oldPost = Post::factory()->create(['title' => 'Oud verhaal']);
+    $newPost = Post::factory()->create(['title' => 'Nieuw verhaal']);
 
     $oldPost->delete();
     $this->travel(1)->hour();
@@ -135,7 +140,7 @@ test('sorteert op deleted_at descending', function () {
 });
 
 test('toont empty state met type-hint als type-filter geen resultaten heeft', function () {
-    $post = \App\Models\Post::factory()->create();
+    $post = Post::factory()->create();
     $post->delete();
 
     $admin = User::factory()->create();
@@ -148,8 +153,8 @@ test('toont empty state met type-hint als type-filter geen resultaten heeft', fu
 });
 
 test('restore herstelt een post zonder soft-deleted parents', function () {
-    $destination = \App\Models\Destination::factory()->create();
-    $post = \App\Models\Post::factory()->for($destination)->create();
+    $destination = Destination::factory()->create();
+    $post = Post::factory()->for($destination)->create();
     $post->delete();
 
     $admin = User::factory()->create();
@@ -163,8 +168,8 @@ test('restore herstelt een post zonder soft-deleted parents', function () {
 });
 
 test('restore van post cascadeert omhoog naar soft-deleted destination', function () {
-    $destination = \App\Models\Destination::factory()->create();
-    $post = \App\Models\Post::factory()->for($destination)->create();
+    $destination = Destination::factory()->create();
+    $post = Post::factory()->for($destination)->create();
     $post->delete();
     $destination->delete();
 
@@ -181,9 +186,9 @@ test('restore van post cascadeert omhoog naar soft-deleted destination', functio
 });
 
 test('restore van post cascadeert door location naar destination', function () {
-    $destination = \App\Models\Destination::factory()->create();
-    $location = \App\Models\Location::factory()->for($destination)->create();
-    $post = \App\Models\Post::factory()
+    $destination = Destination::factory()->create();
+    $location = Location::factory()->for($destination)->create();
+    $post = Post::factory()
         ->for($destination)
         ->for($location)
         ->create();
@@ -205,8 +210,8 @@ test('restore van post cascadeert door location naar destination', function () {
 });
 
 test('restore van location cascadeert naar soft-deleted destination', function () {
-    $destination = \App\Models\Destination::factory()->create();
-    $location = \App\Models\Location::factory()->for($destination)->create();
+    $destination = Destination::factory()->create();
+    $location = Location::factory()->for($destination)->create();
     $location->delete();
     $destination->delete();
 
@@ -222,8 +227,8 @@ test('restore van location cascadeert naar soft-deleted destination', function (
 });
 
 test('restore van location laat levende destination met rust', function () {
-    $destination = \App\Models\Destination::factory()->create();
-    $location = \App\Models\Location::factory()->for($destination)->create();
+    $destination = Destination::factory()->create();
+    $location = Location::factory()->for($destination)->create();
     $location->delete();
 
     $admin = User::factory()->create();
@@ -250,13 +255,13 @@ test('restore werkt voor destination, route en page', function (string $type, st
 
     expect($model->fresh()->trashed())->toBeFalse();
 })->with([
-    ['destination', \App\Models\Destination::class],
-    ['route', \App\Models\Route::class],
-    ['page', \App\Models\Page::class],
+    ['destination', Destination::class],
+    ['route', Route::class],
+    ['page', Page::class],
 ]);
 
 test('restore van niet-trashed item returnt 404', function () {
-    $post = \App\Models\Post::factory()->create();
+    $post = Post::factory()->create();
 
     $admin = User::factory()->create();
     $admin->assignRole('admin');
@@ -285,7 +290,7 @@ test('bad type in restore-URL botst tegen route-constraint 404', function () {
 });
 
 test('auteur krijgt 403 op restore-endpoint', function () {
-    $post = \App\Models\Post::factory()->create();
+    $post = Post::factory()->create();
     $post->delete();
 
     $user = User::factory()->create();
@@ -299,7 +304,7 @@ test('auteur krijgt 403 op restore-endpoint', function () {
 });
 
 test('lid krijgt 403 op restore-endpoint', function () {
-    $post = \App\Models\Post::factory()->create();
+    $post = Post::factory()->create();
     $post->delete();
 
     $user = User::factory()->create();
@@ -311,7 +316,7 @@ test('lid krijgt 403 op restore-endpoint', function () {
 });
 
 test('force-delete verwijdert een post definitief', function () {
-    $post = \App\Models\Post::factory()->create();
+    $post = Post::factory()->create();
     $post->delete();
 
     $admin = User::factory()->create();
@@ -322,7 +327,7 @@ test('force-delete verwijdert een post definitief', function () {
         ->assertRedirect(route('admin.trash.index'))
         ->assertSessionHas('success');
 
-    expect(\App\Models\Post::withTrashed()->find($post->id))->toBeNull();
+    expect(Post::withTrashed()->find($post->id))->toBeNull();
 });
 
 test('force-delete werkt voor location, route en page zonder blokkade', function (string $type, string $factory) {
@@ -338,14 +343,14 @@ test('force-delete werkt voor location, route en page zonder blokkade', function
 
     expect($factory::withTrashed()->find($model->id))->toBeNull();
 })->with([
-    ['location', \App\Models\Location::class],
-    ['route', \App\Models\Route::class],
-    ['page', \App\Models\Page::class],
+    ['location', Location::class],
+    ['route', Route::class],
+    ['page', Page::class],
 ]);
 
 test('force-delete van destination met levende location wordt geblokkeerd', function () {
-    $destination = \App\Models\Destination::factory()->create();
-    \App\Models\Location::factory()->for($destination)->create();
+    $destination = Destination::factory()->create();
+    Location::factory()->for($destination)->create();
     $destination->delete();
 
     $admin = User::factory()->create();
@@ -356,12 +361,12 @@ test('force-delete van destination met levende location wordt geblokkeerd', func
         ->assertRedirect(route('admin.trash.index'))
         ->assertSessionHas('error');
 
-    expect(\App\Models\Destination::withTrashed()->find($destination->id))->not->toBeNull();
+    expect(Destination::withTrashed()->find($destination->id))->not->toBeNull();
 });
 
 test('force-delete van destination met soft-deleted location wordt geblokkeerd', function () {
-    $destination = \App\Models\Destination::factory()->create();
-    $location = \App\Models\Location::factory()->for($destination)->create();
+    $destination = Destination::factory()->create();
+    $location = Location::factory()->for($destination)->create();
     $location->delete();
     $destination->delete();
 
@@ -373,11 +378,11 @@ test('force-delete van destination met soft-deleted location wordt geblokkeerd',
         ->assertRedirect(route('admin.trash.index'))
         ->assertSessionHas('error');
 
-    expect(\App\Models\Destination::withTrashed()->find($destination->id))->not->toBeNull();
+    expect(Destination::withTrashed()->find($destination->id))->not->toBeNull();
 });
 
 test('force-delete van kinderloze destination gaat door', function () {
-    $destination = \App\Models\Destination::factory()->create();
+    $destination = Destination::factory()->create();
     $destination->delete();
 
     $admin = User::factory()->create();
@@ -388,11 +393,11 @@ test('force-delete van kinderloze destination gaat door', function () {
         ->assertRedirect(route('admin.trash.index'))
         ->assertSessionHas('success');
 
-    expect(\App\Models\Destination::withTrashed()->find($destination->id))->toBeNull();
+    expect(Destination::withTrashed()->find($destination->id))->toBeNull();
 });
 
 test('force-delete van niet-trashed item returnt 404', function () {
-    $post = \App\Models\Post::factory()->create();
+    $post = Post::factory()->create();
 
     $admin = User::factory()->create();
     $admin->assignRole('admin');
@@ -401,11 +406,11 @@ test('force-delete van niet-trashed item returnt 404', function () {
         ->delete(route('admin.trash.force-delete', ['type' => 'post', 'id' => $post->id]))
         ->assertNotFound();
 
-    expect(\App\Models\Post::find($post->id))->not->toBeNull();
+    expect(Post::find($post->id))->not->toBeNull();
 });
 
 test('auteur krijgt 403 op force-delete-endpoint', function () {
-    $post = \App\Models\Post::factory()->create();
+    $post = Post::factory()->create();
     $post->delete();
 
     $user = User::factory()->create();
@@ -415,11 +420,11 @@ test('auteur krijgt 403 op force-delete-endpoint', function () {
         ->delete(route('admin.trash.force-delete', ['type' => 'post', 'id' => $post->id]))
         ->assertForbidden();
 
-    expect(\App\Models\Post::withTrashed()->find($post->id))->not->toBeNull();
+    expect(Post::withTrashed()->find($post->id))->not->toBeNull();
 });
 
 test('lid krijgt 403 op force-delete-endpoint', function () {
-    $post = \App\Models\Post::factory()->create();
+    $post = Post::factory()->create();
     $post->delete();
 
     $user = User::factory()->create();
@@ -431,8 +436,8 @@ test('lid krijgt 403 op force-delete-endpoint', function () {
 });
 
 test('geblokkeerde destination in tabel toont disabled delete-knop', function () {
-    $destination = \App\Models\Destination::factory()->create();
-    \App\Models\Location::factory()->for($destination)->create();
+    $destination = Destination::factory()->create();
+    Location::factory()->for($destination)->create();
     $destination->delete();
 
     $admin = User::factory()->create();
@@ -446,9 +451,9 @@ test('geblokkeerde destination in tabel toont disabled delete-knop', function ()
 });
 
 test('bulk-restore herstelt heterogene selectie in één transactie', function () {
-    $post = \App\Models\Post::factory()->create();
-    $destination = \App\Models\Destination::factory()->create();
-    $page = \App\Models\Page::factory()->create();
+    $post = Post::factory()->create();
+    $destination = Destination::factory()->create();
+    $page = Page::factory()->create();
 
     $post->delete();
     $destination->delete();
@@ -474,10 +479,10 @@ test('bulk-restore herstelt heterogene selectie in één transactie', function (
 });
 
 test('bulk-restore cascadeert ancestors dedup per unieke parent', function () {
-    $destination = \App\Models\Destination::factory()->create();
-    $location = \App\Models\Location::factory()->for($destination)->create();
-    $post1 = \App\Models\Post::factory()->for($destination)->for($location)->create();
-    $post2 = \App\Models\Post::factory()->for($destination)->for($location)->create();
+    $destination = Destination::factory()->create();
+    $location = Location::factory()->for($destination)->create();
+    $post1 = Post::factory()->for($destination)->for($location)->create();
+    $post2 = Post::factory()->for($destination)->for($location)->create();
 
     $post1->delete();
     $post2->delete();
@@ -503,7 +508,7 @@ test('bulk-restore cascadeert ancestors dedup per unieke parent', function () {
 });
 
 test('bulk-restore van niet-bestaand item wordt silent overgeslagen', function () {
-    $post = \App\Models\Post::factory()->create();
+    $post = Post::factory()->create();
     $post->delete();
 
     $admin = User::factory()->create();
@@ -554,7 +559,7 @@ test('bulk-restore weigert ongeldige types', function () {
 });
 
 test('bulk-restore accepteert JSON-string als items-payload', function () {
-    $post = \App\Models\Post::factory()->create();
+    $post = Post::factory()->create();
     $post->delete();
 
     $admin = User::factory()->create();
@@ -570,7 +575,7 @@ test('bulk-restore accepteert JSON-string als items-payload', function () {
 });
 
 test('auteur krijgt 403 op bulk-restore-endpoint', function () {
-    $post = \App\Models\Post::factory()->create();
+    $post = Post::factory()->create();
     $post->delete();
 
     $user = User::factory()->create();
