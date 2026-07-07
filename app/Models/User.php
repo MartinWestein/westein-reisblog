@@ -9,6 +9,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -52,6 +53,22 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             'social_links' => 'array',
             'deactivated_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Scope: alleen actieve users (niet gedeactiveerd).
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->whereNull('deactivated_at');
+    }
+
+    /**
+     * Scope: alleen gedeactiveerde users.
+     */
+    public function scopeDeactivated(Builder $query): Builder
+    {
+        return $query->whereNotNull('deactivated_at');
     }
 
     public function registerMediaCollections(): void
