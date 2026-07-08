@@ -1,7 +1,11 @@
 <?php
 
+use App\Listeners\MarkEmailVerifiedAfterPasswordReset;
+use App\Mail\UserInvitationMail;
 use App\Models\User;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -196,4 +200,145 @@ test('pagineert op 25 per pagina', function () {
     expect($users->perPage())->toBe(25);
     expect($users->total())->toBe(31);
     expect($users->count())->toBe(25);
+});
+
+test('admin ziet het create-form', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->get(route('admin.users.create'))
+        ->assertOk()
+        ->assertSee(__('Nieuwe gebruiker'))
+        ->assertSee(__('Uitnodiging versturen'));
+});
+
+test('store maakt user aan met gekozen rollen', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    Mail::fake();
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.store'), [
+            'name' => 'Nieuwe Gebruiker',
+            'email' => 'nieuwe@voorbeeld.nl',
+            'roles' => ['editor', 'lid'],
+        ])
+        ->assertRedirect(route('admin.users.index'))
+        ->assertSessionHas('success');
+
+    $user = User::where('email', 'nieuwe@voorbeeld.nl')->first();
+    expect($user)->not->toBeNull();
+    expect($user->name)->toBe('Nieuwe Gebruiker');
+    expect($user->hasRole('editor'))->toBeTrue();
+    expect($user->hasRole('lid'))->toBeTrue();
+    expect($user->hasRole('auteur'))->toBeFalse();
+});
+
+test('store verstuurt uitnodigingsmail', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    Mail::fake();
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.store'), [
+            'name' => 'Nieuwe Gebruiker',
+            'email' => 'invite@voorbeeld.nl',
+            'roles' => ['lid'],
+        ]);
+
+    Mail::assertQueued(UserInvitationMail::class, function ($mail) {
+        return $mail->hasTo('invite@voorbeeld.nl');
+    });
+});
+
+test('store zet email_verified_at niet bij aanmaken', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    Mail::fake();
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.store'), [
+            'name' => 'Onbevestigd',
+            'email' => 'onbevestigd@voorbeeld.nl',
+            'roles' => ['lid'],
+        ]);
+
+    $user = User::where('email', 'onbevestigd@voorbeeld.nl')->first();
+    expect($user->email_verified_at)->toBeNull();
+});
+
+test('store valideert vereiste velden', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    Mail::fake();
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.store'), [
+            'name' => '',
+            'email' => '',
+        ])
+        ->assertSessionHasErrors(['name', 'email']);
+
+    Mail::assertNothingOutgoing();
+});
+
+test('store valideert email-uniekheid', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    User::factory()->create(['email' => 'bestaat@voorbeeld.nl']);
+
+    Mail::fake();
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.store'), [
+            'name' => 'Dubbel',
+            'email' => 'bestaat@voorbeeld.nl',
+            'roles' => ['lid'],
+        ])
+        ->assertSessionHasErrors('email');
+
+    Mail::assertNothingOutgoing();
+});
+
+test('store valideert rol-whitelist', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    Mail::fake();
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.store'), [
+            'name' => 'Tampering Test',
+            'email' => 'tamper@voorbeeld.nl',
+            'roles' => ['fake-role', 'super-admin'],
+        ])
+        ->assertSessionHasErrors('roles.0');
+
+    Mail::assertNothingOutgoing();
+});
+
+test('listener zet email_verified_at bij PasswordReset op unverified user', function () {
+    $user = User::factory()->unverified()->create();
+    expect($user->email_verified_at)->toBeNull();
+
+    (new MarkEmailVerifiedAfterPasswordReset)->handle(new PasswordReset($user));
+
+    $user->refresh();
+    expect($user->email_verified_at)->not->toBeNull();
+});
+
+test('listener is no-op op al geverifieerde user', function () {
+    $verifiedAt = now()->subDays(5);
+    $user = User::factory()->create(['email_verified_at' => $verifiedAt]);
+
+    (new MarkEmailVerifiedAfterPasswordReset)->handle(new PasswordReset($user));
+
+    $user->refresh();
+    expect($user->email_verified_at->timestamp)->toBe($verifiedAt->timestamp);
 });

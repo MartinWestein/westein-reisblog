@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Users\SendUserInvitationAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Users\StoreUserRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
@@ -62,17 +65,37 @@ class UserController extends Controller
             'roleNames' => $roleNames,
         ]);
     }
-    
+
     public function create()
     {
-        // Implementatie in blok 4.13.c
-        return view('admin.users.create');
+        $this->authorize('create', User::class);
+
+        return view('admin.users.create', [
+            'roleNames' => Role::query()->orderBy('name')->pluck('name')->all(),
+            'defaultRoles' => ['lid'],
+        ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreUserRequest $request, SendUserInvitationAction $sendInvitation)
     {
-        // Implementatie in blok 4.13.c
-        abort(501, 'Nog niet geïmplementeerd.');
+        $validated = $request->validated();
+
+        // Random wachtwoord (64 tekens) - user zet 'm zelf via invite-link
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => bcrypt(Str::random(64)),
+        ]);
+
+        if (! empty($validated['roles'] ?? [])) {
+            $user->syncRoles($validated['roles']);
+        }
+
+        $sendInvitation->execute($user);
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', __('Uitnodiging verstuurd naar :email.', ['email' => $user->email]));
     }
 
     public function edit(User $user)
