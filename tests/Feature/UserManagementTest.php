@@ -766,3 +766,87 @@ test('Fortify staat login toe voor actieve user', function () {
 
     $this->assertAuthenticatedAs($user);
 });
+
+test('sendPasswordReset stuurt invite-mail naar bestaande user', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    Mail::fake();
+
+    $target = User::factory()->create(['email' => 'reset@voorbeeld.nl']);
+    $target->assignRole('lid');
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.password-reset', $target))
+        ->assertRedirect(route('admin.users.edit', $target))
+        ->assertSessionHas('success');
+
+    Mail::assertQueued(UserInvitationMail::class, function ($mail) {
+        return $mail->hasTo('reset@voorbeeld.nl');
+    });
+});
+
+test('sendPasswordReset vereist users.manage-permission', function () {
+    $editor = User::factory()->create();
+    $editor->assignRole('editor');
+
+    $target = User::factory()->create();
+    $target->assignRole('lid');
+
+    $this->actingAs($editor)
+        ->post(route('admin.users.password-reset', $target))
+        ->assertForbidden();
+});
+
+test('disableTwoFactor reset alle drie de 2FA-velden op null', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $target = User::factory()->create([
+        'two_factor_secret' => 'encrypted-secret-payload',
+        'two_factor_recovery_codes' => 'encrypted-recovery-codes',
+        'two_factor_confirmed_at' => now()->subDays(30),
+    ]);
+    $target->assignRole('lid');
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.disable-2fa', $target))
+        ->assertRedirect(route('admin.users.edit', $target))
+        ->assertSessionHas('success');
+
+    $target->refresh();
+    expect($target->two_factor_secret)->toBeNull();
+    expect($target->two_factor_recovery_codes)->toBeNull();
+    expect($target->two_factor_confirmed_at)->toBeNull();
+});
+
+test('disableTwoFactor is idempotent op user zonder 2FA', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $target = User::factory()->create(); // geen 2FA-velden
+    $target->assignRole('lid');
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.disable-2fa', $target))
+        ->assertRedirect(route('admin.users.edit', $target))
+        ->assertSessionHas('success');
+
+    $target->refresh();
+    expect($target->two_factor_secret)->toBeNull();
+    expect($target->two_factor_confirmed_at)->toBeNull();
+});
+
+test('disableTwoFactor vereist users.manage-permission', function () {
+    $auteur = User::factory()->create();
+    $auteur->assignRole('auteur');
+
+    $target = User::factory()->create([
+        'two_factor_secret' => 'iets',
+    ]);
+    $target->assignRole('lid');
+
+    $this->actingAs($auteur)
+        ->post(route('admin.users.disable-2fa', $target))
+        ->assertForbidden();
+});

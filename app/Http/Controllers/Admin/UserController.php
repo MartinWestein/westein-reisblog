@@ -168,4 +168,30 @@ class UserController extends Controller
             ->route('admin.users.index')
             ->with('success', __(':name is opnieuw geactiveerd.', ['name' => $user->name]));
     }
+
+    public function sendPasswordReset(Request $request, User $user, SendUserInvitationAction $sendInvitation)
+    {
+        $this->authorize('update', $user);
+
+        $sendInvitation->execute($user);
+
+        return redirect()
+            ->route('admin.users.edit', $user)
+            ->with('success', __('Wachtwoord-reset-mail verstuurd naar :email.', ['email' => $user->email]));
+    }
+
+    public function disableTwoFactor(Request $request, User $user)
+    {
+        $this->authorize('update', $user);
+
+        $user->forceFill([
+            'two_factor_secret' => null,
+            'two_factor_recovery_codes' => null,
+            'two_factor_confirmed_at' => null,
+        ])->save();
+
+        return redirect()
+            ->route('admin.users.edit', $user)
+            ->with('success', __('Tweestapsverificatie uitgezet voor :name.', ['name' => $user->name]));
+    }
 }

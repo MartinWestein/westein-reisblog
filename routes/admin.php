@@ -108,6 +108,10 @@ Route::middleware('can:users.manage')->group(function () {
         ->name('users.deactivate');
     Route::post('gebruikers/{user}/reactiveren', [UserController::class, 'reactivate'])
         ->name('users.reactivate');
+    Route::post('gebruikers/{user}/wachtwoord-reset', [UserController::class, 'sendPasswordReset'])
+        ->name('users.password-reset');
+    Route::post('gebruikers/{user}/2fa-uitzetten', [UserController::class, 'disableTwoFactor'])
+        ->name('users.disable-2fa');
     Route::resource('gebruikers', UserController::class)
         ->parameters(['gebruikers' => 'user'])
         ->names('users')

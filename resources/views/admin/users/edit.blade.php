@@ -97,26 +97,75 @@
                 @enderror
             </div>
 
-            <div class="d-flex justify-content-between gap-2">
-                <div>
-                    @if (! $user->deactivated_at && $user->id !== auth()->id())
-                        <button type="button" class="btn btn-outline-danger"
-                                data-bs-toggle="modal" data-bs-target="#deactivateUserModal">
-                            <i class="bi bi-person-slash me-1"></i> {{ __('Deactiveren') }}
-                        </button>
-                    @endif
-                </div>
-                <div class="d-flex gap-2">
-                    <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">
-                        {{ __('Annuleren') }}
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        {{ __('Opslaan') }}
-                    </button>
-                </div>
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">
+                    {{ __('Annuleren') }}
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    {{ __('Opslaan') }}
+                </button>
             </div>
         </x-admin.card>
     </form>
+
+    @if ($user->id !== auth()->id())
+        <div class="mt-4">
+            <h2 class="h6 text-muted text-uppercase mb-3">{{ __('Beheeracties') }}</h2>
+            <x-admin.card>
+                <div class="d-flex flex-column gap-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-medium">{{ __('Wachtwoord-reset-mail versturen') }}</div>
+                            <div class="small text-muted">
+                                {{ __('Stuurt een nieuwe activatie-link naar :email.', ['email' => $user->email]) }}
+                            </div>
+                        </div>
+                        <form method="POST" action="{{ route('admin.users.password-reset', $user) }}">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-envelope-arrow-up me-1"></i> {{ __('Versturen') }}
+                            </button>
+                        </form>
+                    </div>
+
+                    @if ($user->two_factor_secret !== null || $user->two_factor_confirmed_at !== null)
+                        <hr class="my-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-medium">{{ __('Tweestapsverificatie uitzetten') }}</div>
+                                <div class="small text-muted">
+                                    {{ __('Verwijdert de 2FA-instelling. De gebruiker moet 2FA opnieuw instellen om te kunnen inloggen (indien vereist voor de rol).') }}
+                                </div>
+                            </div>
+                            <form method="POST" action="{{ route('admin.users.disable-2fa', $user) }}"
+                                  onsubmit="return confirm('{{ __('Tweestapsverificatie uitzetten voor :name?', ['name' => $user->name]) }}');">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-warning btn-sm">
+                                    <i class="bi bi-shield-x me-1"></i> {{ __('Uitzetten') }}
+                                </button>
+                            </form>
+                        </div>
+                    @endif
+
+                    @if (! $user->deactivated_at)
+                        <hr class="my-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-medium">{{ __('Account deactiveren') }}</div>
+                                <div class="small text-muted">
+                                    {{ __('Blokkeert inloggen. Bestaande content blijft zichtbaar. Kan later gereactiveerd worden.') }}
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline-danger btn-sm"
+                                    data-bs-toggle="modal" data-bs-target="#deactivateUserModal">
+                                <i class="bi bi-person-slash me-1"></i> {{ __('Deactiveren') }}
+                            </button>
+                        </div>
+                    @endif
+                </div>
+            </x-admin.card>
+        </div>
+    @endif
 @endsection
 
 @if (! $user->deactivated_at && $user->id !== auth()->id())
