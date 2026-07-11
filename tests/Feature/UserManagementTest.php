@@ -342,3 +342,271 @@ test('listener is no-op op al geverifieerde user', function () {
     $user->refresh();
     expect($user->email_verified_at->timestamp)->toBe($verifiedAt->timestamp);
 });
+test('edit-form rendert met user-data pre-filled', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $target = User::factory()->create(['name' => 'Doel Gebruiker', 'email' => 'doel@test.local']);
+    $target->assignRole('editor');
+
+    $this->actingAs($admin)
+        ->get(route('admin.users.edit', $target))
+        ->assertOk()
+        ->assertSee('Doel Gebruiker')
+        ->assertSee('doel@test.local');
+});
+
+test('update wijzigt naam, email en rollen zonder email-change', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    Mail::fake();
+
+    $target = User::factory()->create(['email' => 'origineel@test.local']);
+    $target->assignRole('lid');
+
+    $this->actingAs($admin)
+        ->patch(route('admin.users.update', $target), [
+            'name' => 'Nieuwe Naam',
+            'email' => 'origineel@test.local',
+            'roles' => ['editor'],
+        ])
+        ->assertRedirect(route('admin.users.index'))
+        ->assertSessionHas('success');
+
+    $target->refresh();
+    expect($target->name)->toBe('Nieuwe Naam');
+    expect($target->email)->toBe('origineel@test.local');
+    expect($target->hasRole('editor'))->toBeTrue();
+    expect($target->hasRole('lid'))->toBeFalse();
+
+    Mail::assertNothingOutgoing();
+});
+
+test('update met email-change reset email_verified_at', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    Mail::fake();
+
+    $target = User::factory()->create([
+        'email' => 'oud@test.local',
+        'email_verified_at' => now()->subDays(30),
+    ]);
+    $target->assignRole('lid');
+
+    expect($target->email_verified_at)->not->toBeNull();
+
+    $this->actingAs($admin)
+        ->patch(route('admin.users.update', $target), [
+            'name' => $target->name,
+            'email' => 'nieuw@test.local',
+            'roles' => ['lid'],
+        ]);
+
+    $target->refresh();
+    expect($target->email)->toBe('nieuw@test.local');
+    expect($target->email_verified_at)->toBeNull();
+});
+
+test('update met email-change triggert invite-mail naar nieuwe adres', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    Mail::fake();
+
+    $target = User::factory()->create(['email' => 'oud@test.local']);
+    $target->assignRole('lid');
+
+    $this->actingAs($admin)
+        ->patch(route('admin.users.update', $target), [
+            'name' => $target->name,
+            'email' => 'nieuw@test.local',
+            'roles' => ['lid'],
+        ]);
+
+    Mail::assertQueued(UserInvitationMail::class, function ($mail) {
+        return $mail->hasTo('nieuw@test.local');
+    });
+});
+
+test('update zonder email-change triggert geen invite-mail', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    Mail::fake();
+
+    $target = User::factory()->create(['email' => 'zelfde@test.local']);
+    $target->assignRole('lid');
+
+    $this->actingAs($admin)
+        ->patch(route('admin.users.update', $target), [
+            'name' => 'Andere Naam',
+            'email' => 'zelfde@test.local',
+            'roles' => ['editor'],
+        ]);
+
+    Mail::assertNothingOutgoing();
+});
+
+test('update valideert vereiste velden', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $target = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->patch(route('admin.users.update', $target), [
+            'name' => '',
+            'email' => '',
+        ])
+        ->assertSessionHasErrors(['name', 'email']);
+});
+
+test('update valideert email-uniekheid tegen andere users', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    User::factory()->create(['email' => 'bestaat@test.local']);
+    $target = User::factory()->create(['email' => 'target@test.local']);
+
+    $this->actingAs($admin)
+        ->patch(route('admin.users.update', $target), [
+            'name' => $target->name,
+            'email' => 'bestaat@test.local',
+            'roles' => ['lid'],
+        ])
+        ->assertSessionHasErrors('email');
+});
+
+test('update laat user z\'n eigen email houden', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $target = User::factory()->create(['email' => 'eigen@test.local']);
+    $target->assignRole('lid');
+
+    $this->actingAs($admin)
+        ->patch(route('admin.users.update', $target), [
+            'name' => 'Nieuwe Naam',
+            'email' => 'eigen@test.local',
+            'roles' => ['lid'],
+        ])
+        ->assertRedirect(route('admin.users.index'))
+        ->assertSessionHasNoErrors();
+});
+
+test('update valideert rol-whitelist', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $target = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->patch(route('admin.users.update', $target), [
+            'name' => $target->name,
+            'email' => $target->email,
+            'roles' => ['fake-role'],
+        ])
+        ->assertSessionHasErrors('roles.0');
+});
+
+test('F4-U2 guard: admin kan eigen admin-rol niet verwijderen', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    // Zorg dat er nog een andere actieve admin is, zodat F4-U10 niet triggert
+    $tweede = User::factory()->create();
+    $tweede->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->patch(route('admin.users.update', $admin), [
+            'name' => $admin->name,
+            'email' => $admin->email,
+            'roles' => ['lid'],
+        ])
+        ->assertSessionHasErrors('roles');
+
+    $admin->refresh();
+    expect($admin->hasRole('admin'))->toBeTrue();
+});
+
+test('admin kan wel andere admin z\'n admin-rol verwijderen', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $tweede = User::factory()->create();
+    $tweede->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->patch(route('admin.users.update', $tweede), [
+            'name' => $tweede->name,
+            'email' => $tweede->email,
+            'roles' => ['editor'],
+        ])
+        ->assertRedirect(route('admin.users.index'))
+        ->assertSessionHasNoErrors();
+
+    $tweede->refresh();
+    expect($tweede->hasRole('admin'))->toBeFalse();
+    expect($tweede->hasRole('editor'))->toBeTrue();
+});
+
+test('F4-U10 guard: laatste actieve admin behoudt admin-rol', function () {
+    // Enige admin in het systeem
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->patch(route('admin.users.update', $admin), [
+            'name' => $admin->name,
+            'email' => $admin->email,
+            'roles' => ['lid'],
+        ])
+        ->assertSessionHasErrors('roles');
+
+    $admin->refresh();
+    expect($admin->hasRole('admin'))->toBeTrue();
+});
+
+test('F4-U10 guard: gedeactiveerde admin telt niet mee als actief', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    // Tweede admin is gedeactiveerd - telt niet als "actieve admin"
+    $gedeactiveerd = User::factory()->create(['deactivated_at' => now()]);
+    $gedeactiveerd->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->patch(route('admin.users.update', $admin), [
+            'name' => $admin->name,
+            'email' => $admin->email,
+            'roles' => ['lid'],
+        ])
+        ->assertSessionHasErrors('roles');
+
+    $admin->refresh();
+    expect($admin->hasRole('admin'))->toBeTrue();
+});
+
+test('F4-U10 guard: met meerdere actieve admins mag er eentje degraderen', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $tweede = User::factory()->create();
+    $tweede->assignRole('admin');
+
+    // Admin degradeert tweede naar lid - werkt want admin blijft over als actieve admin
+    $this->actingAs($admin)
+        ->patch(route('admin.users.update', $tweede), [
+            'name' => $tweede->name,
+            'email' => $tweede->email,
+            'roles' => ['lid'],
+        ])
+        ->assertRedirect(route('admin.users.index'))
+        ->assertSessionHasNoErrors();
+
+    $tweede->refresh();
+    expect($tweede->hasRole('admin'))->toBeFalse();
+    expect($tweede->hasRole('lid'))->toBeTrue();
+});

@@ -2,6 +2,7 @@
 
 namespace App\Listeners;
 
+use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
 
 class MarkEmailVerifiedAfterPasswordReset
@@ -15,6 +16,7 @@ class MarkEmailVerifiedAfterPasswordReset
      */
     public function handle(PasswordReset $event): void
     {
+        /** @var User $user */
         $user = $event->user;
 
         if ($user->email_verified_at !== null) {

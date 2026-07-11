@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Actions\Users\SendUserInvitationAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Users\StoreUserRequest;
+use App\Http\Requests\Admin\Users\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -100,13 +101,44 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        // Implementatie in blok 4.13.d
-        return view('admin.users.edit', ['user' => $user]);
+        $this->authorize('update', $user);
+
+        return view('admin.users.edit', [
+            'user' => $user,
+            'roleNames' => Role::query()->orderBy('name')->pluck('name')->all(),
+            'currentRoles' => $user->roles->pluck('name')->all(),
+        ]);
     }
 
-    public function update(Request $request, User $user)
+    public function update(UpdateUserRequest $request, User $user, SendUserInvitationAction $sendInvitation)
     {
-        // Implementatie in blok 4.13.d
-        abort(501, 'Nog niet geïmplementeerd.');
+        $validated = $request->validated();
+
+        $emailChanged = $user->email !== $validated['email'];
+
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+
+        if ($emailChanged) {
+            $user->email_verified_at = null;
+        }
+
+        $user->save();
+
+        $user->syncRoles($validated['roles'] ?? []);
+
+        if ($emailChanged) {
+            $sendInvitation->execute($user);
+
+            $message = __('Gebruiker bijgewerkt. Nieuwe activatie-mail verstuurd naar :email.', [
+                'email' => $user->email,
+            ]);
+        } else {
+            $message = __('Gebruiker bijgewerkt.');
+        }
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', $message);
     }
 }
