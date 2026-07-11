@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Actions\Users\SendUserInvitationAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Users\DeactivateUserRequest;
 use App\Http\Requests\Admin\Users\StoreUserRequest;
 use App\Http\Requests\Admin\Users\UpdateUserRequest;
 use App\Models\User;
@@ -140,5 +141,31 @@ class UserController extends Controller
         return redirect()
             ->route('admin.users.index')
             ->with('success', $message);
+    }
+
+    public function deactivate(DeactivateUserRequest $request, User $user)
+    {
+        $user->update([
+            'deactivated_at' => now(),
+            'deactivation_reason' => $request->validated('reason'),
+        ]);
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', __(':name is gedeactiveerd.', ['name' => $user->name]));
+    }
+
+    public function reactivate(Request $request, User $user)
+    {
+        $this->authorize('update', $user);
+
+        $user->update([
+            'deactivated_at' => null,
+            'deactivation_reason' => null,
+        ]);
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', __(':name is opnieuw geactiveerd.', ['name' => $user->name]));
     }
 }

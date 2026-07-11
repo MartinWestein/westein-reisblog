@@ -104,6 +104,10 @@ Route::post('prullenbak/bulk-herstel', [TrashController::class, 'bulkRestore'])
 
 // Gebruikers (stap 4.13)
 Route::middleware('can:users.manage')->group(function () {
+    Route::post('gebruikers/{user}/deactiveren', [UserController::class, 'deactivate'])
+        ->name('users.deactivate');
+    Route::post('gebruikers/{user}/reactiveren', [UserController::class, 'reactivate'])
+        ->name('users.reactivate');
     Route::resource('gebruikers', UserController::class)
         ->parameters(['gebruikers' => 'user'])
         ->names('users')

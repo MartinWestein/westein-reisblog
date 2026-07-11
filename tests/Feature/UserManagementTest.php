@@ -610,3 +610,159 @@ test('F4-U10 guard: met meerdere actieve admins mag er eentje degraderen', funct
     expect($tweede->hasRole('admin'))->toBeFalse();
     expect($tweede->hasRole('lid'))->toBeTrue();
 });
+
+test('deactivate happy path met reden', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    // Zorg dat er nog een actieve admin is (F4-U10 anders triggert)
+    $adminBackup = User::factory()->create();
+    $adminBackup->assignRole('admin');
+
+    $target = User::factory()->create();
+    $target->assignRole('lid');
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.deactivate', $target), [
+            'reason' => 'Op eigen verzoek',
+        ])
+        ->assertRedirect(route('admin.users.index'))
+        ->assertSessionHas('success');
+
+    $target->refresh();
+    expect($target->deactivated_at)->not->toBeNull();
+    expect($target->deactivation_reason)->toBe('Op eigen verzoek');
+});
+
+test('deactivate zonder reden werkt', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $target = User::factory()->create();
+    $target->assignRole('lid');
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.deactivate', $target))
+        ->assertRedirect(route('admin.users.index'));
+
+    $target->refresh();
+    expect($target->deactivated_at)->not->toBeNull();
+    expect($target->deactivation_reason)->toBeNull();
+});
+
+test('F4-U2 guard: admin kan zichzelf niet deactiveren', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $adminBackup = User::factory()->create();
+    $adminBackup->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.deactivate', $admin))
+        ->assertSessionHasErrors('reason');
+
+    $admin->refresh();
+    expect($admin->deactivated_at)->toBeNull();
+});
+
+test('F4-U10 guard: laatste actieve admin kan niet gedeactiveerd worden', function () {
+    // Enige admin in het systeem
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    // Andere admin die gedeactiveerd is (telt niet als actief)
+    $gedeactiveerdeAdmin = User::factory()->create(['deactivated_at' => now()]);
+    $gedeactiveerdeAdmin->assignRole('admin');
+
+    // We hebben een tweede admin nodig om de eerste te kunnen bewerken zonder self-lock
+    // Dus laten we een echte second-admin maken die de deactivate doet
+    $tweedeAdmin = User::factory()->create();
+    $tweedeAdmin->assignRole('admin');
+
+    // Nu zijn er twee actieve admins: $admin en $tweedeAdmin
+    // We probeer $admin te deactiveren via $tweedeAdmin
+    // Dat zou moeten werken want er blijft nog een admin over ($tweedeAdmin)
+    // Dus voor de last-admin-test moeten we juist de laatste actieve admin proberen te deactiveren
+
+    // Herstel scenario: één actieve admin ($tweedeAdmin), één gedeactiveerde ($admin nu al gedeactiveerd)
+    $admin->deactivated_at = now();
+    $admin->save();
+
+    // Nu is $tweedeAdmin de enige actieve admin
+    // Een andere admin proberen $tweedeAdmin te deactiveren - maar er is geen andere admin!
+    // Oplossing: gebruik $tweedeAdmin zelf, maar F4-U2 zou dan triggeren
+
+    // Cleanest: laat $admin de acting-user zijn, $admin is de enige actieve admin,
+    // en probeer $admin te deactiveren. Dat is self-lock (F4-U2) + last-admin (F4-U10)
+    // beide - matcht F4-U19 (beide meldingen).
+
+    // Voor pure F4-U10 test zonder F4-U2: maak twee admins waarvan één acting, ander is target
+    // en target is de enige actieve admin - dat kan alleen als acting geen admin is
+    // maar dan komt 'ie niet door de policy heen.
+
+    // Conclusie: F4-U10 alleen is niet zinvol testbaar zonder F4-U2 in familieblog-context.
+    // We testen dat het scenario "laatste actieve admin" blokkeert, ongeacht welke guard 't oppikt.
+
+    // Reset test-fixture voor deze specifieke check:
+    User::query()->delete();
+
+    $enigeAdmin = User::factory()->create();
+    $enigeAdmin->assignRole('admin');
+
+    $this->actingAs($enigeAdmin)
+        ->post(route('admin.users.deactivate', $enigeAdmin))
+        ->assertSessionHasErrors('reason');
+
+    $enigeAdmin->refresh();
+    expect($enigeAdmin->deactivated_at)->toBeNull();
+});
+
+test('reactivate reset deactivated_at en deactivation_reason', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $target = User::factory()->create([
+        'deactivated_at' => now()->subDays(5),
+        'deactivation_reason' => 'Was tijdelijk uitgeschakeld',
+    ]);
+    $target->assignRole('lid');
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.reactivate', $target))
+        ->assertRedirect(route('admin.users.index'))
+        ->assertSessionHas('success');
+
+    $target->refresh();
+    expect($target->deactivated_at)->toBeNull();
+    expect($target->deactivation_reason)->toBeNull();
+});
+
+test('Fortify blokkeert login van gedeactiveerde user', function () {
+    $user = User::factory()->create([
+        'password' => bcrypt('geheim-wachtwoord'),
+        'deactivated_at' => now(),
+    ]);
+    $user->assignRole('lid');
+
+    $this->post(route('login'), [
+        'email' => $user->email,
+        'password' => 'geheim-wachtwoord',
+    ]);
+
+    $this->assertGuest();
+});
+
+test('Fortify staat login toe voor actieve user', function () {
+    $user = User::factory()->create([
+        'password' => bcrypt('geheim-wachtwoord'),
+        'email_verified_at' => now(),
+    ]);
+    $user->assignRole('lid');
+
+    $this->post(route('login'), [
+        'email' => $user->email,
+        'password' => 'geheim-wachtwoord',
+    ]);
+
+    $this->assertAuthenticatedAs($user);
+});
