@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Users\BulkDeactivateUsersAction;
+use App\Actions\Users\BulkReactivateUsersAction;
 use App\Actions\Users\SendUserInvitationAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Users\BulkDeactivateUsersRequest;
+use App\Http\Requests\Admin\Users\BulkReactivateUsersRequest;
 use App\Http\Requests\Admin\Users\DeactivateUserRequest;
 use App\Http\Requests\Admin\Users\StoreUserRequest;
 use App\Http\Requests\Admin\Users\UpdateUserRequest;
@@ -193,5 +197,33 @@ class UserController extends Controller
         return redirect()
             ->route('admin.users.edit', $user)
             ->with('success', __('Tweestapsverificatie uitgezet voor :name.', ['name' => $user->name]));
+    }
+
+    public function bulkDeactivate(BulkDeactivateUsersRequest $request, BulkDeactivateUsersAction $action)
+    {
+        $ids = $request->validated('ids');
+        $affected = $action->execute($ids);
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', trans_choice(
+                '{0} Geen gebruikers gedeactiveerd.|{1} :count gebruiker gedeactiveerd.|[2,*] :count gebruikers gedeactiveerd.',
+                $affected,
+                ['count' => $affected]
+            ));
+    }
+
+    public function bulkReactivate(BulkReactivateUsersRequest $request, BulkReactivateUsersAction $action)
+    {
+        $ids = $request->validated('ids');
+        $affected = $action->execute($ids);
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', trans_choice(
+                '{0} Geen gebruikers gereactiveerd.|{1} :count gebruiker gereactiveerd.|[2,*] :count gebruikers gereactiveerd.',
+                $affected,
+                ['count' => $affected]
+            ));
     }
 }

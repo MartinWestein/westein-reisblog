@@ -70,10 +70,27 @@
                 <p class="mt-2 mb-0">{{ __('Geen gebruikers gevonden.') }}</p>
             </div>
         @else
+            {{-- Reset de store bij elke page-load (analoog aan trashSelection) --}}
+            <div x-init="$store.userSelection.reset()" class="d-none"></div>
+
+            {{-- "Selecteer alle zichtbare"-control --}}
+            <div class="mb-2">
+                <label class="d-inline-flex align-items-center gap-2 small text-muted">
+                    <input
+                        type="checkbox"
+                        class="form-check-input m-0"
+                        :checked="$store.userSelection.allVisibleSelected()"
+                        @change="$event.target.checked ? $store.userSelection.selectAllVisible() : $store.userSelection.clear()"
+                    >
+                    <span>{{ __('Selecteer alle zichtbare') }} ({{ $users->count() }})</span>
+                </label>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
+                            <th style="width: 40px;"></th>
                             <th>
                                 <x-admin.sort-link sort="name" :current-sort="$sort" :current-direction="$direction">
                                     {{ __('Naam') }}
@@ -91,7 +108,15 @@
                     </thead>
                     <tbody>
                         @foreach ($users as $user)
-                            <tr>
+                            <tr data-user-id="{{ $user->id }}">
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        class="form-check-input"
+                                        :checked="$store.userSelection.isSelected({{ $user->id }})"
+                                        @change="$store.userSelection.toggle({{ $user->id }})"
+                                    >
+                                </td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <x-admin.avatar-initials :subject="$user" />
@@ -128,6 +153,116 @@
             <div class="mt-3">
                 {{ $users->links() }}
             </div>
+
+            {{-- Sticky-bottom action bar --}}
+            <div
+                x-show="$store.userSelection.hasSelection()"
+                x-cloak
+                x-transition.opacity
+                class="media-action-bar"
+            >
+                <div class="media-action-bar__inner">
+                    <span class="text-muted">
+                        <span x-text="$store.userSelection.count()"></span>
+                        <span x-text="$store.userSelection.count() === 1 ? '{{ __('gebruiker') }}' : '{{ __('gebruikers') }}'"></span> {{ __('geselecteerd') }}
+                    </span>
+                    <div class="d-flex gap-2 ms-auto">
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                @click="$store.userSelection.clear()">
+                            {{ __('Selectie wissen') }}
+                        </button>
+                        <button type="button" class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal" data-bs-target="#usersBulkReactivateModal">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> {{ __('Reactiveren') }}
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger"
+                                data-bs-toggle="modal" data-bs-target="#usersBulkDeactivateModal">
+                            <i class="bi bi-person-slash me-1"></i> {{ __('Deactiveren') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Hidden forms voor bulk-submits --}}
+            <form
+                id="users-bulk-deactivate-form"
+                method="POST"
+                action="{{ route('admin.users.bulk-deactivate') }}"
+                class="d-none"
+            >
+                @csrf
+                <input type="hidden" name="ids" value="">
+            </form>
+
+            <form
+                id="users-bulk-reactivate-form"
+                method="POST"
+                action="{{ route('admin.users.bulk-reactivate') }}"
+                class="d-none"
+            >
+                @csrf
+                <input type="hidden" name="ids" value="">
+            </form>
         @endif
     </x-admin.card>
 @endsection
+
+@push('modals')
+    <div class="modal fade" id="usersBulkDeactivateModal" tabindex="-1" aria-hidden="true" x-data>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5">{{ __('Gebruikers deactiveren?') }}</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Sluiten') }}"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">
+                        <span x-text="$store.userSelection.count()"></span>
+                        {{ __('gebruikers deactiveren?') }}
+                    </p>
+                    <p class="small text-muted mb-0">
+                        {{ __('Reeds gedeactiveerde gebruikers worden overgeslagen. Bestaande content blijft zichtbaar.') }}
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        {{ __('Annuleren') }}
+                    </button>
+                    <button type="button" class="btn btn-danger"
+                            @click="$store.userSelection.destroyDeactivate()">
+                        <i class="bi bi-person-slash me-1"></i> {{ __('Deactiveren') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="usersBulkReactivateModal" tabindex="-1" aria-hidden="true" x-data>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5">{{ __('Gebruikers reactiveren?') }}</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('Sluiten') }}"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">
+                        <span x-text="$store.userSelection.count()"></span>
+                        {{ __('gebruikers reactiveren?') }}
+                    </p>
+                    <p class="small text-muted mb-0">
+                        {{ __('Reeds actieve gebruikers worden overgeslagen.') }}
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        {{ __('Annuleren') }}
+                    </button>
+                    <button type="button" class="btn btn-primary"
+                            @click="$store.userSelection.destroyReactivate()">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> {{ __('Reactiveren') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+@endpush

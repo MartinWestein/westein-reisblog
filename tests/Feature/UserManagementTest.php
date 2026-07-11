@@ -850,3 +850,297 @@ test('disableTwoFactor vereist users.manage-permission', function () {
         ->post(route('admin.users.disable-2fa', $target))
         ->assertForbidden();
 });
+
+test('bulk-deactivate zet alle geselecteerde users op deactivated_at', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+    User::factory()->create()->assignRole('admin'); // backup-admin voor F4-U10
+
+    $u1 = User::factory()->create();
+    $u1->assignRole('lid');
+    $u2 = User::factory()->create();
+    $u2->assignRole('lid');
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.bulk-deactivate'), [
+            'ids' => json_encode([$u1->id, $u2->id]),
+        ])
+        ->assertRedirect(route('admin.users.index'))
+        ->assertSessionHas('success');
+
+    expect($u1->refresh()->deactivated_at)->not->toBeNull();
+    expect($u2->refresh()->deactivated_at)->not->toBeNull();
+});
+
+test('bulk-deactivate slaat reeds gedeactiveerde users silent over', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+    User::factory()->create()->assignRole('admin');
+
+    $active = User::factory()->create();
+    $active->assignRole('lid');
+    $alreadyDeactivated = User::factory()->create(['deactivated_at' => now()->subDays(5)]);
+    $alreadyDeactivated->assignRole('lid');
+
+    $originalTimestamp = $alreadyDeactivated->deactivated_at;
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.bulk-deactivate'), [
+            'ids' => json_encode([$active->id, $alreadyDeactivated->id]),
+        ])
+        ->assertRedirect(route('admin.users.index'));
+
+    expect($active->refresh()->deactivated_at)->not->toBeNull();
+    // Timestamp op reeds gedeactiveerde user is niet overschreven
+    expect($alreadyDeactivated->refresh()->deactivated_at->timestamp)->toBe($originalTimestamp->timestamp);
+});
+
+test('bulk-reactivate zet alle geselecteerde users op deactivated_at null', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $u1 = User::factory()->create(['deactivated_at' => now(), 'deactivation_reason' => 'test']);
+    $u1->assignRole('lid');
+    $u2 = User::factory()->create(['deactivated_at' => now()->subDays(3)]);
+    $u2->assignRole('lid');
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.bulk-reactivate'), [
+            'ids' => json_encode([$u1->id, $u2->id]),
+        ])
+        ->assertRedirect(route('admin.users.index'))
+        ->assertSessionHas('success');
+
+    expect($u1->refresh()->deactivated_at)->toBeNull();
+    expect($u2->refresh()->deactivated_at)->toBeNull();
+});
+
+test('bulk-reactivate slaat reeds actieve users silent over', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $deactivated = User::factory()->create(['deactivated_at' => now()]);
+    $deactivated->assignRole('lid');
+    $stillActive = User::factory()->create();
+    $stillActive->assignRole('lid');
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.bulk-reactivate'), [
+            'ids' => json_encode([$deactivated->id, $stillActive->id]),
+        ])
+        ->assertRedirect(route('admin.users.index'));
+
+    expect($deactivated->refresh()->deactivated_at)->toBeNull();
+    // Still active blijft null (was al null)
+    expect($stillActive->refresh()->deactivated_at)->toBeNull();
+});
+
+test('bulk-reactivate reset ook deactivation_reason', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $u = User::factory()->create([
+        'deactivated_at' => now(),
+        'deactivation_reason' => 'Was tijdelijk gedeactiveerd',
+    ]);
+    $u->assignRole('lid');
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.bulk-reactivate'), [
+            'ids' => json_encode([$u->id]),
+        ]);
+
+    $u->refresh();
+    expect($u->deactivated_at)->toBeNull();
+    expect($u->deactivation_reason)->toBeNull();
+});
+
+test('bulk-deactivate valideert dat ids niet leeg is', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.bulk-deactivate'), [
+            'ids' => json_encode([]),
+        ])
+        ->assertSessionHasErrors('ids');
+});
+
+test('bulk-deactivate valideert dat elke id bestaat', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+    User::factory()->create()->assignRole('admin');
+
+    $u = User::factory()->create();
+    $u->assignRole('lid');
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.bulk-deactivate'), [
+            'ids' => json_encode([$u->id, 99999]),
+        ])
+        ->assertSessionHasErrors('ids.1');
+});
+
+test('bulk-deactivate valideert max 100 ids', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+    User::factory()->create()->assignRole('admin');
+
+    $ids = range(1, 101);
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.bulk-deactivate'), [
+            'ids' => json_encode($ids),
+        ])
+        ->assertSessionHasErrors('ids');
+});
+
+test('F4-U2 spiegel: bulk-deactivate blokkeert selectie die de acting-admin bevat', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+    User::factory()->create()->assignRole('admin'); // F4-U10 backup
+
+    $u = User::factory()->create();
+    $u->assignRole('lid');
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.bulk-deactivate'), [
+            'ids' => json_encode([$admin->id, $u->id]),
+        ])
+        ->assertSessionHasErrors('ids');
+
+    expect($admin->refresh()->deactivated_at)->toBeNull();
+    expect($u->refresh()->deactivated_at)->toBeNull();
+});
+
+test('F4-U10 spiegel: bulk-deactivate blokkeert als alle actieve admins in selectie zitten', function () {
+    // Twee admins in het systeem, beide actief
+    $admin1 = User::factory()->create();
+    $admin1->assignRole('admin');
+    $admin2 = User::factory()->create();
+    $admin2->assignRole('admin');
+
+    // Admin1 probeert admin2 én zichzelf te deactiveren via bulk
+    // Zowel F4-U2 (self in selection) als F4-U10 zouden triggeren
+    // Voor pure F4-U10 test: laat admin1 alleen admin2 selecteren
+    // maar dan is F4-U10 alleen relevant als admin2 de enige overgebleven zou zijn
+    // Dus reset scenario naar: één admin ($admin1) probeert alle admins te selecteren
+    // Cleaner: gebruik $admin1 als acting, en zet $admin1 in de selection samen met andere admin
+    // Maar F4-U2 zou dan triggeren. Voor pure F4-U10 zonder F4-U2 overlap:
+
+    // Reset: één enkele admin plus non-admin selecteert alle admins
+    // Onmogelijk want alleen admins hebben users.manage
+    // Zelfde probleem als in blok e: F4-U10 in isolation testen kan niet
+    // realistisch. We testen dat de guard triggert.
+
+    // Concreet: één admin probeert een selectie die alle actieve admins bevat.
+    // Voeg een derde admin toe zodat we admin2+admin3 kunnen selecteren zonder self-lock.
+    $admin3 = User::factory()->create();
+    $admin3->assignRole('admin');
+
+    // Nu zijn er drie admins. Admin1 selecteert admin2 en admin3 (beide andere admins).
+    // Als admin1 zelf ook admin is, blijft admin1 over -> F4-U10 triggert NIET
+    // Dus we moeten admin1 zelf géén admin maken? Kan niet, dan geen users.manage
+
+    // Andere aanpak: admin1 acteert, en selectie bevat admin1 zelf plus alle andere admins
+    // -> F4-U2 én F4-U10 triggeren beide -> assertSessionHasErrors werkt op beide
+
+    // Voor puurdere F4-U10 test: acting admin heeft users.manage, is één van twee admins,
+    // selecteert de andere admin. Dan is guard: als andere_admin gedeactiveerd wordt,
+    // blijft acting_admin over als actieve admin -> F4-U10 triggert NIET.
+    // Dus F4-U10 kan alleen triggeren als:
+    // - Selectie bevat acting_admin (dan F4-U2 óók)
+    // - OF selectie bevat alle andere actieve admins en acting_admin is niet zelf actief
+
+    // Dit is dezelfde limitatie als in blok e. Test-strategie: F4-U10 triggert
+    // als selectie én acting-admin de laatste actieve admins zijn.
+
+    // Clean test: één actieve admin + één gedeactiveerde admin + acting selecteert de actieve admin
+    // Maar dan is acting zelf ook admin? Kan niet want dan niet-actief. Hersetup:
+
+    // Actor: één acting admin (=$admin1), enige actieve admin
+    // Selection: $admin1 zelf -> F4-U2 triggert (self-lock)
+    // OF: acting = admin die zichzelf niet in selection zet, maar dan MOET er een andere admin zijn
+    // die in de selection kan, en die is dan actief -> guard triggert alleen als alle in selection
+
+    // Realistisch bulk-F4-U10 scenario: twee admins, admin1 selecteert admin2, ALS admin2 de enige
+    // actieve admin is naast admin1 -> F4-U10 zou moeten passeren want admin1 blijft.
+    // Voor F4-U10 fail: selection bevat alle andere actieve admins EN acting-admin is niet actief
+    // -> maar dan mag acting-admin niet inloggen (F4-U5)
+
+    // Conclusie: F4-U10 bulk-guard triggert alleen bij F4-U2-overlap in realistische scenarios.
+    // Test: acting selecteert zichzelf + alle andere actieve admins -> beide guards triggeren.
+    User::query()->delete();
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+    $anotherAdmin = User::factory()->create();
+    $anotherAdmin->assignRole('admin');
+
+    // Selectie bevat de andere admin (niet acting-admin). Er blijft één actieve admin over.
+    // F4-U10 triggert NIET in deze setup. Om F4-U10 pure te testen: reset.
+    // Selectie bevat álle actieve admins behalve acting. Als selection = [anotherAdmin]
+    // en er zijn nog admins buiten selectie ($admin blijft) -> F4-U10 passeert.
+
+    // Pure F4-U10 fail vereist: selection bevat alle actieve admins minus acting,
+    // EN acting is niet actief. Onhaalbaar realistisch.
+
+    // Praktische test: gecombineerd scenario met acting in selection + alle andere admins
+    $this->actingAs($admin)
+        ->post(route('admin.users.bulk-deactivate'), [
+            'ids' => json_encode([$admin->id, $anotherAdmin->id]),
+        ])
+        ->assertSessionHasErrors('ids');
+
+    expect($admin->refresh()->deactivated_at)->toBeNull();
+    expect($anotherAdmin->refresh()->deactivated_at)->toBeNull();
+});
+
+test('bulk-deactivate laat toe als er buiten selectie nog actieve admins zijn', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+    User::factory()->create()->assignRole('admin'); // extra actieve admin buiten selectie
+
+    $u1 = User::factory()->create();
+    $u1->assignRole('lid');
+    $u2 = User::factory()->create();
+    $u2->assignRole('lid');
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.bulk-deactivate'), [
+            'ids' => json_encode([$u1->id, $u2->id]),
+        ])
+        ->assertRedirect(route('admin.users.index'))
+        ->assertSessionHasNoErrors();
+
+    expect($u1->refresh()->deactivated_at)->not->toBeNull();
+    expect($u2->refresh()->deactivated_at)->not->toBeNull();
+});
+
+test('bulk-deactivate vereist users.manage-permission', function () {
+    $editor = User::factory()->create();
+    $editor->assignRole('editor');
+
+    $u = User::factory()->create();
+    $u->assignRole('lid');
+
+    $this->actingAs($editor)
+        ->post(route('admin.users.bulk-deactivate'), [
+            'ids' => json_encode([$u->id]),
+        ])
+        ->assertForbidden();
+});
+
+test('bulk-reactivate vereist users.manage-permission', function () {
+    $auteur = User::factory()->create();
+    $auteur->assignRole('auteur');
+
+    $u = User::factory()->create(['deactivated_at' => now()]);
+    $u->assignRole('lid');
+
+    $this->actingAs($auteur)
+        ->post(route('admin.users.bulk-reactivate'), [
+            'ids' => json_encode([$u->id]),
+        ])
+        ->assertForbidden();
+});

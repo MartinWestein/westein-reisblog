@@ -11,6 +11,7 @@ import routeWaypoints from './admin/route-waypoints.js';
 import './admin/image-picker.js'
 import { registerMediaSelectionStore } from './admin/media-selection.js';
 import { registerTrashSelectionStore } from './admin/trash-selection.js';
+import { registerUserSelectionStore } from './admin/user-selection.js';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -39,6 +40,7 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('routeWaypoints', routeWaypoints);
     registerMediaSelectionStore(Alpine);
     registerTrashSelectionStore(Alpine);
+    registerUserSelectionStore(Alpine);
 });
 
 window.Alpine = Alpine;
