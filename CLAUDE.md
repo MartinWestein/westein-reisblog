@@ -2,42 +2,43 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 5 juli 2026 — Stap 4.12 (`/admin/prullenbak`) volledig afgerond op branch `stap-4.12-prullenbak`, suite 465 groen, klaar voor merge + push.
+**Laatst bijgewerkt:** 11 juli 2026 — Stap 4.13 (Users + rollen beheer) volledig afgerond in zeven sub-blokken op branch `stap-4.13-users-rollen`, suite 526 groen. Stap 4.14 (deze sessie) rondt Fase 4 af.
 **Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
-**Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → wordt na 4.14 vastgelegd in `fase-4-bouwplan.md`.
+**Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → `fase-4-bouwplan.md` (opgeleverd in Stap 4.14).
 
 ---
 
 ## Status
 
-Fase 4 in uitvoering. Stap 4.12 (`/admin/prullenbak`) volledig afgerond op feature-branch `stap-4.12-prullenbak` in zes sub-blokken (chore(sidebar-extractie) + 4.12.a.2 RBAC + chore(seeder) + 4.12.a.3 data-laag + 4.12.b.1 restore + 4.12.b.2 force-delete + 4.12.c bulk-restore). Lokaal **7 commits ahead van `origin/main`** — merge + push staat gepland zodra deze CLAUDE.md-update commit'd is. Testsuite **465 groen, deterministisch**. 43 nieuwe tests specifiek voor Trash-module in `TrashManagementTest.php`.
+Fase 4 volledig afgerond. Stap 4.13 (Users + rollen beheer) in zeven sub-blokken opgeleverd op feature-branch `stap-4.13-users-rollen`, met 22 beslissingen (F4-U1 t/m F4-U22) vastgelegd. Testsuite **526 groen, deterministisch**. Branch bevat 7 commits ahead van `origin/main`, plus 4.14-commit die deze CLAUDE.md-update en `fase-4-bouwplan.md` toevoegt.
 
-## Volgende concrete actie — Stap 4.13: Users + rollen beheer
+Sub-blokken 4.13:
+- **4.13.a** Foundation + sidebar-retrofit (nav-link `:can`-prop, drop dode Locaties-link, controller/policy/testfile-stubs)
+- **4.13.b** Index met filter/sort/paginate (7 tests)
+- **4.13.c** Create + invite-flow met Mailable + PasswordReset-listener (9 tests)
+- **4.13.d** Edit + rollen + guards (F4-U2 self-lock + F4-U10 last-admin via `withValidator()`), email-change resetet `email_verified_at` en dispatcht nieuwe invite (14 tests)
+- **4.13.e** Deactivate/reactivate + Fortify `authenticateUsing()`-blok (7 tests)
+- **4.13.f** Admin wachtwoord-reset + 2FA-force-disable via aparte Beheeracties-sectie (5 tests)
+- **4.13.g** Bulk-flow (Alpine.store + sticky action-bar + twee modals + bulk-guards) (13 tests)
 
-Stap 4.12 afgerond, negen beslissingen (F4-T1 t/m F4-T9) vastgelegd. Volgende module = Stap 4.13 Users + rollen beheer, volgens roadmap.
+Alle drie de loose ends uit CLAUDE.md v vóór deze sessie zijn opgelost:
+1. Sidebar `@can`-retrofit ✓ (blok 4.13.a)
+2. Dode `admin.locaties.index`-link ✓ (blok 4.13.a)
+3. Legacy `media.upload`/`media.delete` permissions uit RolePermissionSeeder ✓ (was al opgeruimd in 4.12)
 
-Voorbereiding op te focussen vóór ontwerp-vragen:
-- User CRUD (index, create, edit) — F4-8 hint naar `deactivated_at` + `deactivation_reason` als schema-uitbreiding (geen hard-delete via UI). Migratie waarschijnlijk al nodig.
-- Rollen-toewijzing per user (Spatie multi-role, F2-4).
-- Wachtwoord-reset door admin (Fortify-integratie).
-- 2FA-status inspectie/reset.
-- Bulk-acties (activatie/deactivatie/rol-toewijzing).
+## Volgende concrete actie — Stap 4.14 → merge naar main + push
 
-Beslissingen voor Stap 4.13 worden geprefixt `F4-U1, F4-U2, …` (U voor Users).
+Na deze CLAUDE.md-update en `fase-4-bouwplan.md`-oplevering:
+- `.\vendor\bin\pint` op alle 4.14-wijzigingen
+- Één commit: `Stap 4.14: CLAUDE.md update + fase-4-bouwplan.md`
+- `git checkout main && git merge stap-4.13-users-rollen && git push origin main`
+- Feature-branch verwijderen lokaal + remote
 
-### Loose ends om in 4.13 mee te nemen
+Daarna: **Fase 5 — Ontwikkeling openbare pagina's**. Zie masterplan §5 voor scope.
 
-1. **Sidebar `<x-admin.nav-link>` doet géén `@can`-check.** Alleen `Route::has()`. Auteur ziet links naar Familie, Pagina's, Media, Gebruikers die naar 403 leiden. Fix: component extenden met optionele `:can`-prop, álle items in één pass retrofitten. Prullenbak-link kreeg in 4.12 al ad-hoc `@can('trash.manage')`-wrap — vergelijkbaar patroon voor de rest.
+### Loose end voor Fase 5
 
-2. **Dode `admin.locaties.index`-sidebar-link.** Route bestaat niet meer sinds 4.4 (Locations zijn genest onder Destinations; alleen `admin.destinations.locations.index` bestaat, en die vereist een `{destination}`-parameter dus is nooit een geldige top-level nav-link). `<x-admin.nav-link>`'s `Route::has()`-check zorgt dat de link stil disabled is, maar visueel wel aanwezig. Bij de `@can`-retrofit **regel dropen** — niet omdopen naar `admin.locations.index` want die bestaat óók niet.
-
----
-
-### Twee loose ends uit Stap 4.11 die meegaan naar latere sessie
-
-1. **Legacy `media.upload` / `media.delete` permissions in `RolePermissionSeeder`.** Niet gebruikt door enige policy (F4-9 zegt expliciet "geen losse media-permission — eigenaar-policy via `$media->model`"). Onschadelijk maar onnetjes. Mini-cleanup-commit waardig, bijvoorbeeld tijdens Stap 4.13 (Users + rollen beheer) wanneer de seeder toch grondig geraakt wordt.
-
-2. **Sidebar-leakage project-breed.** `<x-admin.nav-link>` doet alleen `Route::has()`-existence-check, geen `@can`-permission-check. Auteur ziet links naar Familie, Pagina's, Media, Prullenbak, Gebruikers die naar 403 leiden. Geen 4.11-probleem — patroon zit door de hele sidebar. Fix: component extenden met optionele `:can`-prop, álle items in één pass retrofitten. Geschikt voor Stap 4.13.
+- **`ExampleTest.php` (welcome-view Vite-manifest-fout)**. Standaard Laravel-artefact. Test faalt zonder `npm run dev` omdat `welcome.blade.php` verwijst naar `resources/css/app.css` die niet in het Vite-manifest zit (ons manifest levert `resources/scss/app.scss` en `admin.scss`). In Fase 5 wordt `welcome.blade.php` vervangen door onze eigen homepage — `ExampleTest.php` mag dan verwijderd worden. Tot dat moment: `npm run dev` moet lopen tijdens `php artisan test` óf `--exclude=Example`-filter.
 
 ---
 
@@ -204,6 +205,42 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 - `App\Actions\Trash\BulkRestoreTrashItemsAction` — leunt op single-action, silent-skip op `ModelNotFoundException` (bijv. race met force-delete), ancestor-dedup op `type:title`-key over de hele batch. `BulkRestoreResult` DTO met tri-count (primary/ancestor/failed).
 - `App\Http\Requests\Admin\Trash\BulkRestoreRequest` — max:100 cap, `Rule::in(...)` op type, `prepareForValidation()` decode't JSON-string payload.
 
+### Fase 4 — Users + rollen beheer (Stap 4.13)
+- F4-U1. Scope volledig: index + create + edit + rollen + deactivate/reactivate + admin-triggered wachtwoord-reset + 2FA-status inspectie + 2FA-force-disable.
+- F4-U2. Beide role-guards: geen zelf-lock op admin-rol + geen laatste-admin-verlies. Enforcement via `withValidator()` in `UpdateUserRequest`; bulk-spiegel in `BulkDeactivateUsersRequest`.
+- F4-U3. Create-flow via invite-mail met Fortify password-reset-link (hergebruikt de Fortify-token-broker; niet Fortify's default `sendResetLink` maar handmatig `Password::createToken()` + custom Mailable).
+- F4-U4. `email_verified_at` wordt automatisch op `now()` gezet bij succesvolle password-reset via invite-link, via listener op `Illuminate\Auth\Events\PasswordReset`. Idempotente no-op voor al-geverifieerde users.
+- F4-U5. Gedeactiveerde users: hard block via Fortify `authenticateUsing()`-callback, dezelfde generic error als bij fout wachtwoord (geen info-leak).
+- F4-U6. Bestaande content blijft zichtbaar met auteur-naam bij deactivatie (geen retroactieve anonimisering). Gedeactiveerde users blijven zichtbaar in admin-paneel met status-badge en reactivate-knop.
+- F4-U7. Index-patroon: tabel (niet cards) — avatar-thumb naast naam, sortable kolommen, badges voor rollen/status. Consistent met andere operationele modules (Subscribers, Comments).
+- F4-U8. Filters: tekst-zoek (naam+email) + rol-filter + status-filter. Sort: naam/email/created_at, default `created_at desc`. Geen 2FA-filter (F2-2 impliceert dat Admin/Editor sowieso 2FA hebben, marginale use case).
+- F4-U9. Bulk-acties: alleen bulk-deactivate + bulk-reactivate, geen bulk-rol-toewijzen. Hergebruikt `Alpine.store` + sticky action-bar patroon (F4-M8/M9).
+- F4-U10. Laatste-admin-guard strikt: alleen actieve admins tellen. Guard blokkeert zowel rol-verwijdering als deactivate van de laatste actieve admin. Concrete query: `User::role('admin')->active()->where('id', '!=', $editedUser->id)->count() > 0`.
+- F4-U11. RBAC: alleen Admin via bestaande permission `users.manage`. Editor/Auteur/Lid krijgen 403. `roles.manage`-permission uit seeder blijft voor toekomstige rol-CRUD.
+- F4-U12. Tabel-kolommen minimaal: avatar+naam, email, rollen, status, acties. Geen created_at-kolom (blijft wel sort-optie), geen 2FA-badge (die zit op edit-view).
+- F4-U13. Sidebar volledig retrofit: `<x-admin.nav-link>` krijgt optionele `:can`-prop. Alle sidebar-items retrofit met permission-strings. Dode `admin.locaties.index`-link gedropt. Ad-hoc `@can('trash.manage')`-wrap uit 4.12 vervangen door prop.
+- F4-U14. Sub-blok-opdeling zeven blokken: a (foundation + sidebar), b (index), c (create + invite), d (edit + guards), e (deactivate + login-block), f (admin-reset + 2FA-disable), g (bulk).
+- F4-U15. `Route::resource(...)` `->except(['show', 'destroy'])` — géén destroy-route en géén destroy-method op controller. Defense-in-depth voor "geen hard-delete via UI" (F4-8).
+- F4-U16. Rollen-UI op create: multi-select checkboxes met `lid` default aangevinkt. Op edit: multi-select met huidige rollen aangevinkt (geen default-preselect).
+- F4-U17. Invite-mail: custom `UserInvitationMail` (queued Mailable) met eigen "Welkom, activeer je account"-tekst, niet Fortify's default `ResetPassword`-notification. Markdown-template in `resources/views/emails/users/invitation.blade.php`. Onder de motorkap zelfde token-flow.
+- F4-U18. Edit-scope: name/email/roles. Email-wijziging reset `email_verified_at` naar null en dispatcht nieuwe invite-mail via `SendUserInvitationAction`. Controller detecteert email-change vóór save. Bij edit gebruikt `Rule::unique(...)->ignore($user->id)`. Sessies-invalidatie bij email-change is niet expliciet afgehandeld (edge case op familieblog-schaal).
+- F4-U19. Beide guards (F4-U2 en F4-U10) worden afzonderlijk gecheckt in `withValidator()` — bij overlap tonen beide foutmeldingen. Bewust: informatiever dan opeenvolgende checks.
+- F4-U20. Deactivate-flow: optioneel `deactivation_reason`-veld in confirm-modal (mag leeg blijven, max 500 tekens). Toont in edit-view banner + tooltip op status-badge. Bij reactivate wordt zowel `deactivated_at` als `deactivation_reason` op null gezet — geen historie-tracking (F4-T3-parallel).
+- F4-U21. Edit-view UI: aparte "Beheeracties"-sectie onderaan het form met wachtwoord-reset + 2FA-uitzetten (conditioneel) + deactiveren. Deactiveren verplaatst uit form-onderkant naar deze zone. Sectie verborgen als user zichzelf bewerkt (F4-U2-spiegel op UI-niveau).
+- F4-U22. Bulk-actie-UI: twee knoppen altijd zichtbaar bij selectie (Deactiveren + Reactiveren). Silent-skip op reeds-in-target-state users via `whereNull`/`whereNotNull`-clauses in de Action. Geen contextuele knoppen op basis van selectie-mix (overengineered voor schaal).
+
+**Gedeelde infrastructuur uit 4.13:**
+- `App\Actions\Users\SendUserInvitationAction` — genereert password-reset-token via `Password::createToken()` (niet `Password::broker()->createToken()` —
+- `App\Actions\Users\BulkDeactivateUsersAction` + `BulkReactivateUsersAction` — silent-skip via `whereNull`/`whereNotNull('deactivated_at')`-scope. `DB::transaction` wrapt de loop. Return `int $affected` voor flash-pluralisatie via `trans_choice`.
+- `App\Mail\UserInvitationMail` — queued Mailable (`implements ShouldQueue`), constructor `User $user, string $activationUrl`. Envelope-subject via `config('app.name')`. Markdown-content in `emails.users.invitation`.
+- `App\Listeners\MarkEmailVerifiedAfterPasswordReset` — geregistreerd in `AppServiceProvider::boot()` via `Event::listen(PasswordReset::class, ...)`. Guard-clause: al-geverifieerd → no-op. Anders `forceFill(['email_verified_at' => now()])->save()`.
+- `App\Http\Requests\Admin\Users\StoreUserRequest` — email:rfc + `Rule::unique('users', 'email')`, roles-array met `Rule::in()`-whitelist tegen tampering (rol-namen uit `Role::pluck('name')`).
+- `App\Http\Requests\Admin\Users\UpdateUserRequest` — bovenop Store: `Rule::unique(...)->ignore($editedUser->id)`, plus twee guards via `withValidator()`: `guardNoSelfLock` (F4-U2) + `guardNoLastAdminRoleLoss` (F4-U10). Beide voegen foutmeldingen toe onder `roles`-key.
+- `App\Http\Requests\Admin\Users\DeactivateUserRequest` — reason nullable max 500. Bulk-spiegel-guards via `withValidator()`: `guardNoSelfDeactivate` (F4-U2) + `guardNoLastAdminDeactivate` (F4-U10). Foutmeldingen onder `reason`-key.
+- `App\Http\Requests\Admin\Users\BulkDeactivateUsersRequest` — `prepareForValidation()` decode't JSON-string payload uit hidden form input. `guardNoSelfInSelection` (F4-U2) + `guardNoLastAdminInSelection` (F4-U10). Max 100 IDs.
+- `App\Http\Requests\Admin\Users\BulkReactivateUsersRequest` — zelfde payload-decode + rules, géén guards (reactiveren kan geen schade doen).
+- `Fortify::authenticateUsing()` in `FortifyServiceProvider::boot()` — handmatige lookup + `Hash::check()` + gedeactiveerd-check. Retourneert `null` bij elke fail (generic error, geen info-leak). Bestaande rate limiters + view bindings ongewijzigd.
+
 ### Fase 4 — Media browser (Stap 4.11)
 - F4-M1. Scope = volledige v1: read-only browser + per-item delete + bulk-selectie + bulk-delete via confirm-modal. Geen upload-flow in v1 (blijft via eigenaar-modellen, conform masterplan-#7).
 - F4-M2. RBAC = aparte permission `media.browse`, toegekend aan Admin (via `Gate::before`) + Editor. Auteur en Lid hebben geen toegang. Per-item-eigenaar-policy bij delete blijft staan (F4-9), maar het policy-mix-scenario binnen bulk-delete is in productie-rollen-matrix niet realistisch (Editor heeft via `content.manage` + `posts.update.any` overal toegang) — getest met custom test-rol `media-browser-only`.
@@ -245,6 +282,8 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - **`<x-admin.media-delete-overlay>`** (Stap 4.11.b) — grid-specifieke per-item delete met inline confirm-toggle (vuilnisbak → check/cross). Alpine `x-data` met AJAX-fetch naar `DELETE admin/media/{media}`, DOM-remove op success. Geen form-tag (anders dan `<x-admin.delete-button>`); past in grid-overlay-context met `position: absolute`. Props: `:media-id`.
 - **`Alpine.store('mediaSelection', ...)`** (Stap 4.11.c) — eerste Alpine-store in project (i.p.v. data-factory). Beheert bulk-selectie-state pagina-scoped: `selected: Set`, `toggle(id)`, `selectAllVisible()`, `clear()`, `count()`, `hasSelection()`, `allVisibleSelected()`, `destroy()`. Cross-scope bereikbaar via `$store.mediaSelection.*` — vereist wanneer state gedeeld moet worden tussen view-body en `@push('modals')`-content.
 - **`Alpine.store('trashSelection', ...)`** (Stap 4.12.c) — tweede Alpine-store in project, parallel aan `mediaSelection` maar met **composite keys** (`"{type}:{id}"`) omdat trash-IDs niet globally uniek zijn (Post.1 ≠ Destination.1). API: `reset()` leest visible keys uit `[data-trash-key]` attributes, `isSelected(type, id)`, `toggle(type, id)`, `selectAllVisible()`, `clear()`, `count()`, `hasSelection()`, `allVisibleSelected()`, `destroy()` serialiseert selection naar hidden form-input + submit. Naam `destroy()` is bewust API-parity met mediaSelection maar semantisch misleidend hier — betekent "voer bulk-actie uit" = bulk-**restore**. Comment in code legt uit.
+- **`<x-admin.user-status-badge>`** (Stap 4.13.b) — status-badge voor User met twee visuele states: `Actief` (groen-subtle, check-circle-icon) en `Gedeactiveerd` (grijs, person-slash-icon + tooltip met deactivatie-datum). Prop = `user`. Gebruikt in index-tabel + edit-view-header (bij gedeactiveerde users).
+- **`Alpine.store('userSelection', ...)`** (Stap 4.13.g) — derde Alpine-store in project, parallel aan `mediaSelection` en `trashSelection`. Plain integer-keys (User-IDs uniek — geen composite zoals trash). API: `reset()` leest visible keys uit `[data-user-id]`-attributes, `isSelected(id)`, `toggle(id)`, `selectAllVisible()`, `clear()`, `count()`, `hasSelection()`, `allVisibleSelected()`. Twee destroy-methods: `destroyDeactivate()` en `destroyReactivate()`, elk submit't naar een eigen hidden form (`users-bulk-deactivate-form` / `users-bulk-reactivate-form`) via interne `_submitForm(formId)`-helper. Bulk-actie-parity met bulk-restore uit trash, maar met twee bestemmingen ipv één.
 - **`resources/views/admin/_partials/sidebar.blade.php`** (chore vóór 4.12) — sidebar-markup verhuisd uit `layouts/admin.blade.php` naar aparte partial. Vindbaarheid: `Get-ChildItem *sidebar*` returnde niets omdat het in de layout zat. Parallel met bestaande `admin._partials.flash`-conventie. Bevat alle nav-groepen (Content/Engagement/Beheer) plus mobile-backdrop-div. Alpine-context (`mobileOpen`, `toggleCollapse`) blijft werken omdat `@include` server-side templating is, geen JS-boundary.
 
 ---
@@ -290,6 +329,8 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - **OPcache + Blade view-cache op Windows:** `Remove-Item storage\framework\views\*.php -Force` soms nodig wanneer `view:clear` alleen niet werkt.
 - **`@php($x = ...)` Blade shorthand compileert stuk** naar `<?php($x = ...)` zonder spatie — ongeldige PHP, geeft misleidende error op regel 1. Diagnose: `php -l storage\framework\views\*.php`. Altijd blok-vorm voor assignments: `@php $x = ...; @endphp`.
 - **`@@extends`-mojibake compileert tot letterlijke `@extends`-output.** Blade behandelt `@@` als escape voor letterlijk `@`. Als je bij het plakken van een view per ongeluk een dubbele `@` op regel 1 krijgt (VS Code Blade-autocomplete + shift-select-fouten), rendert de hele view als plaintext — je krijgt geen layout, geen extends, gewoon de source-code als HTTP-response. Diagnose: `Format-Hex path\view.blade.php | Select-Object -First 2` — eerste bytes moeten `40 65` zijn (@e), niet `40 40 65` (@@e). Fix: verwijder de extra `@`. Kan óók gebeuren in `@section`, `@include` etc.
+- **PowerShell here-strings + `[System.IO.File]::WriteAllText` verwijderen lege regels in git-commit-messages.** Symptoom: commit-message opgeslagen correct qua inhoud (alle bullets aanwezig, geen data-verlies), maar de blank-line ná de titel-regel ontbreekt in `git log --format=%B`. Betekent dat GitHub-web-UI en andere tools titel + body als één blok tonen. Vermoedelijk normaliseert `WriteAllText`+`git commit -F` opeenvolgende newlines. Praktische workaround: in VS Code een `COMMIT_EDITMSG_TEMP.txt` editen met de gewenste layout, dan `git commit -F path`. Voor familieblog-schaal is dit cosmetisch en niet blokkerend — voor OSS-projecten met PR-reviews wel relevant.
+- **Streaming-race bij grote code-blokken tijdens copy-paste.** Symptoom: de gebruiker plakt een codeblok terwijl Claude nog aan het genereren is; de laatste regels ontbreken en het bestand krijgt een afgekapte versie. Blade-views produceren dan `syntax error, unexpected end of file`; PHP-classes zijn syntactisch invalid. Preventie: Claude eindigt grote codeblokken met een expliciete "einde-marker" (`--- EINDE VAN CODE-BLOK, veilig om te kopiëren ---`) of vraagt om bevestiging vóór verifiëren. Diagnose bij symptoom: `Get-Content path | Measure-Object -Line` + `Get-Content path | Select-Object -Last 10` om te zien of het bestand overtuigend eindigt (met `@endsection`, `}`, of ander verwacht slot-teken).
 
 ### Spatie + framework-defaults
 - **`storage/media-library/`** hoort in `.gitignore`. Spatie schrijft tijdelijke conversion-kopieën onder random hash-paden; bij crashes of `->queued()` zonder running worker blijven die liggen.
@@ -306,7 +347,9 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - **Geneste apostrofs/quotes mixen in Blade-attributen.** `:title="__('Pagina\'s')"` triggert ParseError. Drop de `:`-prefix voor hardcoded NL: `title="Pagina's"`. Binnen `{{ ... }}` werkt escape wél (geen attribuut-context).
 - **Geneste resource-routes met `scoped(['child' => 'slug'])`** valideren parent↔child-relatie automatisch (404 bij cross-parent). Test expliciet met `assertNotFound()`.
 - **`@push('modals')`-blokken vereisen een `x-data`-marker op de modal-root.** Modals die via `@push('modals')` op `</body>`-niveau renderen vallen buiten elke component-scope. Alpine processed de subtree niet automatisch — `@click`-attributen en andere directives binden niet (`_x_attributeCleanups: false`). Fix: voeg `x-data` (leeg) toe aan de modal-root-`<div>`. `$store`-toegang van binnenin werkt dan ongewijzigd. Symptoom dat dit uitwijst: knop reageert nergens op, geen JS-error, attribuut zit gewoon in DOM. Geldt voor élke pushed-modal die Alpine-directives gebruikt (geconstateerd op `mediaBulkDeleteModal` in 4.11.c — newsletter-dispatch-modal had het toevallig al door andere modal-content).
-- **`<x-admin.nav-link>` doet géén `@can`-check.** Alleen `Route::has()`. Sidebar toont items waarvoor rollen geen toegang hebben → klik → 403. Geen 4.11-probleem (patroon project-breed), wel relevant bij Stap 4.13 (Users + rollen beheer) wanneer de component geretrofit moet worden met een optionele `:can`-prop.
+- **`<x-admin.nav-link>` accepteert optionele `:can`-prop sinds Stap 4.13.a.** Als gezet en de user heeft de permission niet, rendert de component niets (via early `return` uit `@php`-blok — Blade honoreert dat correct). Alle sidebar-items in `_partials/sidebar.blade.php` gebruiken de prop. Nieuwe modules moeten hun sidebar-link met `can="..."` toevoegen, niet met `@can`-wrap eromheen.
+- **`Password::createToken($user)` gebruiken, niet `Password::broker()->createToken($user)`.** Beide werken runtime. Verschil: de facade-signature van `Password::createToken()` heeft correcte return-types, terwijl `Password::broker()` een `PasswordBroker`-**interface** returnt zonder `createToken()`-method — Intelephense rood-onderstreept dan de tweede-call. `Password::createToken()` delegeert intern naar de default broker; functioneel identiek, statisch schoner.
+- **`$event->user->forceFill(...)` op `PasswordReset`-event triggert Intelephense-warning.** Event heeft type-hint `Illuminate\Contracts\Auth\CanResetPassword` (interface, geen `forceFill`). Runtime is 't onze User (extends Model). Fix: `/** @var \App\Models\User $user */`-annotation vóór de assignment. Zelfde false-positive-familie als de `Password::broker()`-warning.
 
 ### Leaflet (Vite)
 - **Marker-iconen** vereisen `delete L.Icon.Default.prototype._getIconUrl` + `L.Icon.Default.mergeOptions({...})` met PNG's via Vite-imports.
@@ -317,6 +360,7 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 
 ### Observaties (te volgen, niet acuut)
 - **`config('app.faker_locale')` = `en_US`** ondanks NL project. Geen impact op productie, wel relevant als ooit besloten wordt naar `nl_NL` te switchen voor realistischer fixture-data — kanonnenladingen tests die nu toevallig groen draaien zouden deterministisch moeten worden gemaakt (Faker-collision-risico per testfile, zie leerpunt Faker-PRNG).
+- **`ExampleTest.php` (welcome-view Vite-manifest-fout) faalt zonder `npm run dev`.** Welcome-view (Laravel-scaffold) verwijst naar `resources/css/app.css`, ons Vite-manifest levert `resources/scss/app.scss` + `admin.scss`. Test-baseline op 526 groen alleen bruikbaar als `npm run dev` draait tijdens `php artisan test`. Loose end voor Fase 5: `welcome.blade.php` wordt vervangen door onze homepage; `ExampleTest.php` mag dan verwijderd worden.
 
 ---
 
@@ -349,7 +393,7 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 | **4.10**  | Newsletter compose & dispatch (a-h, alle blokken groen)                              | 88    | ✅     |
 | **4.11**  | `/admin/media` browser                                                               |       | ✅     |
 | **4.12**  | `/admin/prullenbak` (handmatig; auto-purge naar Fase 6                               |       | ✅     |
-| **4.13**  | Users + rollen beheer + bulk-acties                                                  |       | ⏳     |
-| **4.14**  | Eindcheck (Pint, Pest, fase-4-bouwplan.md, commit + push)                            |       | ⏳     |
+| **4.13**  | Users + rollen beheer + bulk-acties                                                  | 61    | ✅     |
+| **4.14**  | Eindcheck (Pint, Pest, fase-4-bouwplan.md, commit + push)                            |       | ✅     |
 
-**Totaal suite-status:** 465 groen.
+**Totaal suite-status:** 526 groen.
