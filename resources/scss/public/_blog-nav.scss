@@ -1,0 +1,237 @@
+// resources/scss/public/_blog-nav.scss
+// Blog-eigen nav-band: dark navy achtergrond, tekst-brand + menu-items + profiel-dropdown.
+// Hover/active-onderlijn in perzik (--color-accent-1).
+
+// Wereldwijd x-cloak (voorkomt flash bij Alpine-init) — nodig voor de dropdown.
+[x-cloak] {
+  display: none !important;
+}
+
+.blog-nav {
+  background-color: var(--color-text); // dark navy #14213D
+  padding: 1rem 0;
+
+  .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+
+  // --- Tekst-brand ---
+  &__brand {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.35rem;
+    color: var(--color-bg); // sand-beige
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+
+    &:hover {
+      opacity: 0.85;
+      color: var(--color-bg);
+    }
+  }
+
+  // --- Menu-items ---
+  &__menu {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    .nav-item {
+      position: relative;
+    }
+
+    .nav-link {
+      position: relative;
+      color: var(--color-bg); // sand-beige
+      font-weight: 500;
+      font-size: 0.95rem;
+      text-decoration: none;
+      padding: 0.5rem 0;
+      transition: color 0.2s ease;
+
+      &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 0;
+        height: 2px;
+        background-color: var(--color-accent-1); // perzik
+        transition: width 0.3s ease;
+      }
+
+      &:hover,
+      &.active {
+        color: var(--color-bg);
+      }
+
+      &:hover::after,
+      &.active::after {
+        width: 100%;
+      }
+    }
+  }
+
+  // --- Auth-block (usermenu of login-link) ---
+  &__usermenu {
+    position: relative;
+  }
+
+  &__usermenu-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: transparent;
+    border: none;
+    color: var(--color-bg);
+    font-weight: 500;
+    font-size: 0.95rem;
+    padding: 0.5rem 0.25rem;
+    cursor: pointer;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: var(--color-accent-1); // perzik hover
+    }
+  }
+
+  &__usermenu-name {
+    display: inline-block;
+  }
+
+  &__usermenu-chevron {
+    font-size: 0.75rem;
+  }
+
+  &__usermenu-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    min-width: 200px;
+    background-color: var(--color-surface); // wit
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    padding: 0.5rem 0;
+    z-index: 100;
+  }
+
+  &__usermenu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.6rem 1rem;
+    color: var(--color-text);
+    font-size: 0.9rem;
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background-color: var(--color-bg); // sand-beige hover
+      color: var(--color-text);
+    }
+
+    // Formulier-knop moet zelfde padding hebben — form-tag geeft anders margin.
+    form {
+      margin: 0;
+      width: 100%;
+    }
+  }
+
+  form {
+    margin: 0;
+  }
+
+  &__login-link {
+    color: var(--color-bg);
+    font-weight: 500;
+    font-size: 0.95rem;
+    text-decoration: none;
+    padding: 0.5rem 0.75rem;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: var(--color-accent-1);
+    }
+  }
+
+  // --- Toggler (mobiel) ---
+  .navbar-toggler {
+    display: none;
+    border: 1px solid rgba(248, 246, 242, 0.3);
+    padding: 0.375rem 0.75rem;
+    line-height: 1;
+
+    &:focus {
+      box-shadow: none;
+    }
+
+    .bi {
+      font-size: 1.75rem;
+      color: var(--color-bg);
+      vertical-align: middle;
+    }
+  }
+
+  // --- Responsive ---
+  @media (max-width: 991.98px) {
+    .container {
+      flex-wrap: wrap;
+    }
+
+    .navbar-toggler {
+      display: inline-block;
+    }
+
+    .navbar-collapse {
+      flex-basis: 100%;
+      margin-top: 1rem;
+    }
+
+    &__menu {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
+      width: 100%;
+
+      .nav-item {
+        width: 100%;
+      }
+
+      .nav-link {
+        display: block;
+        width: 100%;
+        padding: 0.75rem 0;
+      }
+    }
+
+    &__usermenu,
+    &__login-link {
+      margin-top: 1rem;
+      width: 100%;
+    }
+
+    &__usermenu-trigger {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    &__usermenu-dropdown {
+      position: static;
+      width: 100%;
+      margin-top: 0.5rem;
+    }
+  }
+}
+
+// EOF

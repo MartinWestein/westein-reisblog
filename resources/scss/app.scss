@@ -48,33 +48,6 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* === Hero (magazine-stijl: edge-to-edge image met overlay) === */
-.hero-magazine {
-  position: relative;
-  min-height: 480px;
-  background-size: cover;
-  background-position: center;
-  color: white;
-  display: flex;
-  align-items: flex-end;
-  padding: var(--space-5);
-
-  &::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: linear-gradient(rgba(20,33,61,.35), rgba(20,33,61,.6));
-  }
-
-  > * { position: relative; z-index: 1; }
-
-  h1 {
-    color: white;
-    font-weight: 800;
-    font-size: clamp(2rem, 5vw, 3.5rem);
-    max-width: 720px;
-  }
-}
-
 /* === Post-card image === */
 .post-card-img {
   aspect-ratio: 4/3;
@@ -91,24 +64,12 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-body);
 }
 
-/* === Site-header & footer === */
-.site-header {
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid rgba(0,0,0,.08);
-  background: var(--color-surface);
-}
-.site-header .brand {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 1.4rem;
-  color: var(--brand-primary);
-  text-decoration: none;
-}
-.site-footer {
-  background: var(--color-surface);
-  border-top: 1px solid rgba(0,0,0,.08);
-  padding: var(--space-5) 0;
-  margin-top: var(--space-6);
-  color: var(--color-muted);
-}
+/* === Public layout & partials (Fase 5) === */
+@import 'public/layout';
+@import 'public/site-nav';
+@import 'public/blog-nav';
+@import 'public/footer';
+
 @import 'auth';
+
+/* EOF */

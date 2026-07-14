@@ -12,3 +12,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('password.confirm')
         ->name('profile.two-factor');
 });
+
+// EOF

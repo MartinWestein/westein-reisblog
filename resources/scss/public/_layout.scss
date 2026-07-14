@@ -1,0 +1,10 @@
+// resources/scss/public/_layout.scss
+// Basis layout-styling voor publieke pagina's.
+// Vulling van site-nav / blog-nav / footer volgt in 5.0.a.2 / .3 / .4.
+
+.public-main {
+  min-height: 60vh;
+  padding: var(--space-5) 0;
+}
+
+// EOF
