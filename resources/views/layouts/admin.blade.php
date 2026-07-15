@@ -57,8 +57,8 @@
                             </div>
                         </div>
 
-                        <a href="{{ route('profile.two-factor') }}" class="admin-usermenu__item">
-                            <i class="bi bi-shield-lock"></i> {{ __('Tweestapsverificatie') }}
+                        <a href="{{ route('account.show') }}" class="admin-usermenu__item">
+                            <i class="bi bi-person-circle"></i> {{ __('Mijn account') }}
                         </a>
                         <a href="{{ url('/') }}" class="admin-usermenu__item" target="_blank">
                             <i class="bi bi-box-arrow-up-right"></i> {{ __('Bekijk site') }}
