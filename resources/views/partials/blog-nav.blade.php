@@ -29,7 +29,7 @@
             @auth
                 <div class="blog-nav__usermenu" x-data="{ open: false }" @click.outside="open = false">
                     <button type="button" class="blog-nav__usermenu-trigger" @click="open = !open" :aria-expanded="open.toString()">
-                        <span class="blog-nav__usermenu-name">{{ auth()->user()->name }}</span>
+                        <span class="blog-nav__usermenu-name"> {{ auth()->user()->name }}</span>
                         <i class="bi bi-chevron-down blog-nav__usermenu-chevron"></i>
                     </button>
 

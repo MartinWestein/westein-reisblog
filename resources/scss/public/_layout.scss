@@ -4,7 +4,13 @@
 
 .public-main {
   min-height: 60vh;
-  padding: var(--space-5) 0;
+  padding: 0;
+
+  // Fallback voor pagina's zonder eigen padding (bijv. /mijn-account).
+  > .container {
+    padding-top: var(--space-4);
+    padding-bottom: var(--space-5);
+  }
 }
 
 // EOF
