@@ -5,6 +5,7 @@ use App\Mail\UserInvitationMail;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -1143,4 +1144,72 @@ test('bulk-reactivate vereist users.manage-permission', function () {
             'ids' => json_encode([$u->id]),
         ])
         ->assertForbidden();
+});
+
+it('invalidates active sessions when admin changes user email (F4-U18)', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $target = User::factory()->create(['email' => 'oud@example.com', 'email_verified_at' => now()]);
+    $target->assignRole('lid');
+
+    $otherUser = User::factory()->create();
+    $otherUser->assignRole('lid');
+
+    DB::table('sessions')->insert([
+        [
+            'id' => 'target-session-id',
+            'user_id' => $target->id,
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'PHPUnit',
+            'payload' => 'dummy',
+            'last_activity' => now()->timestamp,
+        ],
+        [
+            'id' => 'other-session-id',
+            'user_id' => $otherUser->id,
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'PHPUnit',
+            'payload' => 'dummy',
+            'last_activity' => now()->timestamp,
+        ],
+    ]);
+
+    $this->actingAs($admin)
+        ->put(route('admin.users.update', $target), [
+            'name' => $target->name,
+            'email' => 'nieuw@example.com',
+            'roles' => ['lid'],
+        ])
+        ->assertRedirect(route('admin.users.index'));
+
+    expect(DB::table('sessions')->where('user_id', $target->id)->count())->toBe(0);
+    expect(DB::table('sessions')->where('user_id', $otherUser->id)->count())->toBe(1);
+});
+
+it('does not invalidate sessions on non-email updates', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $target = User::factory()->create(['name' => 'Origineel', 'email_verified_at' => now()]);
+    $target->assignRole('lid');
+
+    DB::table('sessions')->insert([
+        'id' => 'target-session-id',
+        'user_id' => $target->id,
+        'ip_address' => '127.0.0.1',
+        'user_agent' => 'PHPUnit',
+        'payload' => 'dummy',
+        'last_activity' => now()->timestamp,
+    ]);
+
+    $this->actingAs($admin)
+        ->put(route('admin.users.update', $target), [
+            'name' => 'Bijgewerkt',
+            'email' => $target->email,
+            'roles' => ['lid'],
+        ])
+        ->assertRedirect(route('admin.users.index'));
+
+    expect(DB::table('sessions')->where('user_id', $target->id)->count())->toBe(1);
 });

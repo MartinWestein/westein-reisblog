@@ -13,6 +13,7 @@ use App\Http\Requests\Admin\Users\StoreUserRequest;
 use App\Http\Requests\Admin\Users\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
@@ -134,6 +135,12 @@ class UserController extends Controller
 
         if ($emailChanged) {
             $sendInvitation->execute($user);
+
+            // F4-U18: bestaande sessies invalideren zodat de oude login-context
+            // niet blijft doorwerken na e-mailwijziging. Vereist SESSION_DRIVER=database.
+            DB::table('sessions')
+                ->where('user_id', $user->id)
+                ->delete();
 
             $message = __('Gebruiker bijgewerkt. Nieuwe activatie-mail verstuurd naar :email.', [
                 'email' => $user->email,
