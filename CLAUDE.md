@@ -2,43 +2,51 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 11 juli 2026 — Stap 4.13 (Users + rollen beheer) volledig afgerond in zeven sub-blokken op branch `stap-4.13-users-rollen`, suite 526 groen. Stap 4.14 (deze sessie) rondt Fase 4 af.
+**Laatst bijgewerkt:** 16 juli 2026 — Fase 5.0 (Fundament + homepage) volledig afgerond in vier sub-blokken, suite 553 groen, vier commits ahead van origin.
 **Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
-**Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → `fase-4-bouwplan.md` (opgeleverd in Stap 4.14).
+**Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → `fase-4-bouwplan.md`. Fase 5 → wordt na afronding van alle Fase-5-stappen in één keer geschreven (F5-1), niet incrementeel.
 
 ---
 
 ## Status
 
-Fase 4 volledig afgerond. Stap 4.13 (Users + rollen beheer) in zeven sub-blokken opgeleverd op feature-branch `stap-4.13-users-rollen`, met 22 beslissingen (F4-U1 t/m F4-U22) vastgelegd. Testsuite **526 groen, deterministisch**. Branch bevat 7 commits ahead van `origin/main`, plus 4.14-commit die deze CLAUDE.md-update en `fase-4-bouwplan.md` toevoegt.
+Fase 4 volledig afgerond en gemerged naar main (Stap 4.14, vorige sessie).
 
-Sub-blokken 4.13:
-- **4.13.a** Foundation + sidebar-retrofit (nav-link `:can`-prop, drop dode Locaties-link, controller/policy/testfile-stubs)
-- **4.13.b** Index met filter/sort/paginate (7 tests)
-- **4.13.c** Create + invite-flow met Mailable + PasswordReset-listener (9 tests)
-- **4.13.d** Edit + rollen + guards (F4-U2 self-lock + F4-U10 last-admin via `withValidator()`), email-change resetet `email_verified_at` en dispatcht nieuwe invite (14 tests)
-- **4.13.e** Deactivate/reactivate + Fortify `authenticateUsing()`-blok (7 tests)
-- **4.13.f** Admin wachtwoord-reset + 2FA-force-disable via aparte Beheeracties-sectie (5 tests)
-- **4.13.g** Bulk-flow (Alpine.store + sticky action-bar + twee modals + bulk-guards) (13 tests)
+**Fase 5.0 (Fundament + homepage) deze sessie afgerond** in vier sub-blokken met 24 beslissingen (F5-1 t/m F5-24). Testsuite **553 groen (1370 assertions), deterministisch**.
 
-Alle drie de loose ends uit CLAUDE.md v vóór deze sessie zijn opgelost:
-1. Sidebar `@can`-retrofit ✓ (blok 4.13.a)
-2. Dode `admin.locaties.index`-link ✓ (blok 4.13.a)
-3. Legacy `media.upload`/`media.delete` permissions uit RolePermissionSeeder ✓ (was al opgeruimd in 4.12)
+Sub-blokken 5.0:
+- **5.0.a** Publieke layout + site-nav + blog-nav + footer (`layouts/public.blade.php` gevuld, drie partials, A-hybrid site-nav met kleuren identiek aan hoofdsite, dark navy blog-nav met tekst-brand + menu + profiel-dropdown, drie-kolommen footer)
+- **5.0.b** `/mijn-account` met geïntegreerde 2FA (drie kaarten onder elkaar: persoonlijke gegevens, wachtwoord, tweefactor; 2FA-flow via drie state-partials disabled/setup/enabled; `/profiel/2fa` 301-redirect naar `/mijn-account#2fa`; `/dashboard` verwijderd, Fortify home → `/`)
+- **5.0.c** Homepage + welcome-vervanging + ExampleTest opruimen (`HomeController::index()` met hero, featured destination, laatste posts, uitgelichte routes, CTA-strook; welcome.blade.php + ExampleTest.php verwijderd)
+- **5.0.d** Sessies-invalidatie F4-U18 bij email-change door admin (vereist `SESSION_DRIVER=database`, bevestigd)
 
-## Volgende concrete actie — Stap 4.14 → merge naar main + push
+## Loose ends
 
-Na deze CLAUDE.md-update en `fase-4-bouwplan.md`-oplevering:
-- `.\vendor\bin\pint` op alle 4.14-wijzigingen
-- Één commit: `Stap 4.14: CLAUDE.md update + fase-4-bouwplan.md`
-- `git checkout main && git merge stap-4.13-users-rollen && git push origin main`
-- Feature-branch verwijderen lokaal + remote
+Opgelost in Fase 5.0:
+- ~~`welcome.blade.php` vervangen door eigen homepage~~ (5.0.c)
+- ~~`ExampleTest.php` verwijderen~~ (5.0.c)
+- ~~Sessies-invalidatie bij email-change door admin (F4-U18)~~ (5.0.d)
 
-Daarna: **Fase 5 — Ontwikkeling openbare pagina's**. Zie masterplan §5 voor scope.
+Nog open:
+- **Publieke unsubscribe-route** `/nieuwsbrief/uitschrijven/{token}` (F4-N11) — landt in 5.5 (newsletter + contact).
+- **Tailwind 4.0 uit `package.json` verwijderen** — kandidaat voor 5.6 eindcheck of Fase 6.
+- **Hero-intro-tekst verfijnen** in `home.blade.php` — placeholder gemarkeerd met TODO.
+- **Post-URL-helper voor null-destination** — huidige URL-bouw met `optional($post->destination)->slug` geeft `/bestemmingen//slug` bij posts zonder destination. Oplossen in Fase 5.2 met een view-composer of model-methode.
+- **`is_featured`-flag toevoegen aan Destination/Post/Route** — optioneel, alleen als Martin bewust wil kunnen kiezen wat op de homepage komt (nu automatisch = laatst-toegevoegde). Kandidaat voor 5.1 migration.
+- **Home-item in blog-nav wel/niet houden** — Martin twijfelt, blijft voorlopig zichtbaar.
 
-### Loose end voor Fase 5
 
-- **`ExampleTest.php` (welcome-view Vite-manifest-fout)**. Standaard Laravel-artefact. Test faalt zonder `npm run dev` omdat `welcome.blade.php` verwijst naar `resources/css/app.css` die niet in het Vite-manifest zit (ons manifest levert `resources/scss/app.scss` en `admin.scss`). In Fase 5 wordt `welcome.blade.php` vervangen door onze eigen homepage — `ExampleTest.php` mag dan verwijderd worden. Tot dat moment: `npm run dev` moet lopen tijdens `php artisan test` óf `--exclude=Example`-filter.
+
+## Volgende concrete actie — Stap 5.1 (Bestemmingen + Locaties)
+
+Sub-scope (uit F5-1):
+- `/bestemmingen` overzicht-pagina
+- `/bestemmingen/{slug}` detail-pagina
+- `/bestemmingen/{destination}/{location}` locatie-detail met fotoalbum en Leaflet
+
+Vóór 5.1 start: state-check op `DestinationController` + `LocationController` (bestaande admin-CRUD als referentie), bestaande Media Library-conversies (`hero` + `gallery` op Destination, `gallery` op Location), en check op DemoSeeder of er voldoende bestemmingen + locaties + gallery-foto's zijn om visueel te verifiëren.
+
+Sub-blok-opdeling voor 5.1 bepalen we aan het begin van die sessie, analoog aan de 5.0-granulariteit.
 
 ---
 
@@ -258,6 +266,43 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 - `Alpine.store('mediaSelection', ...)` — eerste store i.p.v. data-factory in het project. Reden: `@push('modals')`-blok rendert op `</body>`-niveau, buiten elke component-scope; store is cross-scope bereikbaar via `$store`.
 ---
 
+## Fase 5 beslissingen
+
+### Fase-macro
+- **F5-1** — Fase 5 opgedeeld in 7 stappen: 5.0 fundament + homepage, 5.1 bestemmingen + locaties, 5.2 posts + comments + blog-index + reistips, 5.3 routes + fotogalerij, 5.4 auteurs + statische pagina's, 5.5 newsletter + contact, 5.6 eindcheck + bouwplan. Cookie-banner + Analytics + Spatie SEO + sitemap + RSS gaan naar Fase 6.
+- **F5-2** — 5.0 opgedeeld in vier sub-blokken: a (layout+nav+footer), b (/mijn-account), c (homepage + welcome-cleanup), d (F4-U18 sessies-invalidatie).
+
+### Layout, navigatie, styling
+- **F5-3** — Hoofdmenu bevat: Home + Bestemmingen + Reistips + Reisroutes + Foto's + Contact. Statische pagina's (Over ons, Privacy) staan in de footer. Home-item blijft voorlopig zichtbaar (twijfelpunt).
+- **F5-4** — Site-nav (gedeeld met ml-westein subdomein-familie) als Blade-partial met hardcoded items in `resources/views/partials/site-nav.blade.php`. Active-state hardcoded op "Reizen".
+- **F5-5** — Site-nav SCSS-strategie **A-hybrid**: kleuren identiek aan hoofdsite (blauw menu-links, rood-roze onderlijn), font Inter erft van blog-body. CSS-vars gescoped naar `.main-nav` (`--sitenav-primary`, `--sitenav-accent`, etc.) om conflict met blog-tokens te voorkomen.
+- **F5-6** — Logo in site-nav via absolute URL naar hoofdsite (`https://ml-westein.nl/assets/img/logo_v3_192x149.png`) — single source of truth.
+- **F5-7** — Twee-lagen-scheiding tussen site-nav en blog-nav: kleurverschillende banden (witte site-nav boven, dark navy blog-nav eronder).
+- **F5-8** — Blog-nav macro-structuur: tekst-brand "Westein Reisblog" links (Playfair, klikbaar naar `/`), menu-items rechts (variant B).
+- **F5-9** — Blog-nav achtergrondkleur = dark navy `#14213D` (`--color-text`).
+- **F5-10** — Auth-state UI: profiel-dropdown rechtsboven met "Mijn account" + "Naar admin" (voor Admin/Editor/Auteur) + "Uitloggen". Uitgelogd: "Inloggen"-link. Alpine-patroon adapted van admin-usermenu.
+- **F5-11** — `/dashboard` verwijderd; iedereen na login → `/`. Fortify's `home` config van `/dashboard` → `/`. `resources/views/dashboard.blade.php` verwijderd.
+- **F5-16** — Magazine-accent = bestaande `--color-accent-1` (perzik `#E8A87C`) uit Fase 1 design-tokens. Terracotta-idee verworpen ten gunste van bestaand palet.
+- **F5-17** — Bootstrap `$primary` blijft `#1E90FF` (blauw, matcht hoofdsite). Perzik-accent voor blog via custom classes (`.section-label`, `.btn-accent`, hover-onderlijnen). Bootstrap-standaard-elementen (`.btn-primary`) blijven blauw.
+- **F5-18** — Fase 1 dead code weggehaald uit `app.scss`: `.site-header`, `.site-footer`, `.hero-magazine`.
+- **F5-19** — Footer klassiek drie-kolommen structuur (brand + Ontdek + Info), analoog aan hoofdsite-patroon.
+- **F5-20** — Footer inhoud: tagline "Onze reizen, verhalen en foto's" (hergebruikt op homepage-hero), Ontdek-kolom (content-nav), Info-kolom (statische pagina's), geen social. Dark navy achtergrond.
+
+### /mijn-account (5.0.b)
+- **F5-12** — `/mijn-account` als echte pagina toegevoegd; sub-blok 5.0.b nieuw ingevoegd (dropdown-item "Mijn account" moet daarheen linken).
+- **F5-13** — Scope: naam editable (custom `AccountController::updateProfile`, alleen `name`-veld), email + rol read-only (F4-U2), wachtwoord editable (Fortify's `user-password.update`), 2FA volledig geïntegreerd (variant 3).
+- **F5-14** — UI: één lange pagina met drie kaarten onder elkaar (persoonlijke gegevens, wachtwoord, tweefactor).
+- **F5-15** — 2FA UX vereenvoudigd t.o.v. eerder plan: kaart-state volgt automatisch uit user-model (`two_factor_secret`, `two_factor_confirmed_at`). Geen query-string-flow nodig; Fortify's password-confirm redirect terug naar `/mijn-account` en de kaart rendert de juiste state.
+- **`/profiel/2fa`** — 301-redirect naar `/mijn-account#2fa`. Naam `profile.two-factor` behouden voor `admin.blade.php`-link (die nu naar `account.show` wijst).
+
+### Homepage (5.0.c)
+- **F5-21** — Macro-structuur: hero + featured destination + laatste posts + featured routes + CTA-strook (variant B).
+- **F5-22** — Hero: tekst-blok links (titel "Onze Reisverhalen" in Playfair, tagline in perzik, intro-tekst-placeholder), featured image rechts. Statische foto in `public/images/hero-home.jpg`. Intro-tekst is TODO — Martin verfijnt later.
+- **F5-23** — "Featured" semantiek zonder `is_featured`-flag: laatst-toegevoegde destination (`latest()`), gepubliceerde routes gesorteerd op reisdatum (`published()->orderedByTravelDate()`). Optie voor expliciete `is_featured` blijft open voor Fase 5.1+.
+
+### Sessies-invalidatie (5.0.d)
+- **F5-24** — Bij email-change door admin: `DB::table('sessions')->where('user_id', $user->id)->delete()` in `Admin\UserController::update()`, naast de F4-U2 auto-invite. Vereist `SESSION_DRIVER=database` (bevestigd in .env). Admin die z'n eigen email wijzigt wordt uitgelogd (intentioneel).
+
 ## Herbruikbare admin-componenten
 
 Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
@@ -286,6 +331,21 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - **`Alpine.store('userSelection', ...)`** (Stap 4.13.g) — derde Alpine-store in project, parallel aan `mediaSelection` en `trashSelection`. Plain integer-keys (User-IDs uniek — geen composite zoals trash). API: `reset()` leest visible keys uit `[data-user-id]`-attributes, `isSelected(id)`, `toggle(id)`, `selectAllVisible()`, `clear()`, `count()`, `hasSelection()`, `allVisibleSelected()`. Twee destroy-methods: `destroyDeactivate()` en `destroyReactivate()`, elk submit't naar een eigen hidden form (`users-bulk-deactivate-form` / `users-bulk-reactivate-form`) via interne `_submitForm(formId)`-helper. Bulk-actie-parity met bulk-restore uit trash, maar met twee bestemmingen ipv één.
 - **`resources/views/admin/_partials/sidebar.blade.php`** (chore vóór 4.12) — sidebar-markup verhuisd uit `layouts/admin.blade.php` naar aparte partial. Vindbaarheid: `Get-ChildItem *sidebar*` returnde niets omdat het in de layout zat. Parallel met bestaande `admin._partials.flash`-conventie. Bevat alle nav-groepen (Content/Engagement/Beheer) plus mobile-backdrop-div. Alpine-context (`mobileOpen`, `toggleCollapse`) blijft werken omdat `@include` server-side templating is, geen JS-boundary.
 
+### Herbruikbare publieke componenten
+
+- `resources/views/partials/site-nav.blade.php` — gedeelde ml-westein site-nav-partial (A-hybrid, kleuren van hoofdsite, absolute URL logo, active hardcoded op Reizen).
+- `resources/views/partials/blog-nav.blade.php` — dark navy blog-nav met tekst-brand + menu-items + profiel-dropdown. Alpine-usermenu-patroon geadapteerd van admin.
+- `resources/views/partials/footer.blade.php` — drie-kolommen footer (brand+tagline / Ontdek / Info) + copyright-onderbalk.
+- `resources/views/layouts/public.blade.php` — publieke layout met head (fonts + vite + title/meta-conventie), main met `@yield('content')`, stacks voor head/modals/scripts.
+- SCSS-partials in `resources/scss/public/`: `_layout.scss`, `_site-nav.scss`, `_blog-nav.scss`, `_footer.scss`, `_account.scss`, `_home.scss`.
+- **Utility-classes uit `_home.scss`** (worden herbruikbaar in latere Fase 5-stappen):
+  - `.section-label` — kleine kapitalen in perzik-accent, meta-lijn boven section-titles.
+  - `.section-title` — Playfair section-heading met clamp-sizing.
+  - `.btn-accent` — perzik CTA-knop met color-mix hover-darkening.
+  - `.post-card` en `.route-card` — grid-card-patronen met hover-lift + shadow (hergebruikbaar in bestemmingen-index 5.1, blog-index 5.2, routes-index 5.3).
+- `resources/views/account/show.blade.php` + `_partials/` — one-page account met kaart-patroon; kaart-styling `.account-card` (header + body-blokken) is generiek herbruikbaar.
+- **`layouts.public` `@section('title')` / `@section('meta_description')` conventie** — elke publieke pagina zet z'n eigen title en description; layout heeft fallbacks.
+
 ---
 
 ## Landmines & patronen — volgende sessie wakker schudden
@@ -300,6 +360,18 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - **Alpine roept `init()` automatisch aan.** Een component met zowel `x-data="factory()"` ALS `x-init="init()"` triggert dubbele initialisatie. Defensief: `if (this.editor) return;` als eerste regel in `init()`.
 - **Alpine `x-show` + Bootstrap display-utility (`d-flex`, `d-block`, etc.) op hetzelfde element = onzichtbaar conflict.** Bootstrap's `display: X !important` overschrijft Alpine's inline `style.display = 'none'`. Element blijft zichtbaar ondanks correcte `x-show`-evaluatie. Fix: wrap in een extra `<div>` met de `x-show`-directive; zet de Bootstrap utility op het kind. Geldt niet voor `visibility`/`opacity`-utilities (geen `display`-property). Geconstateerd op `media-delete-overlay`'s check+cross-knoppen in 4.11.b.
 - **`[x-cloak] { display: none !important; }` moet globaal staan, niet form-scoped.** Tot 4.11.b was deze CSS-regel scoped onder `_forms.scss` (matched alleen `[x-cloak]` binnen `<form>`-context). Componenten buiten een form — sidebar-dropdown, image-picker, gallery-upload, en straks media-overlays — matchten niet, met flash-of-unconfirmed-content tot Alpine de initial state had toegepast. Verplaatst naar `_layout.scss` in eigen commit (0ab2d2d). Hint voor toekomstige SCSS-edits: globale Alpine-helpers (`[x-cloak]`, `[x-transition]`-resets, etc.) horen in `_layout.scss`, niet in domein-specifieke partials.
+
+### Landmines geleerd in Fase 5.0
+
+- **`.navbar-expand-lg` verplicht op nav-tag** wanneer je `.collapse.navbar-collapse` gebruikt — zonder die klasse blijft de collapse ook op desktop-viewport hidden (Bootstrap 5 forceert dit via CSS-cascade). Niet weglaten "omdat we geen `.navbar` gebruiken" — 't heeft niks met de container te maken.
+- **`.navbar-toggler-icon`** krijgt zijn SVG alleen binnen `.navbar`-scope. Zonder `.navbar` parent-klasse blijft de knop leeg. Alternatief: gebruik `<i class="bi bi-list"></i>` en style de font-size + kleur zelf (schoner).
+- **Pest `actingAs` import-conventie varieert per testbestand.** Check eerste ~20 regels van het bestand vóór je een nieuwe test schrijft. Met `use function Pest\Laravel\actingAs;` bovenin: `actingAs($user)` plain. Zonder die import: `$this->actingAs($user)`. Zelfde geldt voor `get`, `put`, `post`. Failure-signal: "Call to undefined function actingAs()".
+- **`git commit -F commit-msg.txt` valkuil op Windows**: als je `git add -A` doet vóór `git commit -F`, wordt de commit-message-file zelf in de commit meegepakt. Fix: plaats de temp-file in `$env:TEMP` (buiten working tree). Amend na de fout: `git add -A ; git commit --amend --no-edit`.
+- **Tailwind 4.0 zit in `package.json`** als leftover van Laravel 11's default-scaffold, terwijl we Bootstrap gebruiken. Kan uit devDependencies weg (`@tailwindcss/vite`, `tailwindcss`). Niet acuut maar staat op de opruim-lijst voor 5.6 of Fase 6.
+- **`welcome.blade.php` met inline Tailwind** faalt zonder `npm run dev` actief (MissingViteManifestException) — was de reden van de `ExampleTest`-loose-end. Nu opgelost door welcome te vervangen door onze eigen `home.blade.php` die `layouts.public` extends.
+- **`is_featured` bestaat niet op Destination / Post / Route** in Fase 3-schema. Gebruik `latest()` (laatst-toegevoegde) of model-scopes zoals `Route::published()->orderedByTravelDate()` als fallback. Als je bewust wilt kunnen kiezen wat "featured" is: aparte migration + admin-toggle nodig (kandidaat voor Fase 5.1).
+- **Fortify's `updateProfileInformation`-action accepteert email standaard.** Voor F4-U2-restrictie (email-change alleen via admin): gebruik eigen controller-methode (`AccountController::updateProfile()`) die alleen `name`-veld valideert. Fortify-action ongemoeid laten voor eventueel later gebruik.
+- **Fortify wachtwoord-form errors landen in aparte error-bag** genaamd `updatePassword`. Anders zijn foutmeldingen onzichtbaar. Blade: `@error('current_password', 'updatePassword')`, test: `assertSessionHasErrorsIn('updatePassword')`.
 
 ### Tests (Pest + Laravel)
 - **`assertRedirect(route('login'))` faalt voor `getJson()`/`postJson()`-requests.** Laravel honoreert de `Accept: application/json`-header en stuurt 401 JSON, geen 302 redirect. Gebruik `->assertUnauthorized()`.
