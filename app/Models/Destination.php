@@ -29,6 +29,7 @@ class Destination extends Model implements HasMedia
         'slug',
         'description',
         'country_code',
+        'is_featured',
     ];
 
     public function getSlugOptions(): SlugOptions
@@ -42,6 +43,18 @@ class Destination extends Model implements HasMedia
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'is_featured' => 'boolean',
+        ];
+    }
+
+    public function scopeFeatured($query)
+    {
+        return $query->where('is_featured', true);
     }
 
     public function locations(): HasMany

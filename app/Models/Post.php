@@ -42,6 +42,7 @@ class Post extends Model implements HasMedia
         'views_count',
         'meta_title',
         'meta_description',
+        'is_featured',
     ];
 
     protected function casts(): array
@@ -49,7 +50,13 @@ class Post extends Model implements HasMedia
         return [
             'published_at' => 'datetime',
             'views_count' => 'integer',
+            'is_featured' => 'boolean',
         ];
+    }
+
+    public function scopeFeatured($query)
+    {
+        return $query->where('is_featured', true);
     }
 
     public function getSlugOptions(): SlugOptions

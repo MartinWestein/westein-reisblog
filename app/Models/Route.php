@@ -34,6 +34,7 @@ class Route extends Model implements HasMedia
         'travel_date',
         'is_published',
         'published_at',
+        'is_featured',
     ];
 
     protected function casts(): array
@@ -42,7 +43,13 @@ class Route extends Model implements HasMedia
             'travel_date' => 'date',
             'is_published' => 'boolean',
             'published_at' => 'datetime',
+            'is_featured' => 'boolean',
         ];
+    }
+
+    public function scopeFeatured($query)
+    {
+        return $query->where('is_featured', true);
     }
 
     public function getSlugOptions(): SlugOptions
