@@ -72,12 +72,15 @@ class DemoContentSeeder extends Seeder
         $authors = collect([$author1, $author2]);
 
         // -----------------------------------------------------------------
-        // DESTINATIONS — 3 stuks (idempotent via slug)
+        // DESTINATIONS — 6 stuks (idempotent via slug), country_code correct gezet
         // -----------------------------------------------------------------
         $destSpecs = [
-            ['name' => 'Italië', 'slug' => 'italie', 'country' => 'IT'],
-            ['name' => 'Schotland', 'slug' => 'schotland', 'country' => 'GB'],
-            ['name' => 'Slovenië', 'slug' => 'slovenie', 'country' => 'SI'],
+            ['name' => 'Italië', 'slug' => 'italie', 'country_code' => 'IT'],
+            ['name' => 'Schotland', 'slug' => 'schotland', 'country_code' => 'GB'],
+            ['name' => 'Slovenië', 'slug' => 'slovenie', 'country_code' => 'SI'],
+            ['name' => 'Canarische Eilanden', 'slug' => 'canarische-eilanden', 'country_code' => 'ES'],
+            ['name' => 'Duitsland', 'slug' => 'duitsland', 'country_code' => 'DE'],
+            ['name' => 'Verenigde Staten', 'slug' => 'verenigde-staten', 'country_code' => 'US'],
         ];
         $destinations = collect();
         foreach ($destSpecs as $spec) {
@@ -87,34 +90,50 @@ class DemoContentSeeder extends Seeder
                     [
                         'name' => $spec['name'],
                         'description' => "Familievakanties in {$spec['name']}.",
+                        'country_code' => $spec['country_code'],
                     ],
                 ),
             );
         }
 
         // -----------------------------------------------------------------
-        // LOCATIONS — 8 stuks, verdeeld over de 3 destinations
+        // LOCATIONS — 14 stuks, verdeeld over de 6 destinations
+        // country_code geërfd van destination voor consistentie
         // -----------------------------------------------------------------
         $locSpecs = [
-            ['dest' => 0, 'name' => 'Rome', 'lat' => 41.9028, 'lng' => 12.4964],
-            ['dest' => 0, 'name' => 'Florence', 'lat' => 43.7696, 'lng' => 11.2558],
-            ['dest' => 0, 'name' => 'Venetië', 'lat' => 45.4408, 'lng' => 12.3155],
-            ['dest' => 1, 'name' => 'Edinburgh', 'lat' => 55.9533, 'lng' => -3.1883],
-            ['dest' => 1, 'name' => 'Isle of Skye', 'lat' => 57.2730, 'lng' => -6.2150],
-            ['dest' => 1, 'name' => 'Glencoe', 'lat' => 56.6864, 'lng' => -5.1027],
-            ['dest' => 2, 'name' => 'Ljubljana', 'lat' => 46.0569, 'lng' => 14.5058],
-            ['dest' => 2, 'name' => 'Bled', 'lat' => 46.3683, 'lng' => 14.1146],
+            // Italië
+            ['dest' => 0, 'name' => 'Rome', 'slug' => 'rome', 'lat' => 41.9028, 'lng' => 12.4964],
+            ['dest' => 0, 'name' => 'Florence', 'slug' => 'florence', 'lat' => 43.7696, 'lng' => 11.2558],
+            ['dest' => 0, 'name' => 'Venetië', 'slug' => 'venetie', 'lat' => 45.4408, 'lng' => 12.3155],
+            // Schotland
+            ['dest' => 1, 'name' => 'Edinburgh', 'slug' => 'edinburgh', 'lat' => 55.9533, 'lng' => -3.1883],
+            ['dest' => 1, 'name' => 'Isle of Skye', 'slug' => 'isle-of-skye', 'lat' => 57.2730, 'lng' => -6.2150],
+            ['dest' => 1, 'name' => 'Glencoe', 'slug' => 'glencoe', 'lat' => 56.6864, 'lng' => -5.1027],
+            // Slovenië
+            ['dest' => 2, 'name' => 'Ljubljana', 'slug' => 'ljubljana', 'lat' => 46.0569, 'lng' => 14.5058],
+            ['dest' => 2, 'name' => 'Bled', 'slug' => 'bled', 'lat' => 46.3683, 'lng' => 14.1146],
+            // Canarische Eilanden
+            ['dest' => 3, 'name' => 'Tenerife', 'slug' => 'tenerife', 'lat' => 28.2916, 'lng' => -16.6291],
+            ['dest' => 3, 'name' => 'Lanzarote', 'slug' => 'lanzarote', 'lat' => 29.0469, 'lng' => -13.5900],
+            // Duitsland
+            ['dest' => 4, 'name' => 'Berlijn', 'slug' => 'berlijn', 'lat' => 52.5200, 'lng' => 13.4050],
+            ['dest' => 4, 'name' => 'Zwarte Woud', 'slug' => 'zwarte-woud', 'lat' => 48.0000, 'lng' => 8.2000],
+            // Verenigde Staten
+            ['dest' => 5, 'name' => 'New York', 'slug' => 'new-york', 'lat' => 40.7128, 'lng' => -74.0060],
+            ['dest' => 5, 'name' => 'Miami', 'slug' => 'miami', 'lat' => 25.7617, 'lng' => -80.1918],
         ];
         $locations = collect();
         foreach ($locSpecs as $spec) {
+            $destination = $destinations[$spec['dest']];
             $locations->push(
                 Location::firstOrCreate(
-                    ['slug' => Str::slug($spec['name'])],
+                    ['slug' => $spec['slug']],
                     [
-                        'destination_id' => $destinations[$spec['dest']]->id,
+                        'destination_id' => $destination->id,
                         'name' => $spec['name'],
                         'latitude' => $spec['lat'],
                         'longitude' => $spec['lng'],
+                        'country_code' => $destination->country_code,
                         'description' => "Bezoek aan {$spec['name']}.",
                     ],
                 ),
@@ -122,7 +141,7 @@ class DemoContentSeeder extends Seeder
         }
 
         // -----------------------------------------------------------------
-        // POSTS — 18 stuks, gemixt over locations + auteurs + categorieën
+        // POSTS — 30 stuks, gemixt over locations + auteurs + categorieën
         // -----------------------------------------------------------------
         $categories = Category::all();
         $tagPool = ['camper', 'kindvriendelijk', 'wandelen', 'eten', 'cultuur', 'natuur'];
@@ -135,6 +154,7 @@ class DemoContentSeeder extends Seeder
 
         if (Post::count() === 0) {
             $titles = [
+                // Bestaande 18
                 'Onze eerste dag in Rome', 'Pasta-paradise in Florence', 'Gondelvaart met de kinderen',
                 'Edinburgh: kastelen en koek', 'Wandelen op Skye', 'Highland-camperen in Glencoe',
                 'Ljubljana per fiets', 'Het meer van Bled bij zonsopkomst', 'Wat we leerden in Italië',
@@ -142,6 +162,13 @@ class DemoContentSeeder extends Seeder
                 'Eten met kinderen onderweg', 'Beste fotospots in Bled', 'Vroeg opstaan loont',
                 'Onze 10 lessen van deze roadtrip', 'Wat we anders hadden gedaan',
                 'Boekentips voor onderweg', 'Veilig kamperen met kleine kinderen',
+                // Nieuwe 12 — spread over de 3 nieuwe destinations
+                'Op de Teide vulkaan in Tenerife', 'Vulkanische landschappen op Lanzarote',
+                'Wijngaarden in de as: La Geria', 'Camperspots op de Canarische Eilanden',
+                'Berlijn in twee dagen met kinderen', 'Wandelen door het Zwarte Woud',
+                'Titisee: rustpunt in het bos', 'Wat je moet weten over Berlijn',
+                'New York met kids: onze survivalgids', 'Miami art deco: kleur op South Beach',
+                'Onze eerste transatlantische vlucht', 'Familiereis naar de VS: onze kosten',
             ];
 
             foreach ($titles as $i => $title) {
@@ -218,9 +245,10 @@ class DemoContentSeeder extends Seeder
         }
 
         // -----------------------------------------------------------------
-        // ROUTES — 2 stuks (Italië + Schotland), waypoints in volgorde
+        // ROUTES — 6 stuks, één per destination, waypoints in volgorde
         // -----------------------------------------------------------------
         if (Route::count() === 0) {
+            // Italië — Rome/Florence/Venetië (index 0/1/2)
             $italyRoute = Route::create([
                 'destination_id' => $destinations[0]->id,
                 'name' => 'Italië roadtrip 2024',
@@ -234,6 +262,7 @@ class DemoContentSeeder extends Seeder
                 $locations[2]->id => ['order' => 3, 'notes' => 'Eindigen in Venetië'],
             ]);
 
+            // Schotland — Edinburgh/Skye/Glencoe (index 3/4/5)
             $scotRoute = Route::create([
                 'destination_id' => $destinations[1]->id,
                 'name' => 'Highlands tour 2023',
@@ -246,7 +275,74 @@ class DemoContentSeeder extends Seeder
                 $locations[5]->id => ['order' => 2, 'notes' => 'Naar Glencoe'],
                 $locations[4]->id => ['order' => 3, 'notes' => 'Eindigen op Skye'],
             ]);
+
+            // Slovenië — Ljubljana/Bled (index 6/7)
+            $sloRoute = Route::create([
+                'destination_id' => $destinations[2]->id,
+                'name' => 'Slovenië meren-tour 2024',
+                'slug' => 'slovenie-meren-tour-2024',
+                'description' => 'Een week rond de mooiste meren van de Julische Alpen.',
+                'travel_date' => '2024-06-10',
+            ]);
+            $sloRoute->locations()->attach([
+                $locations[6]->id => ['order' => 1, 'notes' => 'Aankomst in Ljubljana'],
+                $locations[7]->id => ['order' => 2, 'notes' => 'Doorreis naar Bled'],
+            ]);
+
+            // Canarische Eilanden — Tenerife/Lanzarote (index 8/9)
+            $canaryRoute = Route::create([
+                'destination_id' => $destinations[3]->id,
+                'name' => 'Canarische eilandhoppen 2024',
+                'slug' => 'canarische-eilandhoppen-2024',
+                'description' => 'Twee eilanden vergelijken: Tenerife en Lanzarote.',
+                'travel_date' => '2024-02-15',
+            ]);
+            $canaryRoute->locations()->attach([
+                $locations[8]->id => ['order' => 1, 'notes' => 'Vlucht naar Tenerife'],
+                $locations[9]->id => ['order' => 2, 'notes' => 'Ferry naar Lanzarote'],
+            ]);
+
+            // Duitsland — Berlijn/Zwarte Woud (index 10/11)
+            $duiRoute = Route::create([
+                'destination_id' => $destinations[4]->id,
+                'name' => 'Duitsland camperreis 2022',
+                'slug' => 'duitsland-camperreis-2022',
+                'description' => 'Van hoofdstad naar de dennenbossen met de camper.',
+                'travel_date' => '2022-08-05',
+            ]);
+            $duiRoute->locations()->attach([
+                $locations[10]->id => ['order' => 1, 'notes' => 'Start in Berlijn'],
+                $locations[11]->id => ['order' => 2, 'notes' => 'Doorreis naar Zwarte Woud'],
+            ]);
+
+            // Verenigde Staten — New York/Miami (index 12/13)
+            $usaRoute = Route::create([
+                'destination_id' => $destinations[5]->id,
+                'name' => 'Amerikaanse oostkust 2019',
+                'slug' => 'amerikaanse-oostkust-2019',
+                'description' => 'Van New York naar Miami — tien dagen langs de oostkust.',
+                'travel_date' => '2019-07-20',
+            ]);
+            $usaRoute->locations()->attach([
+                $locations[12]->id => ['order' => 1, 'notes' => 'Landen in New York'],
+                $locations[13]->id => ['order' => 2, 'notes' => 'Vlucht door naar Miami'],
+            ]);
         }
+
+        // -----------------------------------------------------------------
+        // IS_FEATURED — markering voor prominente weergave op homepage/index (F5-31)
+        // Meerdere records mogen tegelijk featured zijn; controllers picken via
+        // ->featured()->latest() zodat de meest recent gewijzigde wint.
+        // -----------------------------------------------------------------
+        Destination::where('slug', 'italie')->update(['is_featured' => true]);
+
+        Route::where('slug', 'italie-roadtrip-2024')->update(['is_featured' => true]);
+
+        Post::whereIn('title', [
+            'Onze eerste dag in Rome',
+            'Highland-camperen in Glencoe',
+            'New York met kids: onze survivalgids',
+        ])->update(['is_featured' => true]);
 
         // -----------------------------------------------------------------
         // SUBSCRIBERS — 30 stuks (20 confirmed, 7 pending, 3 unsubscribed)
