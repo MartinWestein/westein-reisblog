@@ -141,6 +141,19 @@ class DemoContentSeeder extends Seeder
         }
 
         // -----------------------------------------------------------------
+        // MEDIA — attach fixture-images aan destinations en locations
+        // Idempotent: gebeurt niet dubbel bij re-seed.
+        // preservingOriginal() zorgt dat fixtures na eerste seed niet verhuizen.
+        // -----------------------------------------------------------------
+        foreach ($destinations as $destination) {
+            $this->attachDestinationHero($destination);
+        }
+
+        foreach ($locations as $location) {
+            $this->attachLocationGallery($location);
+        }
+
+        // -----------------------------------------------------------------
         // POSTS — 30 stuks, gemixt over locations + auteurs + categorieën
         // -----------------------------------------------------------------
         $categories = Category::all();
@@ -424,6 +437,47 @@ class DemoContentSeeder extends Seeder
                     'order' => $spec['order'],
                 ],
             );
+        }
+    }
+
+    protected function attachDestinationHero(Destination $destination): void
+    {
+        $path = database_path("seeders/fixtures/destinations/{$destination->slug}/hero.jpg");
+
+        if (! file_exists($path)) {
+            return;
+        }
+
+        if ($destination->getFirstMedia('hero') !== null) {
+            return;
+        }
+
+        $destination->addMedia($path)
+            ->preservingOriginal()
+            ->toMediaCollection('hero');
+    }
+
+    protected function attachLocationGallery(Location $location): void
+    {
+        $dir = database_path("seeders/fixtures/locations/{$location->slug}");
+
+        if (! is_dir($dir)) {
+            return;
+        }
+
+        if ($location->getMedia('gallery')->isNotEmpty()) {
+            return;
+        }
+
+        for ($i = 1; $i <= 4; $i++) {
+            $filename = 'gallery-'.str_pad((string) $i, 2, '0', STR_PAD_LEFT).'.jpg';
+            $path = $dir.DIRECTORY_SEPARATOR.$filename;
+
+            if (file_exists($path)) {
+                $location->addMedia($path)
+                    ->preservingOriginal()
+                    ->toMediaCollection('gallery');
+            }
         }
     }
 }
