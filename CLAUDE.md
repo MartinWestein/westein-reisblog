@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 16 juli 2026 — Fase 5.0 (Fundament + homepage) volledig afgerond in vier sub-blokken, suite 553 groen, vier commits ahead van origin.
+**Laatst bijgewerkt:** 19 juli 2026 — Fase 5.0 (Fundament + homepage) volledig afgerond in vier sub-blokken, suite 553 groen, vier commits ahead van origin.
 **Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
 **Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → `fase-4-bouwplan.md`. Fase 5 → wordt na afronding van alle Fase-5-stappen in één keer geschreven (F5-1), niet incrementeel.
 
@@ -32,23 +32,22 @@ Nog open:
 - **Tailwind 4.0 uit `package.json` verwijderen** — kandidaat voor 5.6 eindcheck of Fase 6.
 - **Hero-intro-tekst verfijnen** in `home.blade.php` — placeholder gemarkeerd met TODO.
 - **Post-URL-helper voor null-destination** — huidige URL-bouw met `optional($post->destination)->slug` geeft `/bestemmingen//slug` bij posts zonder destination. Oplossen in Fase 5.2 met een view-composer of model-methode.
-- **`is_featured`-flag toevoegen aan Destination/Post/Route** — optioneel, alleen als Martin bewust wil kunnen kiezen wat op de homepage komt (nu automatisch = laatst-toegevoegde). Kandidaat voor 5.1 migration.
 - **Home-item in blog-nav wel/niet houden** — Martin twijfelt, blijft voorlopig zichtbaar.
 
+**Volgende concrete actie: Fase 5.1.b — is_featured admin-toggle UX**
 
+Data-laag is klaar (F5-30, F5-31): kolommen bestaan, scopeFeatured() werkt op
+Destination/Route/Post, seeder markeert 1 destination + 1 route + 3 posts
+featured.
 
-## Volgende concrete actie — Stap 5.1 (Bestemmingen + Locaties)
+Scope 5.1.b:
+- Admin edit-forms voor Destination, Route, Post: checkbox `is_featured` toevoegen (Bootstrap `.form-check`, past bij bestaand `.form-check`-patroon in admin-CRUD).
+- Admin index-pagina's: badge/indicator tonen bij featured records.
+- Policy-check: overweeg of "toggle featured" een aparte permission behoeft, of dat het valt onder `.update`-permission per model. Aanbeveling: onder `.update` (YAGNI, geen aparte flow nodig voor family-blog-schaal).
+- Tests: feature-test per model — set true, unset, verify indicator, verify featured() scope.
+- Geen bulk-actie in 5.1.b (YAGNI — max 6 destinations, 30 posts).
 
-Sub-scope (uit F5-1):
-- `/bestemmingen` overzicht-pagina
-- `/bestemmingen/{slug}` detail-pagina
-- `/bestemmingen/{destination}/{location}` locatie-detail met fotoalbum en Leaflet
-
-Vóór 5.1 start: state-check op `DestinationController` + `LocationController` (bestaande admin-CRUD als referentie), bestaande Media Library-conversies (`hero` + `gallery` op Destination, `gallery` op Location), en check op DemoSeeder of er voldoende bestemmingen + locaties + gallery-foto's zijn om visueel te verifiëren.
-
-Sub-blok-opdeling voor 5.1 bepalen we aan het begin van die sessie, analoog aan de 5.0-granulariteit.
-
----
+State-check volgende sessie: `git log --oneline -6` (verwacht 5.1.a-CLAUDE bovenaan), `php artisan test` (verwacht 553), `Get-Content app/Http/Controllers/Admin/DestinationController.php` en de edit-view om te zien waar de checkbox in het formulier past.---
 
 ## Project
 
@@ -303,6 +302,15 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 ### Sessies-invalidatie (5.0.d)
 - **F5-24** — Bij email-change door admin: `DB::table('sessions')->where('user_id', $user->id)->delete()` in `Admin\UserController::update()`, naast de F4-U2 auto-invite. Vereist `SESSION_DRIVER=database` (bevestigd in .env). Admin die z'n eigen email wijzigt wordt uitgelogd (intentioneel).
 
+- **F5-25** (5.1.a — data-blokker): DemoSeeder verrijken + fixture-images als eerste blokkerende sub-blok van Fase 5.1, vóór publieke pagina's kunnen worden gebouwd. Reden: dev-DB was rommelig gevuld met handmatige test-data (dubbele Spanje, "Nieuw test land"), 0 media op locations — bouwen zonder visuele feedback onmogelijk.
+- **F5-26** (foto-strategie): Gecommitte fixture-images in `database/seeders/fixtures/` i.p.v. runtime API-fetch, placeholder-generator, of hybrid. Reden: offline-veilige `migrate:fresh --seed`, reproduceerbare demo-content, geen API-key of rate-limit-afhankelijkheid. Foto's van Pexels (identieke license als Unsplash: commercieel hergebruik zonder verplichte attributie).
+- **F5-27** (content-omvang): 6 destinations / 14 locations. Nieuwe: Canarische Eilanden (Tenerife/Lanzarote), Duitsland (Berlijn/Zwarte Woud), Verenigde Staten (New York/Miami). Bestaande drie (Italië, Schotland, Slovenië) met hun 8 locaties behouden.
+- **F5-28** (foto-omvang): Minimalistisch — 1 hero per destination, 4 gallery per locatie, 0 destination-gallery. Totaal 62 foto's, ~20 MB repo-groei. Implicatie: destination-detail-pagina (5.1.d) heeft geen eigen gallery-strook — locations vormen de primaire visuele content op die pagina.
+- **F5-29** (sub-blok-opdeling 5.1): 5 sub-blokken met is_featured tussenin. 5.1.a=data+fixtures, 5.1.b=is_featured admin-toggle UX, 5.1.c=/bestemmingen index, 5.1.d=/bestemmingen/{dest} detail, 5.1.e=/bestemmingen/{dest}/{loc} detail. Data-laag van is_featured hoorde technisch in 5.1.a (dependency: seeder moet markering kunnen zetten); 5.1.b is enkel UI.
+- **F5-30** (is_featured scope): Destination + Route + Post krijgen `is_featured`-boolean. Location bewust uitgesloten (geen homepage- of index-slot voor "featured location"). Consistente coverage om latere retrofit-migraties te voorkomen.
+- **F5-31** (is_featured constraint): Boolean, meerdere records mogen tegelijk featured zijn per model. Controllers picken via `->featured()->latest('updated_at')` — meest recent gewijzigde wint. Simpelste implementatie, meest flexibel voor Post (blog-index kan carousel tonen), geen model-observer of boot-hook nodig.
+- **F5-32** (post/route content-schaal): 30 posts en 6 routes in seeder (was 18/2). Één route per destination met 2-3 waypoints elk. Voldoende materiaal voor 5.2 blog-paginatie en 5.4 reisroutes-index zonder later terug te hoeven naar de seeder.
+
 ## Herbruikbare admin-componenten
 
 Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
@@ -372,6 +380,11 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - **`is_featured` bestaat niet op Destination / Post / Route** in Fase 3-schema. Gebruik `latest()` (laatst-toegevoegde) of model-scopes zoals `Route::published()->orderedByTravelDate()` als fallback. Als je bewust wilt kunnen kiezen wat "featured" is: aparte migration + admin-toggle nodig (kandidaat voor Fase 5.1).
 - **Fortify's `updateProfileInformation`-action accepteert email standaard.** Voor F4-U2-restrictie (email-change alleen via admin): gebruik eigen controller-methode (`AccountController::updateProfile()`) die alleen `name`-veld valideert. Fortify-action ongemoeid laten voor eventueel later gebruik.
 - **Fortify wachtwoord-form errors landen in aparte error-bag** genaamd `updatePassword`. Anders zijn foutmeldingen onzichtbaar. Blade: `@error('current_password', 'updatePassword')`, test: `assertSessionHasErrorsIn('updatePassword')`.
+- **Landmine: `git add -A` bij multi-commit-workflows.** Bij parallelle foto/asset-shopping tijdens code-commits pakt `git add -A` untracked bestanden mee die bij een LATERE commit horen. Symptoom in 5.1.a Commit 2: `.commit-msg.tmp` (transport-file voor `git commit -F`) en 18 fixture-JPG's kwamen per ongeluk in de is_featured-commit terecht. Fix: `git reset --soft HEAD~1`, unstage met `git restore --staged <paths>`, cleane hercommit. Preventie: **altijd expliciete paths bij `git add`** (bijv. `git add database/seeders/DemoContentSeeder.php`), nooit `-A` in workflows met gemixte pending changes. `.commit-msg.tmp` moet expliciet buiten staging blijven — het is transport, geen content.
+- **Landmine: Faker-locale switch localiseert alleen data-methodes, geen tekstgenerators.** `APP_FAKER_LOCALE=nl_NL` maakt `fake()->name()`, `->city()`, `->address()` Nederlands, maar `->sentence()`, `->paragraph()`, `->paragraphs()`, `->word()`, `->text()` blijven **altijd Lorem Ipsum** ongeacht locale. Geen bug in Faker — hardcoded gedrag. Voor 5.1 acceptabel: post-body's en family-bio's zijn niet zichtbaar op bestemmingen-pagina's (alleen title/excerpt, die zijn hardcoded Nederlands). Voor 5.2 (post-detail-pagina) wordt Lorem zichtbaar — dan afwegen: custom NL-tekst-fixture-array, of Lorem accepteren als "even not-real content" tijdens dev.
+- **Landmine: fixture-media-attach zonder `->preservingOriginal()` verhuist bronbestand.** Bij `$model->addMedia($path)->toMediaCollection(...)` *verplaatst* Spatie Media Library het bronbestand naar `storage/app/public/{media-id}/`. Bij gecommitte fixture-images is dit fataal: na eerste `migrate:fresh --seed` is de `fixtures/`-directory leeg en werkt de tweede seed niet meer. **Altijd `->preservingOriginal()`** bij fixture-attach. Sanity-test: na `migrate:fresh --seed` moet count van `fixtures/**/*.jpg` gelijk zijn aan wat je committed hebt.
+- **Legacy bug ontdekt en gefixed: oude DemoContentSeeder gaf `country_code` niet door aan destinations.** De `$destSpecs`-array had een `'country'`-key gedefinieerd, maar die werd niet meegegeven aan `Destination::firstOrCreate()`. Resultaat: alle destinations in de dev-DB hadden `country_code = NULL`. Fix in 5.1.a Commit 3: key hernoemd naar `'country_code'` en toegevoegd aan create-body. Locations erven nu `country_code` van hun destination voor consistentie.
+
 
 ### Tests (Pest + Laravel)
 - **`assertRedirect(route('login'))` faalt voor `getJson()`/`postJson()`-requests.** Laravel honoreert de `Accept: application/json`-header en stuurt 401 JSON, geen 302 redirect. Gebruik `->assertUnauthorized()`.
@@ -441,31 +454,25 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - ✅ **Fase 1 — Project setup & design system** _(afgerond 2 mei 2026)_
 - ✅ **Fase 2 — Authenticatie & autorisatie** _(afgerond 10 mei 2026)_
 - ✅ **Fase 3 — Database & content modellen** _(afgerond 13 mei 2026)_
-- 🔄 **Fase 4 — Afgeschermd Admin-gedeelte** _(in uitvoering)_
-- ⏳ **Fase 5 — Ontwikkeling openbare pagina's**
+- ✅ **Fase 4 — Afgeschermd Admin-gedeelte** _(afgerond)_
+- ⏳ **Fase 5 — Ontwikkeling openbare pagina's** _(in ontwikkeling)_
 - ⏳ **Fase 6 — SEO, performance en publicatie**
 
-### Fase 4 — overzicht
+### Fase 5 — overzicht
 
-| Stap      | Inhoud                                                                               | Tests | Status |
-| --------- | ------------------------------------------------------------------------------------ | ----- | ------ |
-| **4.0**   | Fundament: soft deletes, users opruimen + `deactivated_at`, Post `inline_images`     |       | ✅     |
-| **4.1**   | Admin-layout: inklapbare sidebar, gegroepeerde nav, topbar, flash + form-componenten |       | ✅     |
-| **4.2**   | Dashboard met 6 KPI-cards + activity feed. Rename `Post::user()` → `Post::author()`  |       | ✅     |
-| **4.3.1** | Categories CRUD                                                                      |       | ✅     |
-| **4.3.2** | Tags CRUD (morphedByMany op Posts)                                                   |       | ✅     |
-| **4.3.3** | FamilyMembers CRUD — eerste cards-layout + eerste media-upload                       | 15    | ✅     |
-| **4.3.4** | Pages CRUD — eerste TipTap simple + HTMLPurifier                                     | 18    | ✅     |
-| **4.4**   | Destinations + Locations CRUD + generieke gallery-component                          | 42    | ✅     |
-| **4.5**   | Posts CRUD + TipTap rich + own/any-policy + abstract `PostRequest`                   | 33    | ✅     |
-| **4.6**   | TipTap image-picker modal (browse + upload, alignment-classes)                       | 25    | ✅     |
-| **4.7**   | Comment-moderatie (state-machine, verb-routes, avatar-refactor)                      | 16    | ✅     |
-| **4.8**   | Routes + Waypoints CRUD (SortableJS, Leaflet, SVG-thumbnail)                         | 26    | ✅     |
-| **4.9**   | Subscribers + import/export (CSV, double-opt-in, error-CSV)                          | 37    | ✅     |
-| **4.10**  | Newsletter compose & dispatch (a-h, alle blokken groen)                              | 88    | ✅     |
-| **4.11**  | `/admin/media` browser                                                               |       | ✅     |
-| **4.12**  | `/admin/prullenbak` (handmatig; auto-purge naar Fase 6                               |       | ✅     |
-| **4.13**  | Users + rollen beheer + bulk-acties                                                  | 61    | ✅     |
-| **4.14**  | Eindcheck (Pint, Pest, fase-4-bouwplan.md, commit + push)                            |       | ✅     |
+| Stap        | Inhoud                                                                               | Tests | Status |
+| ----------- | ------------------------------------------------------------------------------------ | ----- | ------ |
+| **5.0.a**   | Fundament: soft deletes, users opruimen + `deactivated_at`, Post `inline_images`     |       | ✅     |
+| **5.0.b**   | Admin-layout: inklapbare sidebar, gegroepeerde nav, topbar, flash + form-componenten |       | ✅     |
+| **5.0.c**   | Dashboard met 6 KPI-cards + activity feed. Rename `Post::user()` → `Post::author()`  |       | ✅     |
+| **5.0.d**   | Categories CRUD                                                                      |       | ✅     |
+| **5.1.a**   | Dashboard met 6 KPI-cards + activity feed. Rename `Post::user()` → `Post::author()`  |       | ✅     |
+| **5.1.b**   | Categories CRUD                                                                      |       | ✅     |
 
-**Totaal suite-status:** 526 groen.
+Sub-blokken 5.0:
+- **5.0.a** Publieke layout + site-nav + blog-nav + footer (`layouts/public.blade.php` gevuld, drie partials, A-hybrid site-nav met kleuren identiek aan hoofdsite, dark navy blog-nav met tekst-brand + menu + profiel-dropdown, drie-kolommen footer)
+- **5.0.b** `/mijn-account` met geïntegreerde 2FA (drie kaarten onder elkaar: persoonlijke gegevens, wachtwoord, tweefactor; 2FA-flow via drie state-partials disabled/setup/enabled; `/profiel/2fa` 301-redirect naar `/mijn-account#2fa`; `/dashboard` verwijderd, Fortify home → `/`)
+- **5.0.c** Homepage + welcome-vervanging + ExampleTest opruimen (`HomeController::index()` met hero, featured destination, laatste posts, uitgelichte routes, CTA-strook; welcome.blade.php + ExampleTest.php verwijderd)
+- **5.0.d** Sessies-invalidatie F4-U18 bij email-change door admin (vereist `SESSION_DRIVER=database`, bevestigd)
+
+**Totaal suite-status:** 553 groen.
