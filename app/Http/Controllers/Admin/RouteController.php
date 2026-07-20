@@ -101,7 +101,7 @@ class RouteController extends Controller
 
         return redirect()
             ->route('admin.reisroutes.edit', $route)
-            ->with('success', "Reisroute &laquo;{$route->name}&raquo; aangemaakt.");
+            ->with('success', "Reisroute «{$route->name}» aangemaakt.");
     }
 
     public function edit(Route $route): View
@@ -141,7 +141,7 @@ class RouteController extends Controller
 
         return redirect()
             ->route('admin.reisroutes.edit', $route)
-            ->with('success', "Reisroute &laquo;{$route->name}&raquo; bijgewerkt.");
+            ->with('success', "Reisroute «{$route->name}» bijgewerkt.");
     }
 
     public function destroy(Route $route): RedirectResponse
@@ -153,7 +153,7 @@ class RouteController extends Controller
 
         return redirect()
             ->route('admin.reisroutes.index')
-            ->with('success', "Reisroute &laquo;{$name}&raquo; verwijderd.");
+            ->with('success', "Reisroute «{$name}» verwijderd.");
     }
 
     /**
