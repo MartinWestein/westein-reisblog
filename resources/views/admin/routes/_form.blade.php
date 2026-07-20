@@ -204,6 +204,21 @@
                 </div>
             </x-admin.form-section>
 
+            <x-admin.form-section title="Uitlichten">
+                <label class="d-flex align-items-center gap-2">
+                    <input
+                        type="checkbox"
+                        name="is_featured"
+                        value="1"
+                        @checked(old('is_featured', $route?->is_featured))
+                    >
+                    <span>{{ __('Uitgelicht op de homepage en index') }}</span>
+                </label>
+                <small class="admin-field__hint d-block mt-1">
+                    {{ __('Uitgelichte routes worden prominent getoond in overzichten.') }}
+                </small>
+            </x-admin.form-section>
+
             <x-admin.form-section title="Reis">
                 <x-admin.field
                     name="travel_date"

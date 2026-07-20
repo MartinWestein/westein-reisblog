@@ -113,6 +113,12 @@
                                 </td>
                                 <td>
                                     <strong>{{ $route->name }}</strong>
+                                    @if ($route->is_featured)
+                                        <span class="badge bg-warning text-dark ms-2">
+                                            <i class="bi bi-star-fill" aria-hidden="true"></i>
+                                            {{ __('Uitgelicht') }}
+                                        </span>
+                                    @endif
                                     @if ($route->description)
                                         <div class="text-muted small">{{ Str::limit(strip_tags($route->description), 80) }}</div>
                                     @endif

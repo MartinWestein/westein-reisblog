@@ -26,6 +26,7 @@ abstract class RouteRequest extends FormRequest
 
             'is_published' => ['nullable', 'boolean'],
             'published_at' => ['nullable', 'date'],
+            'is_featured' => ['boolean'],
 
             'waypoints' => ['nullable', 'array'],
             'waypoints.*.location_id' => ['required', 'integer', 'exists:locations,id'],
@@ -51,6 +52,9 @@ abstract class RouteRequest extends FormRequest
 
         // is_published is een form-helper (checkbox/toggle), niet altijd in payload.
         $this->merge(['is_published' => $this->boolean('is_published')]);
+
+        // Idem is_featured - missing key betekent uitgevinkt.
+        $this->merge(['is_featured' => $this->boolean('is_featured')]);
     }
 
     public function withValidator(Validator $validator): void

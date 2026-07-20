@@ -408,3 +408,82 @@ it('displayHeroUrl falls back to first waypoint gallery photo', function () {
 
     expect($route->fresh()->displayHeroUrl())->not->toBeNull();
 });
+
+// ============================================================
+// Uitlichten — is_featured toggle (5.1.b-ii)
+// ============================================================
+
+it('maakt een route aan met is_featured aangevinkt', function () {
+    actingAs($this->editor)
+        ->post(route('admin.reisroutes.store'), [
+            'destination_id' => $this->destination->id,
+            'name' => 'Beste route',
+            'is_featured' => '1',
+        ])
+        ->assertRedirect();
+
+    expect(Route::firstWhere('name', 'Beste route')->is_featured)->toBeTrue();
+});
+
+it('slaat is_featured standaard op als false bij aanmaken zonder toggle', function () {
+    actingAs($this->editor)
+        ->post(route('admin.reisroutes.store'), [
+            'destination_id' => $this->destination->id,
+            'name' => 'Gewone route',
+        ])
+        ->assertRedirect();
+
+    expect(Route::firstWhere('name', 'Gewone route')->is_featured)->toBeFalse();
+});
+
+it('zet is_featured aan via update op een route', function () {
+    $route = Route::factory()->for($this->destination)->create(['is_featured' => false]);
+
+    actingAs($this->editor)
+        ->put(route('admin.reisroutes.update', $route), [
+            'destination_id' => $this->destination->id,
+            'name' => $route->name,
+            'is_featured' => '1',
+        ]);
+
+    expect($route->fresh()->is_featured)->toBeTrue();
+});
+
+it('zet is_featured weer uit via update wanneer checkbox niet aangevinkt is (route)', function () {
+    $route = Route::factory()->for($this->destination)->create(['is_featured' => true]);
+
+    actingAs($this->editor)
+        ->put(route('admin.reisroutes.update', $route), [
+            'destination_id' => $this->destination->id,
+            'name' => $route->name,
+            // is_featured bewust weggelaten — simuleert een uitgevinkte checkbox
+        ]);
+
+    expect($route->fresh()->is_featured)->toBeFalse();
+});
+
+it('toont een uitgelicht-badge op de routes-index bij is_featured=true', function () {
+    Route::factory()->for($this->destination)->create(['name' => 'Beste route', 'is_featured' => true]);
+    Route::factory()->for($this->destination)->create(['name' => 'Middelmatig', 'is_featured' => false]);
+
+    $response = actingAs($this->admin)
+        ->get(route('admin.reisroutes.index'))
+        ->assertOk()
+        ->assertSee('Beste route')
+        ->assertSee('Middelmatig');
+
+    // Badge komt precies één keer voor — alleen bij de featured route
+    expect(substr_count($response->getContent(), 'Uitgelicht'))->toBe(1);
+});
+
+it('scopeFeatured pickt alleen routes met is_featured=true', function () {
+    Route::factory()->for($this->destination)->create(['name' => 'A', 'is_featured' => true]);
+    Route::factory()->for($this->destination)->create(['name' => 'B', 'is_featured' => false]);
+    Route::factory()->for($this->destination)->create(['name' => 'C', 'is_featured' => true]);
+
+    $featured = Route::featured()->pluck('name')->toArray();
+
+    expect($featured)->toHaveCount(2)
+        ->and($featured)->toContain('A', 'C')
+        ->and($featured)->not->toContain('B');
+});
