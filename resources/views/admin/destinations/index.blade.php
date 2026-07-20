@@ -88,6 +88,12 @@
                                 <i class="bi bi-image" aria-hidden="true"></i>
                             </span>
                         @endunless
+                        @if ($destination->is_featured)
+                            <span class="badge bg-warning text-dark position-absolute top-0 start-0 m-2">
+                                <i class="bi bi-star-fill" aria-hidden="true"></i>
+                                {{ __('Uitgelicht') }}
+                            </span>
+                        @endif
                         <div class="destination-card__overlay">
                             <h2 class="destination-card__name">{{ $destination->name }}</h2>
                             @if ($destination->country_code)

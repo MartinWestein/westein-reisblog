@@ -20,11 +20,16 @@ class UpdateDestinationRequest extends FormRequest
             'country_code' => ['nullable', 'string', 'size:2', 'alpha'],
             'hero' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:16384'],
             'remove_hero' => ['nullable', 'boolean'],
+            'is_featured' => ['boolean'],
         ];
     }
 
     protected function prepareForValidation(): void
     {
+        $this->merge([
+            'is_featured' => $this->boolean('is_featured'),
+        ]);
+
         if ($this->filled('country_code')) {
             $this->merge(['country_code' => strtoupper($this->country_code)]);
         }

@@ -28,6 +28,15 @@
             <x-admin.field name="country_code" label="{{ __('Landcode') }}"
                 :value="$destination?->country_code"
                 hint="{{ __('ISO 2-letter, bijv. IT of GB.') }}" maxlength="2" />
+
+            <div class="form-check mt-3">
+                <input type="checkbox" class="form-check-input" id="is_featured"
+                       name="is_featured" value="1"
+                       @checked(old('is_featured', $destination?->is_featured))>
+                <label class="form-check-label" for="is_featured">
+                    {{ __('Uitgelicht op de homepage en index') }}
+                </label>
+            </div>
         </x-admin.form-section>
 
         <x-admin.form-section title="{{ __('Hero-afbeelding') }}">
