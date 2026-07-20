@@ -21,6 +21,7 @@ class FamilyMember extends Model implements HasMedia
 
     /** @use HasFactory<FamilyMemberFactory> */
     use HasFactory;
+
     use HasSlug;
     use InteractsWithMedia;
 
