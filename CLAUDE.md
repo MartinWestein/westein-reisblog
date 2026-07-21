@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 19 juli 2026 — Fase 5.0 (Fundament + homepage) volledig afgerond in vier sub-blokken, suite 553 groen, vier commits ahead van origin.
+**Laatst bijgewerkt:** 21 juli 2026 — Fase 5.1.b (is_featured admin-toggle UX voor Destination + Route + Post) afgerond, suite 571 groen, 10 commits ahead van origin (pending push aan sessie-einde).
 **Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
 **Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → `fase-4-bouwplan.md`. Fase 5 → wordt na afronding van alle Fase-5-stappen in één keer geschreven (F5-1), niet incrementeel.
 
@@ -10,15 +10,24 @@ Briefing voor Claude bij elke sessie. Lees dit eerst.
 
 ## Status
 
-Fase 4 volledig afgerond en gemerged naar main (Stap 4.14, vorige sessie).
+Fase 4 volledig afgerond en gemerged naar main (Stap 4.14).
 
-**Fase 5.0 (Fundament + homepage) deze sessie afgerond** in vier sub-blokken met 24 beslissingen (F5-1 t/m F5-24). Testsuite **553 groen (1370 assertions), deterministisch**.
+**Fase 5.0 (Fundament + homepage) afgerond** in vier sub-blokken met 24 beslissingen (F5-1 t/m F5-24). Testsuite ging van 526 → 553.
 
-Sub-blokken 5.0:
-- **5.0.a** Publieke layout + site-nav + blog-nav + footer (`layouts/public.blade.php` gevuld, drie partials, A-hybrid site-nav met kleuren identiek aan hoofdsite, dark navy blog-nav met tekst-brand + menu + profiel-dropdown, drie-kolommen footer)
-- **5.0.b** `/mijn-account` met geïntegreerde 2FA (drie kaarten onder elkaar: persoonlijke gegevens, wachtwoord, tweefactor; 2FA-flow via drie state-partials disabled/setup/enabled; `/profiel/2fa` 301-redirect naar `/mijn-account#2fa`; `/dashboard` verwijderd, Fortify home → `/`)
-- **5.0.c** Homepage + welcome-vervanging + ExampleTest opruimen (`HomeController::index()` met hero, featured destination, laatste posts, uitgelichte routes, CTA-strook; welcome.blade.php + ExampleTest.php verwijderd)
-- **5.0.d** Sessies-invalidatie F4-U18 bij email-change door admin (vereist `SESSION_DRIVER=database`, bevestigd)
+**Fase 5.1.a (data-blokker) afgerond** — DemoContentSeeder verrijkt (6 destinations, 14 locations, 30 posts, 6 routes), 62 Pexels fixture-images gecommit, is_featured data-laag toegevoegd (kolommen + scopes). Beslissingen F5-25 t/m F5-32. Testsuite ongewijzigd op 553 (geen tests toegevoegd — data-only sub-blok).
+
+**Fase 5.1.b (is_featured admin-toggle UX) deze sessie afgerond** in drie sub-blokken plus twee losse chores. Beslissingen F5-33 en F5-34. Testsuite **571 groen (1412 assertions), deterministisch**.
+
+Sub-blokken 5.1.b:
+- **5.1.b-i** Destination: checkbox in `_form.blade.php` Details-sectie, ster-badge linksboven op destination-card in de index, 6 nieuwe tests. Commit `a8a8dad`.
+- **5.1.b-ii** Route: checkbox in aparte "Uitlichten"-form-section tussen Publicatie en Reis, ster-badge inline naast route-naam in tabel-index, 6 nieuwe tests. Commit `d1348b3`. Test-conventie: `actingAs()`-import-stijl (verschilt van Destination).
+- **5.1.b-iii** Post: checkbox in nieuwe "Uitlichten"-form-section tussen Publicatie en Bestemming (bewust gescheiden van bestaande "Uitgelichte afbeelding" — verschillend concept), ster-badge inline naast titel in tabel-index, 6 nieuwe tests via `postPayload()`-helper. Commit `f8088fb`.
+
+Twee chores mee-gecommit tijdens 5.1.b:
+- `cf4dd7c` Pint autofix op FamilyMember.php (pre-existing style-issue, opgepikt tijdens 5.1.b-i Pint-run).
+- `cd4bdc0` HTML-entities `«` `»` in RouteController flash-messages vervangen door UTF-8-karakters. Blade `{{ }}` escapet `&` naar `&amp;`, dus entities lekten rauw naar de browser. Pre-existing, ontdekt tijdens 5.1.b-ii browser-check.
+
+Base-request-classes (`RouteRequest`, `PostRequest`) hoefden voor is_featured slechts één plek te editen — Store/Update erven automatisch. Destination heeft geen base, dus twee subclasses gepatched.
 
 ## Loose ends
 
@@ -27,27 +36,37 @@ Opgelost in Fase 5.0:
 - ~~`ExampleTest.php` verwijderen~~ (5.0.c)
 - ~~Sessies-invalidatie bij email-change door admin (F4-U18)~~ (5.0.d)
 
+Opgelost in Fase 5.1.a:
+- ~~`is_featured`-flag toevoegen aan Destination/Post/Route~~ (5.1.a — kolommen + scopes, 5.1.b — admin-toggle)
+- ~~`SubscriberDemoSeeder` weesbestand~~ (5.1.a — verwijderd)
+- ~~`config('app.faker_locale') = 'en_US'`~~ (5.1.a — via `.env` op `nl_NL`; localiseert alleen data-methodes, niet tekstgenerators — zie leerpunt)
+
 Nog open:
 - **Publieke unsubscribe-route** `/nieuwsbrief/uitschrijven/{token}` (F4-N11) — landt in 5.5 (newsletter + contact).
 - **Tailwind 4.0 uit `package.json` verwijderen** — kandidaat voor 5.6 eindcheck of Fase 6.
 - **Hero-intro-tekst verfijnen** in `home.blade.php` — placeholder gemarkeerd met TODO.
 - **Post-URL-helper voor null-destination** — huidige URL-bouw met `optional($post->destination)->slug` geeft `/bestemmingen//slug` bij posts zonder destination. Oplossen in Fase 5.2 met een view-composer of model-methode.
 - **Home-item in blog-nav wel/niet houden** — Martin twijfelt, blijft voorlopig zichtbaar.
+- **Faker-Lorem-valkuil in 5.2 (post-detail-pagina)** — `fake()->paragraphs()` blijft Lorem Ipsum ondanks `nl_NL`-locale. Beslissen: custom NL-tekst-fixture-array, of Lorem accepteren als dev-placeholder tot productie-content in Fase 6.
+- **Flash-key inconsistentie in admin-controllers** — `RouteController` gebruikt `->with('success', ...)`, andere controllers (Destination, Location, Comment) gebruiken `->with('status', ...)`. De `admin._partials.flash`-partial rendert alleen `success/error/info/warning`, dus `status`-flash-messages worden nooit getoond. Impact: bij Destination/Location create/update/delete zie je geen feedback-melding. Fix in Fase 6-cleanup: kies één convention en migreer alle controllers.
 
-**Volgende concrete actie: Fase 5.1.b — is_featured admin-toggle UX**
+**Volgende concrete actie: Fase 5.1.c — `/bestemmingen` index-pagina**
 
-Data-laag is klaar (F5-30, F5-31): kolommen bestaan, scopeFeatured() werkt op
-Destination/Route/Post, seeder markeert 1 destination + 1 route + 3 posts
-featured.
+Eerste publieke pagina van 5.1. Data-laag en admin-toggle klaar (F5-27, F5-30, F5-31): 6 destinations met hero + country_code + is_featured, seeder markeert Italië als featured. Layout-conventies uit 5.0 (F5-1 t/m F5-24) beschikbaar.
 
-Scope 5.1.b:
-- Admin edit-forms voor Destination, Route, Post: checkbox `is_featured` toevoegen (Bootstrap `.form-check`, past bij bestaand `.form-check`-patroon in admin-CRUD).
-- Admin index-pagina's: badge/indicator tonen bij featured records.
-- Policy-check: overweeg of "toggle featured" een aparte permission behoeft, of dat het valt onder `.update`-permission per model. Aanbeveling: onder `.update` (YAGNI, geen aparte flow nodig voor family-blog-schaal).
-- Tests: feature-test per model — set true, unset, verify indicator, verify featured() scope.
-- Geen bulk-actie in 5.1.b (YAGNI — max 6 destinations, 30 posts).
+Scope 5.1.c:
+- Publieke controller `App\Http\Controllers\DestinationController::index()` — geen policy-check nodig.
+- Route: `GET /bestemmingen` → `destinations.index`, met `->getRouteKeyName() = 'slug'` op Destination (al zo).
+- View `resources/views/destinations/index.blade.php` extends `layouts.public`.
+- Featured-destination-hero bovenaan (via `Destination::featured()->latest('updated_at')->first()`), rest van destinations in magazine-grid daaronder.
+- Herbruikbare bouwstenen: `.section-label`, `.section-title`, `.btn-accent`, magazine-typografie uit `layouts.public`.
+- Voor lege state (geen destinations): fallback-tekst met zandbeige placeholder.
+- `@section('title')` en `@section('meta_description')` per pagina, F5-convention.
+- Feature-tests: publieke route bereikbaar zonder auth, correcte destinations tonen, featured-destination prominent, correcte SEO-metadata.
 
-State-check volgende sessie: `git log --oneline -6` (verwacht 5.1.a-CLAUDE bovenaan), `php artisan test` (verwacht 553), `Get-Content app/Http/Controllers/Admin/DestinationController.php` en de edit-view om te zien waar de checkbox in het formulier past.---
+State-check volgende sessie: `git log --oneline -12` (verwacht 5.1.b-CLAUDE bovenaan), `php artisan test` (verwacht 571), `Get-Content routes/web.php | Select-String "bestemmingen"` (bestaande route-stub?), `Get-Content resources/views/layouts/public.blade.php | Select-Object -First 40` voor layout-slots.
+
+---
 
 ## Project
 
@@ -311,6 +330,11 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 - **F5-31** (is_featured constraint): Boolean, meerdere records mogen tegelijk featured zijn per model. Controllers picken via `->featured()->latest('updated_at')` — meest recent gewijzigde wint. Simpelste implementatie, meest flexibel voor Post (blog-index kan carousel tonen), geen model-observer of boot-hook nodig.
 - **F5-32** (post/route content-schaal): 30 posts en 6 routes in seeder (was 18/2). Één route per destination met 2-3 waypoints elk. Voldoende materiaal voor 5.2 blog-paginatie en 5.4 reisroutes-index zonder later terug te hoeven naar de seeder.
 
+### 5.1.b — admin-toggle UX
+
+- **F5-33** (sub-blok-opdeling 5.1.b): Per model — 5.1.b-i Destination, 5.1.b-ii Route, 5.1.b-iii Post. Elk sub-blok bewijst het patroon voor de volgende; bij een test-fail is de blast-radius klein tot één model. Volgorde simpel → complex: Destination heeft kleinste edit-form, Post grootste met featured_image + categories + tags + status.
+- **F5-34** (is_featured badge-conventie): Bootstrap `.badge.bg-warning.text-dark` met `bi bi-star-fill`-icoon + tekst "Uitgelicht". Positionering afhankelijk van index-layout: absolute-positioned linksboven bij card-grid (Destination), inline naast titel bij tabel-index (Route, Post). Bewust géén aparte SCSS — Bootstrap position-utilities volstaan. Terminologie: "Uitlichten" (werkwoord) voor de admin-form-section-titel, "Uitgelicht" (deelwoord) voor de badge-tekst, "Uitgelicht op de homepage en index" voor de checkbox-label. Bij Post specifiek: bewust gescheiden naast bestaande "Uitgelichte afbeelding"-section (featured media-collection is een ander concept dan is_featured presentation-flag).
+
 ## Herbruikbare admin-componenten
 
 Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
@@ -385,6 +409,12 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - **Landmine: fixture-media-attach zonder `->preservingOriginal()` verhuist bronbestand.** Bij `$model->addMedia($path)->toMediaCollection(...)` *verplaatst* Spatie Media Library het bronbestand naar `storage/app/public/{media-id}/`. Bij gecommitte fixture-images is dit fataal: na eerste `migrate:fresh --seed` is de `fixtures/`-directory leeg en werkt de tweede seed niet meer. **Altijd `->preservingOriginal()`** bij fixture-attach. Sanity-test: na `migrate:fresh --seed` moet count van `fixtures/**/*.jpg` gelijk zijn aan wat je committed hebt.
 - **Legacy bug ontdekt en gefixed: oude DemoContentSeeder gaf `country_code` niet door aan destinations.** De `$destSpecs`-array had een `'country'`-key gedefinieerd, maar die werd niet meegegeven aan `Destination::firstOrCreate()`. Resultaat: alle destinations in de dev-DB hadden `country_code = NULL`. Fix in 5.1.a Commit 3: key hernoemd naar `'country_code'` en toegevoegd aan create-body. Locations erven nu `country_code` van hun destination voor consistentie.
 
+### Landmines geleerd in Fase 5.1.b
+
+- **PowerShell 5.1 default console gebruikt CP1252, niet UTF-8.** UTF-8 multi-byte-tekens zoals `«` (`C2 AB`) en `»` (`C2 BB`) worden per byte als CP1252 gerendered → `Â«` en `Â»`. File is bytes-correct; console liegt. Bij zichtbare "encoding-fout" in `Get-Content`: (a) expliciet `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8` én `-Encoding UTF8` op `Get-Content`, of (b) browser-render als ground truth voor Blade-output. `Select-String -Pattern "c2 ab|c2 bb"` op `Format-Hex`-output matcht niet betrouwbaar over regelgrenzen — geen goede bytes-verify.
+- **HTML-entities in PHP-flash-message-strings tonen rauw in Blade.** `"Reisroute &laquo;{$name}&raquo; bijgewerkt."` in de controller → Blade's `{{ }}` escapet `&` naar `&amp;` → gebruiker ziet `&laquo;...&raquo;`. Fix: literale UTF-8-karakters in de PHP-source (`«{$name}»`). VS Code default encoding (UTF-8 zonder BOM) is fine. Entities alleen in lang-files die via `@lang` of `{!! !!}` gerendered worden (bijv. `lang/nl/pagination.php` waar Laravel's paginator-view unescaped rendert). Herkomst van deze bug in RouteController: waarschijnlijk restant van een PowerShell-here-string-workaround uit een eerdere sessie.
+- **VS Code find-replace is niet atomair over meerdere search-terms.** Bij chained replace-rondes (`&laquo;` → `«`, dan `&raquo;` → `»`) kan één van beide misgaan, waardoor je een mixed state overhoudt zoals `«{$route->name} >>` (deels vervangen). Post-verify moet altijd zoeken naar zowel oude patronen als naar de verwachte eindstaat. Voor N replacements: N grep-verifies met verwachte-count-assertion.
+- **Flash-key inconsistentie ontdekt (niet gefixt in 5.1.b).** RouteController gebruikt `->with('success', ...)`. DestinationController, LocationController, CommentController gebruiken `->with('status', ...)`. De `admin._partials.flash`-partial loopt alleen door `['success', 'error', 'info', 'warning']` — dus `status`-flash-messages worden nooit getoond. Impact: bij Destination create/update/delete wordt de gebruiker naar de index geredirect zonder feedback-melding. Loose end voor Fase 6-cleanup: kies één convention (`status` of `success`) en migreer alle controllers. Zie ook oudere landmine over flash-key-shape onder "Spatie + framework-defaults".
 
 ### Tests (Pest + Laravel)
 - **`assertRedirect(route('login'))` faalt voor `getJson()`/`postJson()`-requests.** Laravel honoreert de `Accept: application/json`-header en stuurt 401 JSON, geen 302 redirect. Gebruik `->assertUnauthorized()`.
@@ -444,8 +474,8 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - **Revert DOM, re-render uit model.** SortableJS muteert DOM direct; Alpine ziet dat als out-of-band. Patroon in `onEnd`: eerst item op `event.oldIndex` terugplaatsen, DAN Alpine-array splice'n, force-notify met `this.array = [...this.array]`.
 
 ### Observaties (te volgen, niet acuut)
-- **`config('app.faker_locale')` = `en_US`** ondanks NL project. Geen impact op productie, wel relevant als ooit besloten wordt naar `nl_NL` te switchen voor realistischer fixture-data — kanonnenladingen tests die nu toevallig groen draaien zouden deterministisch moeten worden gemaakt (Faker-collision-risico per testfile, zie leerpunt Faker-PRNG).
-- **`ExampleTest.php` (welcome-view Vite-manifest-fout) faalt zonder `npm run dev`.** Welcome-view (Laravel-scaffold) verwijst naar `resources/css/app.css`, ons Vite-manifest levert `resources/scss/app.scss` + `admin.scss`. Test-baseline op 526 groen alleen bruikbaar als `npm run dev` draait tijdens `php artisan test`. Loose end voor Fase 5: `welcome.blade.php` wordt vervangen door onze homepage; `ExampleTest.php` mag dan verwijderd worden.
+- ~~`config('app.faker_locale')` = `en_US`~~ opgelost in 5.1.a (nu `nl_NL` via `.env`; localiseert alleen data-methodes, niet tekstgenerators — nieuwe landmine gedocumenteerd).
+- ~~`ExampleTest.php` (welcome-view Vite-manifest-fout)~~ opgelost in 5.0.c (`welcome.blade.php` + `ExampleTest.php` verwijderd).
 
 ---
 
@@ -460,19 +490,21 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 
 ### Fase 5 — overzicht
 
-| Stap        | Inhoud                                                                               | Tests | Status |
-| ----------- | ------------------------------------------------------------------------------------ | ----- | ------ |
-| **5.0.a**   | Fundament: soft deletes, users opruimen + `deactivated_at`, Post `inline_images`     |       | ✅     |
-| **5.0.b**   | Admin-layout: inklapbare sidebar, gegroepeerde nav, topbar, flash + form-componenten |       | ✅     |
-| **5.0.c**   | Dashboard met 6 KPI-cards + activity feed. Rename `Post::user()` → `Post::author()`  |       | ✅     |
-| **5.0.d**   | Categories CRUD                                                                      |       | ✅     |
-| **5.1.a**   | Dashboard met 6 KPI-cards + activity feed. Rename `Post::user()` → `Post::author()`  |       | ✅     |
-| **5.1.b**   | Categories CRUD                                                                      |       | ✅     |
+| Stap      | Inhoud                                                                             | Suite     | Status |
+| --------- | ---------------------------------------------------------------------------------- | --------- | ------ |
+| **5.0.a** | Publieke layout + site-nav + blog-nav + footer                                     | 526 → 526 | ✅     |
+| **5.0.b** | `/mijn-account` met geïntegreerde 2FA                                              | 526 → 542 | ✅     |
+| **5.0.c** | Homepage + welcome-vervanging + ExampleTest opruimen                               | 542 → 553 | ✅     |
+| **5.0.d** | Sessies-invalidatie F4-U18 bij email-change door admin                             | 553 → 553 | ✅     |
+| **5.1.a** | DemoContentSeeder verrijken + fixture-images + is_featured data-laag               | 553 → 553 | ✅     |
+| **5.1.b** | is_featured admin-toggle UX (Destination + Route + Post, drie sub-blokken)         | 553 → 571 | ✅     |
+| **5.1.c** | `/bestemmingen` publieke index-pagina                                              |           | ⏳     |
+| **5.1.d** | `/bestemmingen/{destination}` detail-pagina                                        |           | ⏳     |
+| **5.1.e** | `/bestemmingen/{destination}/{location}` detail-pagina (Leaflet + fotoalbum)       |           | ⏳     |
+| **5.2**   | Posts + comments + blog-index + reistips                                           |           | ⏳     |
+| **5.3**   | Routes + fotogalerij                                                               |           | ⏳     |
+| **5.4**   | Auteurs + statische pagina's                                                       |           | ⏳     |
+| **5.5**   | Newsletter + contact                                                               |           | ⏳     |
+| **5.6**   | Eindcheck + `fase-5-bouwplan.md` schrijven                                         |           | ⏳     |
 
-Sub-blokken 5.0:
-- **5.0.a** Publieke layout + site-nav + blog-nav + footer (`layouts/public.blade.php` gevuld, drie partials, A-hybrid site-nav met kleuren identiek aan hoofdsite, dark navy blog-nav met tekst-brand + menu + profiel-dropdown, drie-kolommen footer)
-- **5.0.b** `/mijn-account` met geïntegreerde 2FA (drie kaarten onder elkaar: persoonlijke gegevens, wachtwoord, tweefactor; 2FA-flow via drie state-partials disabled/setup/enabled; `/profiel/2fa` 301-redirect naar `/mijn-account#2fa`; `/dashboard` verwijderd, Fortify home → `/`)
-- **5.0.c** Homepage + welcome-vervanging + ExampleTest opruimen (`HomeController::index()` met hero, featured destination, laatste posts, uitgelichte routes, CTA-strook; welcome.blade.php + ExampleTest.php verwijderd)
-- **5.0.d** Sessies-invalidatie F4-U18 bij email-change door admin (vereist `SESSION_DRIVER=database`, bevestigd)
-
-**Totaal suite-status:** 553 groen.
+**Totaal suite-status:** 571 groen (1412 assertions).
