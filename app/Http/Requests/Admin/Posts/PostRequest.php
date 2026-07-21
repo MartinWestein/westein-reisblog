@@ -48,6 +48,7 @@ abstract class PostRequest extends FormRequest
             'featured' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:8192'],
             'remove_featured' => ['nullable', 'boolean'],
             'featured_image_alt' => ['nullable', 'string', 'max:255'],
+            'is_featured' => ['boolean'],
 
             'meta_title' => ['nullable', 'string', 'max:160'],
             'meta_description' => ['nullable', 'string', 'max:300'],
@@ -59,6 +60,7 @@ abstract class PostRequest extends FormRequest
         // Checkbox-conversie (image-upload-component stuurt 'remove_featured')
         $this->merge([
             'remove_featured' => $this->boolean('remove_featured'),
+            'is_featured' => $this->boolean('is_featured'),
         ]);
 
         // Tag-pills komen binnen als één komma-gescheiden string → normaliseer naar array.

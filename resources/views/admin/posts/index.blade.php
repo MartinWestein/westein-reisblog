@@ -120,8 +120,15 @@
                                                 <i class="bi bi-image"></i>
                                             </span>
                                         @endif
+
                                         <div>
                                             <strong>{{ $post->title }}</strong>
+                                            @if ($post->is_featured)
+                                                <span class="badge bg-warning text-dark ms-2">
+                                                    <i class="bi bi-star-fill" aria-hidden="true"></i>
+                                                    {{ __('Uitgelicht') }}
+                                                </span>
+                                            @endif
                                             <div><code class="text-muted small">{{ $post->slug }}</code></div>
                                         </div>
                                     </div>

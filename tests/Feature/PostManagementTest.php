@@ -629,3 +629,86 @@ it('hergebruikt bestaande tags zonder duplicaten aan te maken', function () {
     expect(Tag::count())->toBe($countBefore + 1)                                   // alleen 'nieuw' erbij
         ->and(Post::where('title', 'Hergebruik-test')->first()->tags)->toHaveCount(2);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Uitlichten — is_featured toggle (5.1.b-iii)
+|--------------------------------------------------------------------------
+*/
+
+it('maakt een post aan met is_featured aangevinkt', function () {
+    $this->actingAs($this->editor)
+        ->post(route('admin.posts.store'), postPayload([
+            'title' => 'Beste post',
+            'is_featured' => '1',
+        ]))
+        ->assertRedirect();
+
+    expect(Post::firstWhere('title', 'Beste post')->is_featured)->toBeTrue();
+});
+
+it('slaat is_featured standaard op als false bij aanmaken zonder toggle', function () {
+    $this->actingAs($this->editor)
+        ->post(route('admin.posts.store'), postPayload([
+            'title' => 'Gewone post',
+        ]))
+        ->assertRedirect();
+
+    expect(Post::firstWhere('title', 'Gewone post')->is_featured)->toBeFalse();
+});
+
+it('zet is_featured aan via update op een post', function () {
+    $post = Post::factory()->create([
+        'user_id' => $this->editor->id,
+        'is_featured' => false,
+    ]);
+
+    $this->actingAs($this->editor)
+        ->put(route('admin.posts.update', $post), postPayload([
+            'title' => $post->title,
+            'is_featured' => '1',
+        ]));
+
+    expect($post->fresh()->is_featured)->toBeTrue();
+});
+
+it('zet is_featured weer uit via update wanneer checkbox niet aangevinkt is (post)', function () {
+    $post = Post::factory()->create([
+        'user_id' => $this->editor->id,
+        'is_featured' => true,
+    ]);
+
+    $this->actingAs($this->editor)
+        ->put(route('admin.posts.update', $post), postPayload([
+            'title' => $post->title,
+            // is_featured bewust weggelaten — simuleert een uitgevinkte checkbox
+        ]));
+
+    expect($post->fresh()->is_featured)->toBeFalse();
+});
+
+it('toont een uitgelicht-badge op de posts-index bij is_featured=true', function () {
+    Post::factory()->create(['title' => 'Beste post', 'is_featured' => true]);
+    Post::factory()->create(['title' => 'Middelmatig', 'is_featured' => false]);
+
+    $response = $this->actingAs($this->admin)
+        ->get(route('admin.posts.index'))
+        ->assertOk()
+        ->assertSee('Beste post')
+        ->assertSee('Middelmatig');
+
+    // Badge komt precies één keer voor — alleen bij de featured post
+    expect(substr_count($response->getContent(), 'Uitgelicht'))->toBe(1);
+});
+
+it('scopeFeatured pickt alleen posts met is_featured=true', function () {
+    Post::factory()->create(['title' => 'A', 'is_featured' => true]);
+    Post::factory()->create(['title' => 'B', 'is_featured' => false]);
+    Post::factory()->create(['title' => 'C', 'is_featured' => true]);
+
+    $featured = Post::featured()->pluck('title')->toArray();
+
+    expect($featured)->toHaveCount(2)
+        ->and($featured)->toContain('A', 'C')
+        ->and($featured)->not->toContain('B');
+});

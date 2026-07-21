@@ -138,6 +138,22 @@
             </div>
         </x-admin.form-section>
 
+        {{-- Uitlichten — prominente plaatsing op homepage/index --}}
+        <x-admin.form-section title="Uitlichten">
+            <label class="d-flex align-items-center gap-2">
+                <input
+                    type="checkbox"
+                    name="is_featured"
+                    value="1"
+                    @checked(old('is_featured', $post?->is_featured))
+                >
+                <span>{{ __('Uitgelicht op de homepage en index') }}</span>
+            </label>
+            <small class="admin-field__hint d-block mt-1">
+                {{ __('Uitgelichte posts worden prominent getoond in overzichten.') }}
+            </small>
+        </x-admin.form-section>
+
         {{-- Bestemming + locatie (§3.4) --}}
         <x-admin.form-section title="Bestemming">
             <div
