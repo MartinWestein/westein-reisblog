@@ -16,7 +16,9 @@ Fase 4 volledig afgerond en gemerged naar main (Stap 4.14).
 
 **Fase 5.1.a (data-blokker) afgerond** — DemoContentSeeder verrijkt (6 destinations, 14 locations, 30 posts, 6 routes), 62 Pexels fixture-images gecommit, is_featured data-laag toegevoegd (kolommen + scopes). Beslissingen F5-25 t/m F5-32. Testsuite ongewijzigd op 553 (geen tests toegevoegd — data-only sub-blok).
 
-**Fase 5.1.b (is_featured admin-toggle UX) deze sessie afgerond** in drie sub-blokken plus twee losse chores. Beslissingen F5-33 en F5-34. Testsuite **571 groen (1412 assertions), deterministisch**.
+**Fase 5.1.b (is_featured admin-toggle UX) afgerond** in drie sub-blokken plus twee losse chores. Beslissingen F5-33 en F5-34. Testsuite ging van 553 → 571.
+
+**Fase 5.1.c (publieke `/bestemmingen` index-pagina) deze sessie afgerond** in één sub-blok, één commit. Publieke `DestinationController` + view + SCSS-partial + zes Pest-tests. Beslissingen F5-35 t/m F5-39. Testsuite **577 groen (1429 assertions), deterministisch**.
 
 Sub-blokken 5.1.b:
 - **5.1.b-i** Destination: checkbox in `_form.blade.php` Details-sectie, ster-badge linksboven op destination-card in de index, 6 nieuwe tests. Commit `a8a8dad`.
@@ -49,22 +51,22 @@ Nog open:
 - **Home-item in blog-nav wel/niet houden** — Martin twijfelt, blijft voorlopig zichtbaar.
 - **Faker-Lorem-valkuil in 5.2 (post-detail-pagina)** — `fake()->paragraphs()` blijft Lorem Ipsum ondanks `nl_NL`-locale. Beslissen: custom NL-tekst-fixture-array, of Lorem accepteren als dev-placeholder tot productie-content in Fase 6.
 - **Flash-key inconsistentie in admin-controllers** — `RouteController` gebruikt `->with('success', ...)`, andere controllers (Destination, Location, Comment) gebruiken `->with('status', ...)`. De `admin._partials.flash`-partial rendert alleen `success/error/info/warning`, dus `status`-flash-messages worden nooit getoond. Impact: bij Destination/Location create/update/delete zie je geen feedback-melding. Fix in Fase 6-cleanup: kies één convention en migreer alle controllers.
+- **Lege `resources/views/public/`-directory** — vermoedelijk Fase 1-scaffolding-restant. Alle publieke views leven feitelijk in `resources/views/destinations/`, `resources/views/home.blade.php`, en `resources/views/partials/`. Kandidaat voor 5.6 eindcheck-cleanup: verwijderen of documenteren waarvoor de map bedoeld is.
+- **Sass 3.0-migratie voor Bootstrap 5.3 SCSS** — huidige `npm run build` produceert honderden deprecation warnings (`@import` → `@use`, `mix()` → `color.mix()`, `red()/green()/blue()` → `color.channel()`). Bootstrap's eigen SCSS is niet forward-compatible. Onze eigen partials gebruiken de nieuwe syntax al niet, dus dit is een Bootstrap-vendor-upgrade of migratie naar `@use` in eigen imports. Fase 6.
 
-**Volgende concrete actie: Fase 5.1.c — `/bestemmingen` index-pagina**
+**Volgende concrete actie: Fase 5.1.d — `/bestemmingen/{destination}` detail-pagina**
 
-Eerste publieke pagina van 5.1. Data-laag en admin-toggle klaar (F5-27, F5-30, F5-31): 6 destinations met hero + country_code + is_featured, seeder markeert Italië als featured. Layout-conventies uit 5.0 (F5-1 t/m F5-24) beschikbaar.
+Detail-pagina van één destination met hero + description-blok + lijst van locations. Data-laag klaar (6 destinations, 14 locations via F5-27). Route-stub `GET /bestemmingen/{destination:slug}` bestaat nog niet. Publieke `DestinationController` bestaat (`index`-action uit 5.1.c) — nieuwe `show`-action erbij.
 
-Scope 5.1.c:
-- Publieke controller `App\Http\Controllers\DestinationController::index()` — geen policy-check nodig.
-- Route: `GET /bestemmingen` → `destinations.index`, met `->getRouteKeyName() = 'slug'` op Destination (al zo).
-- View `resources/views/destinations/index.blade.php` extends `layouts.public`.
-- Featured-destination-hero bovenaan (via `Destination::featured()->latest('updated_at')->first()`), rest van destinations in magazine-grid daaronder.
-- Herbruikbare bouwstenen: `.section-label`, `.section-title`, `.btn-accent`, magazine-typografie uit `layouts.public`.
-- Voor lege state (geen destinations): fallback-tekst met zandbeige placeholder.
-- `@section('title')` en `@section('meta_description')` per pagina, F5-convention.
-- Feature-tests: publieke route bereikbaar zonder auth, correcte destinations tonen, featured-destination prominent, correcte SEO-metadata.
+Scope 5.1.d (voorlopig — te lock'en als F5-40+):
+- `DestinationController::show(Destination $destination)`-action met route-model-binding op `slug`.
+- View `resources/views/destinations/show.blade.php` extends `layouts.public`.
+- Hero-blok: destination hero-image + naam-h1 + description-alinea.
+- Locations-strook: elke location als kaart of tegel (patroon te bespreken). Herbruikbare `.destination-card`-patroon uit 5.1.c mogelijk basis.
+- F5-28-consequentie: geen destination-gallery-strook — locations zijn de primaire visuele content.
+- Feature-tests: 200 bij bestaande slug, 404 bij onbekende slug, hero + description tonen, locations tonen in juiste volgorde.
 
-State-check volgende sessie: `git log --oneline -12` (verwacht 5.1.b-CLAUDE bovenaan), `php artisan test` (verwacht 571), `Get-Content routes/web.php | Select-String "bestemmingen"` (bestaande route-stub?), `Get-Content resources/views/layouts/public.blade.php | Select-Object -First 40` voor layout-slots.
+State-check volgende sessie: `git log --oneline -8` (verwacht 5.1.c-CLAUDE bovenaan op origin/main), `php artisan test` (verwacht 577), `Get-Content routes/web.php | Select-String "bestemmingen"` (verwacht één route: index), `php artisan route:list --path=bestemmingen` voor volledig plaatje.
 
 ---
 
@@ -335,8 +337,15 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 - **F5-33** (sub-blok-opdeling 5.1.b): Per model — 5.1.b-i Destination, 5.1.b-ii Route, 5.1.b-iii Post. Elk sub-blok bewijst het patroon voor de volgende; bij een test-fail is de blast-radius klein tot één model. Volgorde simpel → complex: Destination heeft kleinste edit-form, Post grootste met featured_image + categories + tags + status.
 - **F5-34** (is_featured badge-conventie): Bootstrap `.badge.bg-warning.text-dark` met `bi bi-star-fill`-icoon + tekst "Uitgelicht". Positionering afhankelijk van index-layout: absolute-positioned linksboven bij card-grid (Destination), inline naast titel bij tabel-index (Route, Post). Bewust géén aparte SCSS — Bootstrap position-utilities volstaan. Terminologie: "Uitlichten" (werkwoord) voor de admin-form-section-titel, "Uitgelicht" (deelwoord) voor de badge-tekst, "Uitgelicht op de homepage en index" voor de checkbox-label. Bij Post specifiek: bewust gescheiden naast bestaande "Uitgelichte afbeelding"-section (featured media-collection is een ander concept dan is_featured presentation-flag).
 
-## Herbruikbare admin-componenten
+### 5.1.c — publieke destinations-index
 
+- **F5-35** (macro-structuur `/bestemmingen`): Uniforme 3-koloms grid (`col-md-6.col-lg-4`), featured herkenbaar aan F5-34 ster-badge + subtiele perzik-outline (`outline: 2px solid var(--color-accent-1); outline-offset: -2px`) op de kaart. Geen aparte featured-hero-strook — dubbelop met homepage-featured-hero (F5-21). Uniforme grid schaalt naar N featured (F5-31-vriendelijk). `outline` in plaats van `border` om kaart-hoogte gelijk te houden bij mixed featured/non-featured rijen. Overwogen alternatieven: aparte featured-hero-strook bovenaan (kwetsbaar bij N > 1 featured), asymmetrische grid met featured breed bovenaan (leunt te sterk op precies één featured).
+- **F5-36** (kaart-inhoud destination-card): hero (4:3 aspect-ratio, `loading="lazy"`) + naam als h2 + description-snippet (`Str::limit(strip_tags(...), 140)`) + locatie-teller (`bi-geo-alt` + count + `plek`/`plekken`). Anchor omvat de hele kaart (image + body) — geen aparte "Lees meer"-knop, spiegelt `.post-card`-patroon uit homepage. Controller-implicatie: `->withCount('locations')` voor N+1-preventie. Overwogen alternatieven: minimalistisch (hero + naam + country-code) — te weinig SEO-content; rijk (+ laatste-post-datum) — overbelast voor eerste-bezoek-experience.
+- **F5-37** (sortering `/bestemmingen`): `->orderByDesc('is_featured')->latest('created_at')`. Featured cluster bovenaan, rest chronologisch nieuwste-eerst. Badge blijft primair signaal, positie ondersteunt. Overwogen alternatieven: puur alfabetisch (badge als enige signaal) — te subtiel; puur `updated_at desc` — verwarrend want minor edit schuift destination naar boven.
+- **F5-38** (geen country-meta op destination-card): destination-naam is de titel; landscontext komt eventueel op detail-pagina 5.1.d. Reden: voor 4 van de 6 destinations is destination-naam === landsnaam (Italië, Slovenië, Duitsland, Verenigde Staten), voor 2 informatief (Schotland → VK, Canarische Eilanden → Spanje) — de winst was cosmetisch redundantie waard, uiteindelijk gekozen voor cleaner design. Consequentie: geen `country_names_nl`-lookup in `config/westein.php` nodig voor deze pagina; komt eventueel terug in 5.1.d.
+- **F5-39** (sub-blok-omvang 5.1.c): Geleverd als één sub-blok, één commit. Reden: geen forms, geen validatie, alleen lees-view — grondslag om te splitsen ontbreekt. Contrast met 5.1.b dat drie sub-blokken had (Destination + Route + Post) omdat elk model een eigen form-integratie was.
+
+## Herbruikbare admin-componenten
 Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 
 - **`<x-admin.field>`** — label + input/textarea/number, error-mapping, hint, readonly. Basis-veld. Project gebruikt straight Bootstrap, `.admin-field` is de uitzondering.
@@ -415,6 +424,11 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - **HTML-entities in PHP-flash-message-strings tonen rauw in Blade.** `"Reisroute &laquo;{$name}&raquo; bijgewerkt."` in de controller → Blade's `{{ }}` escapet `&` naar `&amp;` → gebruiker ziet `&laquo;...&raquo;`. Fix: literale UTF-8-karakters in de PHP-source (`«{$name}»`). VS Code default encoding (UTF-8 zonder BOM) is fine. Entities alleen in lang-files die via `@lang` of `{!! !!}` gerendered worden (bijv. `lang/nl/pagination.php` waar Laravel's paginator-view unescaped rendert). Herkomst van deze bug in RouteController: waarschijnlijk restant van een PowerShell-here-string-workaround uit een eerdere sessie.
 - **VS Code find-replace is niet atomair over meerdere search-terms.** Bij chained replace-rondes (`&laquo;` → `«`, dan `&raquo;` → `»`) kan één van beide misgaan, waardoor je een mixed state overhoudt zoals `«{$route->name} >>` (deels vervangen). Post-verify moet altijd zoeken naar zowel oude patronen als naar de verwachte eindstaat. Voor N replacements: N grep-verifies met verwachte-count-assertion.
 - **Flash-key inconsistentie ontdekt (niet gefixt in 5.1.b).** RouteController gebruikt `->with('success', ...)`. DestinationController, LocationController, CommentController gebruiken `->with('status', ...)`. De `admin._partials.flash`-partial loopt alleen door `['success', 'error', 'info', 'warning']` — dus `status`-flash-messages worden nooit getoond. Impact: bij Destination create/update/delete wordt de gebruiker naar de index geredirect zonder feedback-melding. Loose end voor Fase 6-cleanup: kies één convention (`status` of `success`) en migreer alle controllers. Zie ook oudere landmine over flash-key-shape onder "Spatie + framework-defaults".
+
+### Landmines geleerd in Fase 5.1.c
+
+- **Blade `{{ }}`-echo's op aparte regels breken `assertSee`-substrings.** Blade rendert elke echo met omringende whitespace uit de source. `{{ $count }}` en `{{ $unit }}` op twee opeenvolgende Blade-regels produceren `<n>\n    <unit>` in de output-HTML — de browser collapsed die whitespace bij render, maar de source-HTML bevat de newline. `assertSee('3 plekken')` faalt want de substring bestaat niet aaneengesloten. Fix: gerelateerde echo's op één Blade-regel met precies één spatie ertussen: `{{ $count }} {{ $unit }}`. Diagnose: bij een verrassende `assertSee`-fail, controleer eerst de gerenderde bron-HTML (staat in de faal-output) op newlines tussen echo's, niet op de browser-render.
+- **PowerShell interpreteert `->method()` in tinker `--execute` als redirect-target.** `php artisan tinker --execute="app(Controller::class)->index()"` produceert een leeg bestand met de naam `index()` in de working directory — PowerShell's parser ziet `->` niet als PHP-operator maar als redirect-token en probeert de output naar `index()` te schrijven. Symptoom: silente terugkeer zonder output, plus een untracked bestand. Fix: wegwerp-`.php`-bestand voor tinker-werk (conform bestaande landmine over multi-statement tinker), niet `--execute` met object-method-chains. Verwante shell-tokens die je in tinker moet vermijden: `>`, `>>`, `<`, `|`, `&`, backticks, ronde haken. Voor pure query-inspecties zonder method-chains kan `--execute` nog steeds werken, mits singlequotes eromheen én geen `->`.
 
 ### Tests (Pest + Laravel)
 - **`assertRedirect(route('login'))` faalt voor `getJson()`/`postJson()`-requests.** Laravel honoreert de `Accept: application/json`-header en stuurt 401 JSON, geen 302 redirect. Gebruik `->assertUnauthorized()`.
@@ -498,7 +512,7 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 | **5.0.d** | Sessies-invalidatie F4-U18 bij email-change door admin                             | 553 → 553 | ✅     |
 | **5.1.a** | DemoContentSeeder verrijken + fixture-images + is_featured data-laag               | 553 → 553 | ✅     |
 | **5.1.b** | is_featured admin-toggle UX (Destination + Route + Post, drie sub-blokken)         | 553 → 571 | ✅     |
-| **5.1.c** | `/bestemmingen` publieke index-pagina                                              |           | ⏳     |
+| **5.1.c** | `/bestemmingen` publieke index-pagina                                              | 571 → 577 | ✅     |
 | **5.1.d** | `/bestemmingen/{destination}` detail-pagina                                        |           | ⏳     |
 | **5.1.e** | `/bestemmingen/{destination}/{location}` detail-pagina (Leaflet + fotoalbum)       |           | ⏳     |
 | **5.2**   | Posts + comments + blog-index + reistips                                           |           | ⏳     |
@@ -507,4 +521,4 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 | **5.5**   | Newsletter + contact                                                               |           | ⏳     |
 | **5.6**   | Eindcheck + `fase-5-bouwplan.md` schrijven                                         |           | ⏳     |
 
-**Totaal suite-status:** 571 groen (1412 assertions).
+**Totaal suite-status:** 577 groen (1429 assertions).
