@@ -75,12 +75,42 @@ class DemoContentSeeder extends Seeder
         // DESTINATIONS — 6 stuks (idempotent via slug), country_code correct gezet
         // -----------------------------------------------------------------
         $destSpecs = [
-            ['name' => 'Italië', 'slug' => 'italie', 'country_code' => 'IT'],
-            ['name' => 'Schotland', 'slug' => 'schotland', 'country_code' => 'GB'],
-            ['name' => 'Slovenië', 'slug' => 'slovenie', 'country_code' => 'SI'],
-            ['name' => 'Canarische Eilanden', 'slug' => 'canarische-eilanden', 'country_code' => 'ES'],
-            ['name' => 'Duitsland', 'slug' => 'duitsland', 'country_code' => 'DE'],
-            ['name' => 'Verenigde Staten', 'slug' => 'verenigde-staten', 'country_code' => 'US'],
+            [
+                'name' => 'Italië',
+                'slug' => 'italie',
+                'country_code' => 'IT',
+                'description' => 'Onze grote zomerreis: drie weken door Toscane, Lazio en Veneto. Van glooiende wijnvelden tot de kanalen van Venetië, met tussenstops die we niet meer vergeten.',
+            ],
+            [
+                'name' => 'Schotland',
+                'slug' => 'schotland',
+                'country_code' => 'GB',
+                'description' => 'Tien dagen door de Highlands, tussen mistige lochs en historische kastelen. Voor ons de mooiste combinatie van ruige natuur en gastvrije pubs.',
+            ],
+            [
+                'name' => 'Slovenië',
+                'slug' => 'slovenie',
+                'country_code' => 'SI',
+                'description' => 'Een compact land met een verrassende variatie: van de meren van Bled en Bohinj tot de Julische Alpen. Een week vol wandelingen en heldere bergstreken.',
+            ],
+            [
+                'name' => 'Canarische Eilanden',
+                'slug' => 'canarische-eilanden',
+                'country_code' => 'ES',
+                'description' => 'Twee eilanden op één reis: het groene Tenerife en het vulkanische Lanzarote. Genieten van winterzon en compleet verschillende landschappen.',
+            ],
+            [
+                'name' => 'Duitsland',
+                'slug' => 'duitsland',
+                'country_code' => 'DE',
+                'description' => 'Van de bruisende straten van Berlijn naar de stille dennenbossen van het Zwarte Woud. Een camperroute die stad en natuur in één reis verbindt.',
+            ],
+            [
+                'name' => 'Verenigde Staten',
+                'slug' => 'verenigde-staten',
+                'country_code' => 'US',
+                'description' => 'Tien dagen langs de oostkust, van New York naar Miami. Skyline-verkenningen, road-trip-motels en het Miami-strand als eindpunt van onze zomerreis.',
+            ],
         ];
         $destinations = collect();
         foreach ($destSpecs as $spec) {
@@ -89,7 +119,7 @@ class DemoContentSeeder extends Seeder
                     ['slug' => $spec['slug']],
                     [
                         'name' => $spec['name'],
-                        'description' => "Familievakanties in {$spec['name']}.",
+                        'description' => $spec['description'],
                         'country_code' => $spec['country_code'],
                     ],
                 ),
