@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 21 juli 2026 — Fase 5.1.b (is_featured admin-toggle UX voor Destination + Route + Post) afgerond, suite 571 groen, 10 commits ahead van origin (pending push aan sessie-einde).
+**Laatst bijgewerkt:** 2 augustus 2026 — Fase 5.1.d afgerond, suite 571 groen, 10 commits ahead van origin (pending push aan sessie-einde).
 **Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
 **Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → `fase-4-bouwplan.md`. Fase 5 → wordt na afronding van alle Fase-5-stappen in één keer geschreven (F5-1), niet incrementeel.
 
@@ -31,6 +31,9 @@ Twee chores mee-gecommit tijdens 5.1.b:
 
 Base-request-classes (`RouteRequest`, `PostRequest`) hoefden voor is_featured slechts één plek te editen — Store/Update erven automatisch. Destination heeft geen base, dus twee subclasses gepatched.
 
+- **Fase 5.1.d klaar** — publieke destination-detail-pagina live. Tests baseline 584 groen (1447 assertions). `origin/main` HEAD: `62eed5d`.
+- **Volgende: Fase 5.1.e** — publieke `/bestemmingen/{destination:slug}/{location:slug}` detail-pagina met Leaflet-integratie voor coordinates-visualisatie en gallery-fotogrid (4 fotos per locatie uit F5-28).
+
 ## Loose ends
 
 Opgelost in Fase 5.0:
@@ -53,10 +56,11 @@ Nog open:
 - **Flash-key inconsistentie in admin-controllers** — `RouteController` gebruikt `->with('success', ...)`, andere controllers (Destination, Location, Comment) gebruiken `->with('status', ...)`. De `admin._partials.flash`-partial rendert alleen `success/error/info/warning`, dus `status`-flash-messages worden nooit getoond. Impact: bij Destination/Location create/update/delete zie je geen feedback-melding. Fix in Fase 6-cleanup: kies één convention en migreer alle controllers.
 - **Lege `resources/views/public/`-directory** — vermoedelijk Fase 1-scaffolding-restant. Alle publieke views leven feitelijk in `resources/views/destinations/`, `resources/views/home.blade.php`, en `resources/views/partials/`. Kandidaat voor 5.6 eindcheck-cleanup: verwijderen of documenteren waarvoor de map bedoeld is.
 - **Sass 3.0-migratie voor Bootstrap 5.3 SCSS** — huidige `npm run build` produceert honderden deprecation warnings (`@import` → `@use`, `mix()` → `color.mix()`, `red()/green()/blue()` → `color.channel()`). Bootstrap's eigen SCSS is niet forward-compatible. Onze eigen partials gebruiken de nieuwe syntax al niet, dus dit is een Bootstrap-vendor-upgrade of migratie naar `@use` in eigen imports. Fase 6.
+- **`.location-card__link` `href="#"` placeholder** — in `resources/views/destinations/show.blade.php` staat een `{{-- TODO 5.1.e: href vervangen door route('locations.show', [$destination, $location]) --}}`-comment. Vervangen bij implementatie 5.1.e.
+- **Sass 3.0-migratie (bestaande loose end, verduidelijkt)** — Vite build produceert 8+ deprecation warnings: `@import` (alle SCSS entry-imports), Bootstrap 5.3 SCSS `if()`-syntax, `mix()`/`unit()` globals, `red()`/`green()`/`blue()` color-channels. Migrator: `sass-migrator module` beschikbaar. Fase 6-cleanup.
+- **Import-conventie inconsistentie** — 6 van 8 public partials worden als `@import 'public/foo'` zonder underscore geïmporteerd, `_destinations-index` en `_destinations-show` als `@import 'public/_foo'` mét underscore. Functioneel identiek (Sass resolvet beide). Mee te nemen in Fase 6-cleanup.
 
-**Volgende concrete actie: Fase 5.1.d — `/bestemmingen/{destination}` detail-pagina**
-
-Detail-pagina van één destination met hero + description-blok + lijst van locations. Data-laag klaar (6 destinations, 14 locations via F5-27). Route-stub `GET /bestemmingen/{destination:slug}` bestaat nog niet. Publieke `DestinationController` bestaat (`index`-action uit 5.1.c) — nieuwe `show`-action erbij.
+**5.1.e — publieke `/bestemmingen/{destination:slug}/{location:slug}` detail-pagina**. State-check + design-vragen (welke: hero-macro location, gallery-layout voor 4 foto's, Leaflet-plaatsing op de pagina, back-navigatie naar destination-detail vs bestemmingen-index, `assertSee`-strategy voor Leaflet-container).
 
 Scope 5.1.d (voorlopig — te lock'en als F5-40+):
 - `DestinationController::show(Destination $destination)`-action met route-model-binding op `slug`.
@@ -344,6 +348,23 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 - **F5-37** (sortering `/bestemmingen`): `->orderByDesc('is_featured')->latest('created_at')`. Featured cluster bovenaan, rest chronologisch nieuwste-eerst. Badge blijft primair signaal, positie ondersteunt. Overwogen alternatieven: puur alfabetisch (badge als enige signaal) — te subtiel; puur `updated_at desc` — verwarrend want minor edit schuift destination naar boven.
 - **F5-38** (geen country-meta op destination-card): destination-naam is de titel; landscontext komt eventueel op detail-pagina 5.1.d. Reden: voor 4 van de 6 destinations is destination-naam === landsnaam (Italië, Slovenië, Duitsland, Verenigde Staten), voor 2 informatief (Schotland → VK, Canarische Eilanden → Spanje) — de winst was cosmetisch redundantie waard, uiteindelijk gekozen voor cleaner design. Consequentie: geen `country_names_nl`-lookup in `config/westein.php` nodig voor deze pagina; komt eventueel terug in 5.1.d.
 - **F5-39** (sub-blok-omvang 5.1.c): Geleverd als één sub-blok, één commit. Reden: geen forms, geen validatie, alleen lees-view — grondslag om te splitsen ontbreekt. Contrast met 5.1.b dat drie sub-blokken had (Destination + Route + Post) omdat elk model een eigen form-integratie was.
+- **F5-40 Hero-macro detail-pagina** — Edge-to-edge foto volle breedte, daaronder `.section-label` + h1 + description als losse alinea. Gekozen boven overlay-banner (leesbaarheid teksten over foto) en split-hero (reveal-verlies na doorklik vanaf homepage-featured-blok). Rationale: respecteert F5-28 (enige destination-foto krijgt volle viewport-impact) én laat description als echte alinea in flow leesbaar zijn.
+
+- **F5-41 Location-tegel patroon** — Nieuwe `.location-card`, foto-first minimalistisch: image + naam-heading, geen description-teaser, geen meta. Gekozen boven `.destination-card`-hergebruik (visueel verschil tussen destinations als containers en locations als plekken) en location-card+teaser (Faker-Lorem-valkuil + SEO al gedekt door destination.description hoger op de pagina). Voordeel: 5.1.e krijgt echte reveal met tekst + gallery + kaart.
+
+- **F5-42 Locations-strook grid** — Vast 3-koloms grid analoog aan `.destinations-grid` uit 5.1.c. Bij destinations met 2 locations: rij van 2 tiles + lege slot rechts (leest editorial-eerlijk als "twee bezochte plekken"). Bij 3 locations: volle rij. Gekozen boven 2-koloms grid (verticaal-verweesde tile op rij 2 leest sterker als orphan) en center-justify met max-width (te veel CSS-nuance voor de winst).
+
+- **F5-43 Cross-links onderaan** — Kleine "← Alle bestemmingen bekijken" terug-CTA-strook met `.btn-accent`, gecentered. Editorial-afsluiting van de pagina. Gekozen boven YAGNI (pagina-einde zonder afsluiting oogt onaf), prev/next-navigatie (destinations zijn evergreen containers, geen artikelen met canonieke volgorde), en andere-destinations-strook (bij dataset van 6 dupliceert dat homepage-featured).
+
+- **F5-44 Location-card image aspect** — 3:2 landscape. Klassiek fotografisch DSLR-formaat, mobile-vriendelijk (~233px hoog bij 350 wide). Gekozen boven 4:5 portrait (viewport-vullend op mobile, forse scroll) en 1:1 (geen editorial karakter) en 4:3 (te dicht bij destinations-tiles, wringt met F5-41-visuele-onderscheid).
+
+- **F5-45 SEO-metadata conventie detail-pagina's** — `title = {model->name}`, `meta_description = Str::limit(strip_tags({model->description ?? ''}), 160)`. Dynamisch uit content, unieke SERP-string per URL, fallback op layout-default bij lege description. Gekozen boven templated (Google waardeert templated meta-descriptions lager, en SEO-groei is Fase-5-primary-goal). Precedent voor 5.1.e (location), 5.2 (post), 5.3 (route).
+
+- **F5-46 Sub-blok-opdeling 5.1.d** — Één sub-blok, één commit. Analoog aan 5.1.c: geen forms, geen validatie, alleen lees-view. Locations-strook is scope-uitbreiding maar niet groot genoeg voor splits (5.1.d-i zonder locations zou eindstaat-onbereikbaar zijn).
+
+- **F5-47 Destination-descriptions verrijkt** — Seeder `$destSpecs` uitgebreid met `description`-key per spec: 2-zins-Nederlandse teksten, ~140 tekens elk, concrete locatie-details (Toscane, Bled, Tenerife, oostkust, etc.), family-first taalgebruik zonder promo-taal. Aparte chore-commit `1ad2888` vóór 5.1.d. Rationale: één-zin-descriptions uit oorspronkelijke seeder (`"Familievakanties in {name}."`) gaven onrealistische dev-visuele-test + mager meta_description. `migrate:fresh --seed` toegepast omdat `firstOrCreate` idempotent is.
+
+- **F5-48 Hero aspect-ratio detail-pagina** — 2:1 magazine-cover. Op 1440px viewport = 720 hoogte. Gekozen boven 16:9 (te "video-still", pushes description volledig weg) en 16:7 (te bescheiden voor F5-28-weight). Goldilocks tussen visuele weight en pagina-flow.
 
 ## Herbruikbare admin-componenten
 Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
@@ -386,6 +407,15 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
   - `.post-card` en `.route-card` — grid-card-patronen met hover-lift + shadow (hergebruikbaar in bestemmingen-index 5.1, blog-index 5.2, routes-index 5.3).
 - `resources/views/account/show.blade.php` + `_partials/` — one-page account met kaart-patroon; kaart-styling `.account-card` (header + body-blokken) is generiek herbruikbaar.
 - **`layouts.public` `@section('title')` / `@section('meta_description')` conventie** — elke publieke pagina zet z'n eigen title en description; layout heeft fallbacks.
+- `.destination-detail__hero` (edge-to-edge, `aspect-ratio: 2/1`, F5-48) — hero-container voor detail-pagina's; buiten `.container` gerenderd voor volle viewport-breedte. Placeholder-variant met `.bi-image` icoon bij ontbrekende media.
+- `.destination-detail__intro` — sectie-container voor label + h1 + description-alinea, `padding: var(--space-5) 0 var(--space-4)`.
+- `.destination-detail__description` — description-alinea styling: `max-width: 720px`, `font-size: 1.1rem`, `line-height: 1.65`. Leesbaar voor 2-3 zins-alinea's.
+- `.destination-detail__locations` — sectie-container voor locations-strook onder de intro.
+- `.destination-detail__back` — gecentered terug-CTA-strook (F5-43).
+- `.locations-grid` (3-koloms, F5-42) — responsive analoog aan `.destinations-grid`: 3 kols default, 2 kols <992px, 1 kol <576px.
+- `.location-card` + `__link`, `__image-wrap`, `__image` (3:2 F5-44), `__image-placeholder`, `__title` — foto-first minimalistische tile. Naam als h3 met Playfair, geen description/meta.
+
+Media-URL fallback-patroon voor edge-to-edge hero-uses: `getFirstMediaUrl('hero', 'large') ?: getFirstMediaUrl('hero', 'medium') ?: getFirstMediaUrl('hero')`. Uitbreiding van het 5.1.c-patroon (dat alleen medium→original had), noodzakelijk omdat medium (1200px) upscalet op 1440+ viewports.
 
 ---
 
@@ -429,6 +459,16 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 
 - **Blade `{{ }}`-echo's op aparte regels breken `assertSee`-substrings.** Blade rendert elke echo met omringende whitespace uit de source. `{{ $count }}` en `{{ $unit }}` op twee opeenvolgende Blade-regels produceren `<n>\n    <unit>` in de output-HTML — de browser collapsed die whitespace bij render, maar de source-HTML bevat de newline. `assertSee('3 plekken')` faalt want de substring bestaat niet aaneengesloten. Fix: gerelateerde echo's op één Blade-regel met precies één spatie ertussen: `{{ $count }} {{ $unit }}`. Diagnose: bij een verrassende `assertSee`-fail, controleer eerst de gerenderde bron-HTML (staat in de faal-output) op newlines tussen echo's, niet op de browser-render.
 - **PowerShell interpreteert `->method()` in tinker `--execute` als redirect-target.** `php artisan tinker --execute="app(Controller::class)->index()"` produceert een leeg bestand met de naam `index()` in de working directory — PowerShell's parser ziet `->` niet als PHP-operator maar als redirect-token en probeert de output naar `index()` te schrijven. Symptoom: silente terugkeer zonder output, plus een untracked bestand. Fix: wegwerp-`.php`-bestand voor tinker-werk (conform bestaande landmine over multi-statement tinker), niet `--execute` met object-method-chains. Verwante shell-tokens die je in tinker moet vermijden: `>`, `>>`, `<`, `|`, `&`, backticks, ronde haken. Voor pure query-inspecties zonder method-chains kan `--execute` nog steeds werken, mits singlequotes eromheen én geen `->`.
+
+### Landmines geleerd in Fase 5.1.d
+- **Media Library conversies op Destination**: hero collection heeft medium (1200px) en large (2400px); gallery collection heeft thumb (400), medium (1200), large (2400) — allemaal WebP via `registerWebpConversion`-trait met Fit::Max. Voor edge-to-edge full-width heroes op detail-pagina's is 'large' de juiste keuze; 'medium' upscalet zichtbaar. Voor `.location-card`-tiles (~364px wide) is gallery 'medium' ruim voldoende.
+- **`firstOrCreate` is idempotent**: DemoContentSeeder gebruikt dit patroon site-breed. Nieuwe waarden in seeder-arrays worden niet toegepast op bestaande records — alleen bij nieuwe slugs. Om nieuwe waarden op te leggen: `php artisan migrate:fresh --seed` (nucleair, herbouwt DB + herhaalt media-attachments). Alternatief `updateOrCreate` breekt idempotency-conventie; niet toegepast.
+
+- **Herd PHP CLI default `memory_limit` 128M** — te laag voor Spatie Image GD-driver bij hero/media-attachment via seeder. Symptoom: `Allowed memory size of 134217728 bytes exhausted in vendor\spatie\image\src\Drivers\Gd\GdDriver.php`. Fix ad-hoc: `php -d memory_limit=1G artisan migrate:fresh --seed`. Fix permanent: in php.ini (locatie via `php --ini`) → `memory_limit = 512M`.
+- **Git PATH niet automatisch op nieuwe Windows-installatie** — Git for Windows setup vraagt "Adjusting your PATH"; kies "Git from the command line and also from 3rd-party software". Symptoom: `git : The term 'git' is not recognized`. Fix na installatie: `[Environment]::SetEnvironmentVariable("PATH", "...;C:\Program Files\Git\cmd", "User")` en shell herstarten.
+- **Git config `user.name` + `user.email` zijn per-machine** — bij verhuizing opnieuw zetten met `git config --global`. Zonder deze zijn commits niet aan GitHub-profiel gekoppeld.
+- **GitHub-authenticatie via Git Credential Manager (GCM)** — sinds 2021 geen wachtwoord in terminal meer. Bij eerste `git push` opent browser voor GitHub OAuth, daarna cached in Windows Credential Manager. `git fetch` zonder output = succes (Git spreekt alleen bij verandering/fouten).
+- **PHP 8.4.24 op nieuwe laptop, was 8.3+ op oude** — Laravel 13 compatible, geen actie. Wel om te noteren voor toekomstige `composer.json`-`platform`-config bij deployment.
 
 ### Tests (Pest + Laravel)
 - **`assertRedirect(route('login'))` faalt voor `getJson()`/`postJson()`-requests.** Laravel honoreert de `Accept: application/json`-header en stuurt 401 JSON, geen 302 redirect. Gebruik `->assertUnauthorized()`.
