@@ -9,6 +9,8 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/bestemmingen', [DestinationController::class, 'index'])
     ->name('destinations.index');
+Route::get('/bestemmingen/{destination:slug}', [DestinationController::class, 'show'])
+    ->name('destinations.show');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/mijn-account', [AccountController::class, 'show'])->name('account.show');

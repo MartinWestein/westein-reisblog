@@ -1,0 +1,134 @@
+// resources/scss/public/_destinations-show.scss
+// Publieke /bestemmingen/{destination} detail-pagina (5.1.d).
+// Structuur: edge-to-edge 2:1 hero (F5-48), intro-blok met section-label +
+// h1 + description-alinea, 3-koloms locations-grid (F5-42) met foto-first
+// .location-card (F5-41, image aspect 3:2 F5-44), terug-CTA (F5-43).
+
+.destination-detail__hero {
+  width: 100%;
+  background-color: var(--color-bg);
+  overflow: hidden;
+}
+
+.destination-detail__hero-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  object-fit: cover;
+}
+
+.destination-detail__hero-placeholder {
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  background-color: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .bi {
+    font-size: 3rem;
+    color: rgba(20, 33, 61, 0.15);
+  }
+}
+
+.destination-detail__intro {
+  padding: var(--space-5) 0 var(--space-4);
+  background-color: var(--color-bg);
+}
+
+.destination-detail__description {
+  max-width: 720px;
+  margin-top: var(--space-3);
+  font-size: 1.1rem;
+  line-height: 1.65;
+  color: var(--color-text);
+}
+
+.destination-detail__locations {
+  padding: var(--space-4) 0 var(--space-5);
+  background-color: var(--color-bg);
+}
+
+.locations-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+
+  @media (max-width: 991.98px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 575.98px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.location-card {
+  background-color: var(--color-surface);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  &__link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+
+    &:hover,
+    &:focus {
+      color: inherit;
+    }
+  }
+
+  &__image-wrap {
+    position: relative;
+  }
+
+  &__image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+  }
+
+  &__image-placeholder {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    background-color: var(--color-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .bi {
+      font-size: 2.5rem;
+      color: rgba(20, 33, 61, 0.15);
+    }
+  }
+
+  &__title {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text);
+    line-height: 1.3;
+    margin: var(--space-3) var(--space-4) var(--space-4);
+  }
+}
+
+.destination-detail__back {
+  padding: var(--space-4) 0 var(--space-5);
+  background-color: var(--color-bg);
+
+  .container {
+    text-align: center;
+  }
+}
+
+// EOF

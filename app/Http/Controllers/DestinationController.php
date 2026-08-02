@@ -19,4 +19,13 @@ class DestinationController extends Controller
             'destinations' => $destinations,
         ]);
     }
+
+    public function show(Destination $destination): View
+    {
+        $destination->load(['locations' => fn ($q) => $q->orderBy('id')]);
+
+        return view('destinations.show', [
+            'destination' => $destination,
+        ]);
+    }
 }
