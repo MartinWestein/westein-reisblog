@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LocationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -11,6 +12,9 @@ Route::get('/bestemmingen', [DestinationController::class, 'index'])
     ->name('destinations.index');
 Route::get('/bestemmingen/{destination:slug}', [DestinationController::class, 'show'])
     ->name('destinations.show');
+Route::get('/bestemmingen/{destination:slug}/{location:slug}', [LocationController::class, 'show'])
+    ->scopeBindings()
+    ->name('locations.show');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/mijn-account', [AccountController::class, 'show'])->name('account.show');

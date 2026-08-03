@@ -80,3 +80,13 @@ it('shows the locations section label and heading when destination has locations
         ->assertSee('Onderweg')
         ->assertSee('Plekken die we bezochten');
 });
+
+it('renders a breadcrumb at the top with the destinations index link', function () {
+    Destination::factory()->create(['slug' => 'kruimeltest', 'name' => 'Kruimeltest']);
+
+    $response = get('/bestemmingen/kruimeltest')->assertOk();
+
+    $response->assertSee('aria-label="Kruimelspoor"', false);
+    $response->assertSee(route('destinations.index'), false);
+    $response->assertSee('Kruimeltest');
+});

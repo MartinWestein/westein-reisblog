@@ -1,0 +1,147 @@
+// resources/scss/public/_locations-show.scss
+// Publieke /bestemmingen/{destination}/{location} detail-pagina (5.1.e-i).
+// Structuur: breadcrumb (F5-55) + edge-to-edge 2:1 hero uit gallery[0]
+// (F5-52) + intro (label + h1 + description) + bento-gallery met groot links
+// 2/3 breed + 3 klein stacked rechts (F5-53 + F5-54, groot = gallery[0]) +
+// terug-CTA naar parent destination (F5-55).
+
+.public-breadcrumb {
+  padding: var(--space-3) 0;
+  background-color: var(--color-bg);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+
+  &__list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__link {
+    color: var(--color-muted);
+    text-decoration: none;
+
+    &:hover,
+    &:focus {
+      color: var(--color-accent-1);
+      text-decoration: underline;
+    }
+  }
+
+  &__current {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  &__separator {
+    color: var(--color-muted);
+  }
+}
+
+.location-detail__hero {
+  width: 100%;
+  background-color: var(--color-bg);
+  overflow: hidden;
+}
+
+.location-detail__hero-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  object-fit: cover;
+}
+
+.location-detail__hero-placeholder {
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  background-color: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .bi {
+    font-size: 3rem;
+    color: rgba(20, 33, 61, 0.15);
+  }
+}
+
+.location-detail__intro {
+  padding: var(--space-5) 0 var(--space-4);
+  background-color: var(--color-bg);
+}
+
+.location-detail__description {
+  max-width: 720px;
+  margin-top: var(--space-3);
+  font-size: 1.1rem;
+  line-height: 1.65;
+  color: var(--color-text);
+}
+
+.location-detail__gallery {
+  padding: var(--space-4) 0 var(--space-5);
+  background-color: var(--color-bg);
+}
+
+// Bento: 2 kolommen (groot 2fr, klein-stack 1fr). Klein-items hebben aspect
+// 3:2 waardoor grid-rows automatisch klein-hoogtes worden. Groot spant alle
+// 3 rijen → hoogte = 3 * klein_hoogte + 2 * gap, aspect wordt portrait-achtig
+// (breedte 2fr * klein_hoogte * 3). object-fit: cover crop de landscape-foto.
+.location-gallery {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+
+  @media (max-width: 767.98px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.location-gallery__item {
+  overflow: hidden;
+  border-radius: var(--card-radius);
+  margin: 0;
+  box-shadow: var(--shadow-md);
+}
+
+.location-gallery__item--large {
+  grid-row: 1 / span 3;
+
+  @media (max-width: 767.98px) {
+    grid-row: auto;
+    aspect-ratio: 3 / 2;
+  }
+}
+
+.location-gallery__item--small {
+  aspect-ratio: 3 / 2;
+}
+
+.location-gallery__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.location-detail__back {
+  padding: var(--space-4) 0 var(--space-5);
+  background-color: var(--color-bg);
+
+  .container {
+    text-align: center;
+  }
+}
+
+// EOF

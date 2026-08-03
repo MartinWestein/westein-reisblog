@@ -4,6 +4,10 @@
 @section('meta_description', Str::limit(strip_tags($destination->description ?? ''), 160))
 
 @section('content')
+    <x-public.breadcrumb :items="[
+        ['label' => 'Bestemmingen', 'url' => route('destinations.index')],
+        ['label' => $destination->name],
+    ]" />
     @php
         $heroUrl = $destination->getFirstMediaUrl('hero', 'large')
             ?: $destination->getFirstMediaUrl('hero', 'medium')
@@ -44,9 +48,8 @@
 
                 <div class="locations-grid">
                     @foreach ($destination->locations as $location)
-                        {{-- TODO 5.1.e: href vervangen door route('locations.show', [$destination, $location]) --}}
                         <article class="location-card" aria-labelledby="location-card-title-{{ $location->id }}">
-                            <a href="#" class="location-card__link">
+                            <a href="{{ route('locations.show', [$destination, $location]) }}" class="location-card__link">                                
                                 @php
                                     $locationImageUrl = $location->getFirstMediaUrl('gallery', 'medium')
                                         ?: $location->getFirstMediaUrl('gallery');
