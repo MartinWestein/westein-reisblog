@@ -132,25 +132,25 @@ class DemoContentSeeder extends Seeder
         // -----------------------------------------------------------------
         $locSpecs = [
             // Italië
-            ['dest' => 0, 'name' => 'Rome', 'slug' => 'rome', 'lat' => 41.9028, 'lng' => 12.4964],
-            ['dest' => 0, 'name' => 'Florence', 'slug' => 'florence', 'lat' => 43.7696, 'lng' => 11.2558],
-            ['dest' => 0, 'name' => 'Venetië', 'slug' => 'venetie', 'lat' => 45.4408, 'lng' => 12.3155],
+            ['dest' => 0, 'name' => 'Rome', 'slug' => 'rome', 'lat' => 41.9028, 'lng' => 12.4964, 'description' => 'De eeuwige stad met het Colosseum, de Sint-Pieter en de pleinen waar we iedere avond ijs aten.'],
+            ['dest' => 0, 'name' => 'Florence', 'slug' => 'florence', 'lat' => 43.7696, 'lng' => 11.2558, 'description' => 'Toscaanse renaissancestad met de rode koepel van de Duomo en gelato-winkels op elke hoek.'],
+            ['dest' => 0, 'name' => 'Venetië', 'slug' => 'venetie', 'lat' => 45.4408, 'lng' => 12.3155, 'description' => 'Een stad die op water is gebouwd, waar we een gondeltocht maakten door de kanalen.'],
             // Schotland
-            ['dest' => 1, 'name' => 'Edinburgh', 'slug' => 'edinburgh', 'lat' => 55.9533, 'lng' => -3.1883],
-            ['dest' => 1, 'name' => 'Isle of Skye', 'slug' => 'isle-of-skye', 'lat' => 57.2730, 'lng' => -6.2150],
-            ['dest' => 1, 'name' => 'Glencoe', 'slug' => 'glencoe', 'lat' => 56.6864, 'lng' => -5.1027],
+            ['dest' => 1, 'name' => 'Edinburgh', 'slug' => 'edinburgh', 'lat' => 55.9533, 'lng' => -3.1883, 'description' => 'Hoofdstad van Schotland, met een kasteel hoog op de rots en de Royal Mile eronder.'],
+            ['dest' => 1, 'name' => 'Isle of Skye', 'slug' => 'isle-of-skye', 'lat' => 57.2730, 'lng' => -6.2150, 'description' => 'Ruig eiland aan de westkust, bekend om de Fairy Pools en dramatische kliffen.'],
+            ['dest' => 1, 'name' => 'Glencoe', 'slug' => 'glencoe', 'lat' => 56.6864, 'lng' => -5.1027, 'description' => 'Diep dal in de Highlands, ideaal voor lange wandelingen en stille camperspots.'],
             // Slovenië
-            ['dest' => 2, 'name' => 'Ljubljana', 'slug' => 'ljubljana', 'lat' => 46.0569, 'lng' => 14.5058],
-            ['dest' => 2, 'name' => 'Bled', 'slug' => 'bled', 'lat' => 46.3683, 'lng' => 14.1146],
+            ['dest' => 2, 'name' => 'Ljubljana', 'slug' => 'ljubljana', 'lat' => 46.0569, 'lng' => 14.5058, 'description' => 'Compacte hoofdstad met een kasteel op de heuvel en een gezellige rivier-boulevard.'],
+            ['dest' => 2, 'name' => 'Bled', 'slug' => 'bled', 'lat' => 46.3683, 'lng' => 14.1146, 'description' => 'Bergmeer met een kerkje op een eilandje en een kasteel hoog op de klif erboven.'],
             // Canarische Eilanden
-            ['dest' => 3, 'name' => 'Tenerife', 'slug' => 'tenerife', 'lat' => 28.2916, 'lng' => -16.6291],
-            ['dest' => 3, 'name' => 'Lanzarote', 'slug' => 'lanzarote', 'lat' => 29.0469, 'lng' => -13.5900],
+            ['dest' => 3, 'name' => 'Tenerife', 'slug' => 'tenerife', 'lat' => 28.2916, 'lng' => -16.6291, 'description' => 'Grootste van de Canarische Eilanden, met vulkaan de Teide en een groen noorden.'],
+            ['dest' => 3, 'name' => 'Lanzarote', 'slug' => 'lanzarote', 'lat' => 29.0469, 'lng' => -13.5900, 'description' => 'Vulkanisch eiland waar Timanfaya en de wijngaarden van La Geria je bijblijven.'],
             // Duitsland
-            ['dest' => 4, 'name' => 'Berlijn', 'slug' => 'berlijn', 'lat' => 52.5200, 'lng' => 13.4050],
-            ['dest' => 4, 'name' => 'Zwarte Woud', 'slug' => 'zwarte-woud', 'lat' => 48.0000, 'lng' => 8.2000],
+            ['dest' => 4, 'name' => 'Berlijn', 'slug' => 'berlijn', 'lat' => 52.5200, 'lng' => 13.4050, 'description' => 'Bruisende Duitse hoofdstad met museumeiland, muurresten en veel groene parken.'],
+            ['dest' => 4, 'name' => 'Zwarte Woud', 'slug' => 'zwarte-woud', 'lat' => 48.0000, 'lng' => 8.2000, 'description' => 'Dennenbossen in Zuid-Duitsland, met de Titisee en veel wandelroutes tussen de heuvels.'],
             // Verenigde Staten
-            ['dest' => 5, 'name' => 'New York', 'slug' => 'new-york', 'lat' => 40.7128, 'lng' => -74.0060],
-            ['dest' => 5, 'name' => 'Miami', 'slug' => 'miami', 'lat' => 25.7617, 'lng' => -80.1918],
+            ['dest' => 5, 'name' => 'New York', 'slug' => 'new-york', 'lat' => 40.7128, 'lng' => -74.0060, 'description' => 'Manhattan, Central Park en het Vrijheidsbeeld — onze eerste kennismaking met de VS.'],
+            ['dest' => 5, 'name' => 'Miami', 'slug' => 'miami', 'lat' => 25.7617, 'lng' => -80.1918, 'description' => 'Zonnig eindstation aan de Atlantische kust, met art deco en South Beach.'],
         ];
         $locations = collect();
         foreach ($locSpecs as $spec) {
@@ -164,7 +164,7 @@ class DemoContentSeeder extends Seeder
                         'latitude' => $spec['lat'],
                         'longitude' => $spec['lng'],
                         'country_code' => $destination->country_code,
-                        'description' => "Bezoek aan {$spec['name']}.",
+                        'description' => $spec['description'],
                     ],
                 ),
             );
