@@ -588,12 +588,13 @@ Media-URL fallback-patroon voor edge-to-edge hero-uses: `getFirstMediaUrl('hero'
 | **5.1.a** | DemoContentSeeder verrijken + fixture-images + is_featured data-laag               | 553 → 553 | ✅     |
 | **5.1.b** | is_featured admin-toggle UX (Destination + Route + Post, drie sub-blokken)         | 553 → 571 | ✅     |
 | **5.1.c** | `/bestemmingen` publieke index-pagina                                              | 571 → 577 | ✅     |
-| **5.1.d** | `/bestemmingen/{destination}` detail-pagina                                        |           | ⏳     |
-| **5.1.e** | `/bestemmingen/{destination}/{location}` detail-pagina (Leaflet + fotoalbum)       |           | ⏳     |
+| **5.1.d** | `/bestemmingen/{destination}` detail-pagina                                        | 577 → 584 | ✅     |
+| **5.1.e-i** | `/bestemmingen/{destination}/{location}` detail-pagina (statisch + breadcrumb)    | 584 → 593 | ✅     |
+| **5.1.e-ii** | Leaflet-integratie op location-detail                                         |           | ⏳     |
 | **5.2**   | Posts + comments + blog-index + reistips                                           |           | ⏳     |
 | **5.3**   | Routes + fotogalerij                                                               |           | ⏳     |
 | **5.4**   | Auteurs + statische pagina's                                                       |           | ⏳     |
 | **5.5**   | Newsletter + contact                                                               |           | ⏳     |
 | **5.6**   | Eindcheck + `fase-5-bouwplan.md` schrijven                                         |           | ⏳     |
 
-**Totaal suite-status:** 577 groen (1429 assertions).
+**Totaal suite-status:** 593 groen (1471 assertions).
