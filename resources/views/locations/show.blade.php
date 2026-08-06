@@ -69,6 +69,20 @@
         </section>
     @endif
 
+    {{-- Kaart: waar ligt deze plek? (F5-58 t/m F5-64) --}}
+    @if ($location->latitude && $location->longitude)
+        <section class="location-detail__map-section" aria-labelledby="location-detail-map-title">
+            <div class="container">
+                <p class="section-label">Locatie</p>
+                <h2 id="location-detail-map-title" class="section-title">Op de kaart</h2>
+                <div class="location-detail__map"
+                     data-location-map
+                     data-lat="{{ $location->latitude }}" data-lng="{{ $location->longitude }}"
+                     data-name="{{ $location->name }}"></div>
+            </div>
+        </section>
+    @endif
+
     {{-- Terug-CTA naar parent destination (F5-55) --}}
     <div class="location-detail__back">
         <div class="container">

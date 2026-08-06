@@ -144,4 +144,17 @@
   }
 }
 
+.location-detail__map-section {
+  padding: var(--space-5) 0;
+  background-color: var(--color-bg);
+}
+
+.location-detail__map {
+  width: 100%;
+  height: 400px; // F5-59
+
+  @media (max-width: 767.98px) {
+    height: 300px;
+  }
+}
 // EOF

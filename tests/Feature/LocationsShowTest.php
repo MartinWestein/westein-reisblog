@@ -89,3 +89,33 @@ it('does not render the gallery section when the location has no media', functio
         ->assertOk()
         ->assertDontSee('Impressies');
 });
+
+it('toont de kaart-container met coördinaten', function () {
+    $destination = Destination::factory()->create(['name' => 'Italië', 'slug' => 'italie']);
+    Location::factory()->for($destination)->create([
+        'name' => 'Rome',
+        'slug' => 'rome',
+        'latitude' => 41.9028,
+        'longitude' => 12.4964,
+    ]);
+
+    get('/bestemmingen/italie/rome')
+        ->assertOk()
+        ->assertSee('data-location-map', false)
+        ->assertSee('41.9028000')
+        ->assertSee('12.4964000');
+});
+
+it('verbergt de kaart zonder coördinaten', function () {
+    $destination = Destination::factory()->create(['name' => 'Italië', 'slug' => 'italie']);
+    Location::factory()->for($destination)->create([
+        'name' => 'Rome',
+        'slug' => 'rome',
+        'latitude' => null,
+        'longitude' => null,
+    ]);
+
+    get('/bestemmingen/italie/rome')
+        ->assertOk()
+        ->assertDontSee('data-location-map', false);
+});
