@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 3 augustus 2026 — Fase 5.1.e-i afgerond (statisch deel + retro-fit breadcrumb-partial), suite 593 groen (1471 assertions), 3 commits ahead van origin (pending push aan sessie-einde).
+**Laatst bijgewerkt:** 8 augustus 2026 — Fase 5.1.e-ii afgerond (Leaflet-kaart op location-detail), suite 595 groen (1477 assertions), gepusht naar origin/main.
 **Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
 **Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → `fase-4-bouwplan.md`. Fase 5 → wordt na afronding van alle Fase-5-stappen in één keer geschreven (F5-1), niet incrementeel.
 
@@ -33,7 +33,9 @@ Base-request-classes (`RouteRequest`, `PostRequest`) hoefden voor is_featured sl
 
 - **Fase 5.1.d klaar** — publieke destination-detail-pagina live. Tests baseline 584 groen (1447 assertions). `origin/main` HEAD: `62eed5d`.
 - **Fase 5.1.e-i klaar** — publieke `/bestemmingen/{destination:slug}/{location:slug}` detail-pagina live (statisch deel). Route met `->scopeBindings()`, aparte `LocationController`, edge-to-edge 2:1 hero uit `gallery[0]`, bento-gallery (1 groot links + 3 klein rechts stacked), breadcrumb-partial site-breed geïntroduceerd (destination-detail meegekregen als retro-fit), terug-CTA naar parent destination. Baseline 593 groen (1471 assertions). Commit `d8605d2`; voorafgegaan door location-descriptions-chore `d8e6462`.
-- **Volgende: Fase 5.1.e-ii** — Leaflet-integratie voor coordinates-visualisatie op de location-detail-pagina. Design-vragen liggen open: plaatsing op de pagina (tussen description en gallery vs. na gallery), init-strategie (vanilla JS module vs. Alpine wrapper), test-strategy (container + data-attributes, geen JS-execution).
+- **Volgende: Fase 5.2** — Posts + comments + blog-index + reistips. Publieke blog-index, post-detail (TipTap-rendering, gerelateerde posts, comments — alleen ingelogde users), reistips als categorie binnen Posts. Breadcrumb-conventie (F5-56) en SEO-metadata-conventie (F5-45, met em-dash-niveau-uitzondering F5-57 waar van toepassing) volgen op post-detail. Loose end voor 5.2: post-URL-helper voor null-destination.
+
+State-check volgende sessie: `git log --oneline -8` (verwacht 5.1.e-ii-CLAUDE bovenaan op origin/main), `php artisan test` (verwacht 595), `Get-Content routes\web.php | Select-String "posts|blog|reistips"` als startpunt, en inspecteer de admin Post-module + masterplan §-blog voor de publieke post-scope.
 
 ## Loose ends
 
@@ -386,6 +388,17 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 
 - **F5-57 SEO-title met em dash niveau-specifieke uitzondering** — Location-detail-pagina rendert `<title>{location->name} — {destination->name}</title>` (bv. "Rome — Italië"). `layouts.public` prependt `— Westein Reisblog` na de title — eindresultaat: "Rome — Italië — Westein Reisblog". F5-45-conventie voor destinations blijft `title = {destination->name}` puur (destinations-namen zijn zelfstandig). Rationale voor niveau-uitzondering: location-namen kunnen ambigu zijn ("Rome" — Italië of NY? "Miami" — Florida of Ohio?), SERP-duidelijkheid en SEO-groei is F5-primary-goal per F5-45, em dash typografisch consistent met "modern magazine" designkeuze, lengte-groei niet problematisch bij deze location-namen (max ~24 tekens vóór layout-suffix, ruim binnen Google's ~60-teken-truncate). `meta_description` blijft F5-45 puur: `Str::limit(strip_tags($location->description), 160)`.
 
+### 5.1.e-ii — Leaflet-kaart op location-detail
+
+- **F5-58 Kaart-plaatsing na de bento-gallery** — De Leaflet-sectie komt tussen `.location-detail__gallery` en `.location-detail__back` (terug-CTA). Rationale: editorial story-arc hero → intro → gallery (visuele climax) → kaart ("waar ligt dit?") → terug-navigatie. Gekozen boven tussen-intro-en-gallery (breekt de tekst→beeld-reveal met een functioneel blok) en side-by-side-met-intro (te complex voor familieblog-schaal). Degradeert elegant: bij een location zonder gallery (`@if $gallery->isNotEmpty()`) staat de kaart direct na de intro als enige visuele element.
+- **F5-59 Kaart-dimensies + zoom** — Full-width binnen `.container` (niet edge-to-edge; edge-to-edge is gereserveerd voor fotografie/hero F5-48, kaart is functioneel). Vaste hoogte 400px desktop / 300px mobile (<768px), geen aspect-ratio (kaart heeft geen intrinsieke ratio; 16:9 wordt op mobile te laag om te oriënteren). Default-zoom 12 (stad/wijk) via `setView([lat,lng], 12)` — niet `fitBounds` zoals admin, want single marker. Zoom 12 is vergevingsgezind voor seeder-coördinaat-onnauwkeurigheid; 15 zou fouten pijnlijk zichtbaar maken.
+- **F5-60 Default Leaflet-marker** — Blauwe pin + schaduw, met verplichte Vite-PNG-fix (`delete L.Icon.Default.prototype._getIconUrl` + `mergeOptions` met drie geïmporteerde PNG's). Gekozen boven custom perzik-marker (divIcon of PNG-asset): herkenbaarheid als universeel "hier-is-een-locatie"-symbool weegt op familieblog zwaarder dan merk-consistentie, en custom voegt onderhoudsoppervlak toe (CSS-pin-vorm + iconAnchor-tuning, of asset-committen) tegen marginale winst (YAGNI).
+- **F5-61 Vanilla-JS-module + statische import + DOM-guard** — `resources/js/leaflet-location.js` exporteert `initLocationMap()`, statisch geïmporteerd in `app.js`. Geen Alpine (read-only kaart, geen form-reactiviteit — omzeilt de Alpine-in-modal-landmine-familie), geen modal (container direct zichtbaar bij page-load, geen `shown.bs.modal`-defer zoals admin). DOM-guard `querySelector('[data-location-map]')` → early return: Leaflet zit in de gedeelde `app.js`-bundle (elke publieke pagina) maar init draait alleen waar de container staat. Gekozen boven inline-script (business-logic in Blade, niet Vite-bundelbaar), dynamische `import()`/lazy chunk (overbodige complexiteit; ~44 kB gzipped verwaarloosbaar op familieblog-schaal) en aparte Vite entry-point (meeste config).
+- **F5-62 OpenStreetMap-tiles** — `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png` met automatische `attribution` op de tileLayer. Gekozen boven Mapbox/ESRI (gratis, geen API-key-beheer). Consistent met admin route-waypoints.js.
+- **F5-63 Permanente tooltip met location-naam** — `bindTooltip(name, { permanent: true, direction: 'top' })` op de marker. Gekozen boven klik-popup (vereist interactie, toont wat al als h1/breadcrumb op de pagina staat) en kale marker (voelt onaf). Permanente tooltip geeft een altijd-zichtbaar label zonder redundantie-per-klik.
+- **F5-64 Interactie-scope: scroll-wheel-zoom uit** — `scrollWheelZoom: false`; zoom-knoppen, drag-panning en touch-pinch default aan. Rationale: bij een full-width kaart midden in een verticaal scrollende pagina "vangt" scroll-wheel-zoom het wiel en hijackt de page-scroll (klassieke content-pagina-frustratie). Pinch (mobile) botst niet met page-scroll (één-vinger-swipe) en blijft aan. Mirrort admin route-waypoints.js.
+- **F5-65 Test-strategy: twee tests + view-guard** — Pest kan Leaflet-rendering niet testen (geen JS-execution), dus de contract-grens is "staan de coördinaten correct in de DOM?". Twee tests in `LocationsShowTest.php`: happy-path (`assertSee('data-location-map', false)` + `assertSee('41.9028')` / `'12.4964'`) en guard (`null` coördinaten → `assertDontSee('data-location-map', false)`). View krijgt `@if ($location->latitude && $location->longitude)` om het hele kaart-blok — voorkomt de Null-Island-bug (`NaN`-coördinaten → Leaflet centreert op `[0,0]`). Data-attributes bewust op één regel gehouden (assertSee-substring-landmine). Assert op korte substring i.p.v. volledige gecastte `decimal:7`-string (robuuster tegen cast-formattering).
+
 ## Herbruikbare admin-componenten
 Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 
@@ -434,6 +447,9 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 - `.destination-detail__back` — gecentered terug-CTA-strook (F5-43).
 - `.locations-grid` (3-koloms, F5-42) — responsive analoog aan `.destinations-grid`: 3 kols default, 2 kols <992px, 1 kol <576px.
 - `.location-card` + `__link`, `__image-wrap`, `__image` (3:2 F5-44), `__image-placeholder`, `__title` — foto-first minimalistische tile. Naam als h3 met Playfair, geen description/meta.
+
+- `.location-detail__map-section` + `.location-detail__map` (F5-58/F5-59) — kaart-sectie-container (`padding: var(--space-5) 0`) + kaart-div (full-width, 400px/300px mobile). Container krijgt `data-location-map` + `data-lat`/`data-lng`/`data-name` (op één regel voor assertSee) die `leaflet-location.js` oppikt via de DOM-guard.
+- `resources/js/leaflet-location.js` — herbruikbaar vanilla-JS-init-patroon voor publieke Leaflet-kaarten (Vite-PNG-marker-fix + OSM-tiles + DOM-guard). Basis voor toekomstige publieke kaarten (5.3 route-fotogalerij/kaart).
 
 - `<x-public.breadcrumb :items="[...]">` (F5-55 + F5-56) — Blade-component in `resources/views/components/public/`. `items`-prop is array van associative arrays met `label` (verplicht) en optioneel `url`. Laatste item krijgt `aria-current="page"`, andere items met url worden links. `aria-label="Kruimelspoor"`. Separator `/` tussen items (typografisch schoner dan `>`). Site-brede conventie: elke publieke detail-pagina (destination, location, post, route, page) toont breadcrumb bovenaan.
 - `.public-breadcrumb` + `__list` / `__item` / `__link` / `__current` / `__separator` (uit `_locations-show.scss`) — SCSS voor bovenstaande component. `font-size: 0.875rem`, muted links met perzik-accent hover, current-item vetgedrukt. Gebruikt in destinations/show + locations/show.
@@ -489,6 +505,9 @@ Media-URL fallback-patroon voor edge-to-edge hero-uses: `getFirstMediaUrl('hero'
 - **Duplicate `@import` in SCSS wordt door Sass silent geaccepteerd.** `resources/scss/app.scss` had twee opeenvolgende `@import 'public/_destinations-index';` — Sass 1.x compileert zonder waarschuwing, de partial wordt gewoon tweemaal geïnjecteerd (CSS-output identiek want geen mutable state). Ontdekt tijdens 5.1.e-i cleanup toen ik `_locations-show` als import wilde toevoegen. Fix in dezelfde 5.1.e-i-commit meegepakt. Preventie voor volgende SCSS-partial-toevoegingen: `Select-String -Pattern "@import 'public/" resources\scss\app.scss | Group-Object Line | Where-Object Count -gt 1` om duplicates te detecteren.
 
 - **`@section('title', 'A — B')` met em dash rendert correct in `layouts.public` maar assert-syntax is subtiel.** `layouts.public`-title-shell is `<title>@hasSection('title')@yield('title') — @endif{{ config('app.name', 'Westein Reisblog') }}</title>` — dus voor location-detail wordt de output `<title>Rome — Italië — Westein Reisblog</title>` (twee em dashes: één uit F5-57, één uit de layout). `assertSee`-string moet de volledige geneste em-dash-string bevatten (`'<title>Rome — Italie — '.config('app.name')`) niet alleen het pagina-specifieke deel. In tests bewust `Italie` zonder trema gebruikt om Windows PowerShell + Pest console-encoding-drama te vermijden — factory-strings zijn puur test-data, niet productie-content.
+
+- **Vite-PNG-marker-fix is nodig bij élke `import 'leaflet'`, niet alleen admin-modal-context.** Admin route-waypoints.js gebruikt `window.L` (globale Leaflet) en ontkomt aan de fix; de publieke module importeert Leaflet via de Vite-bundle (`import L from 'leaflet'`) en dán resolven de default-marker-PNG's niet zonder `delete L.Icon.Default.prototype._getIconUrl` + `L.Icon.Default.mergeOptions({ iconRetinaUrl, iconUrl, shadowUrl })` met drie expliciete PNG-imports uit `leaflet/dist/images/`. Bevestigd: `npm run build` bundelt de drie PNG's + `leaflet.css` zichtbaar.
+- **`decimal:7`-cast padt coördinaten naar 7 trailing decimalen** (`41.9028` → `"41.9028000"`, string). Voor `assertSee` op coördinaten: gebruik een korte substring (`'41.9028'`) die binnen de gepadde string matcht — hard-coden van de volledige gecastte waarde is bros. Leaflet's `Number()`-guard pakt de gepadde string probleemloos op. (Terzijde: de cast-check via throwaway `.php` toonde de `Set-Content -Encoding UTF8`-BOM als `﻿` vóór de output — bekende PowerShell-BOM-landmine, tinker-output-artefact, geen invloed op de cast zelf.)
 
 ### Landmines geleerd in Fase 5.1.c
 
@@ -589,8 +608,8 @@ Media-URL fallback-patroon voor edge-to-edge hero-uses: `getFirstMediaUrl('hero'
 | **5.1.b** | is_featured admin-toggle UX (Destination + Route + Post, drie sub-blokken)         | 553 → 571 | ✅     |
 | **5.1.c** | `/bestemmingen` publieke index-pagina                                              | 571 → 577 | ✅     |
 | **5.1.d** | `/bestemmingen/{destination}` detail-pagina                                        | 577 → 584 | ✅     |
-| **5.1.e-i** | `/bestemmingen/{destination}/{location}` detail-pagina (statisch + breadcrumb)    | 584 → 593 | ✅     |
-| **5.1.e-ii** | Leaflet-integratie op location-detail                                         |           | ⏳     |
+| **5.1.e-i** | `/bestemmingen/{destination}/{location}` detail-pagina (statisch + breadcrumb)   | 584 → 593 | ✅     |
+| **5.1.e-ii** | Leaflet-kaart op location-detail                                                | 593 → 595 | ✅     |
 | **5.2**   | Posts + comments + blog-index + reistips                                           |           | ⏳     |
 | **5.3**   | Routes + fotogalerij                                                               |           | ⏳     |
 | **5.4**   | Auteurs + statische pagina's                                                       |           | ⏳     |
