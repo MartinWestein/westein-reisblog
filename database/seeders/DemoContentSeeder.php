@@ -183,8 +183,10 @@ class DemoContentSeeder extends Seeder
             $this->attachLocationGallery($location);
         }
 
-        // -----------------------------------------------------------------
-        // POSTS — 30 stuks, gemixt over locations + auteurs + categorieën
+        // POSTS — 30 stuks, expliciet gekoppeld aan location + categorie + content (F5-68).
+        // Elke titel hangt aan de inhoudelijk juiste location; categorie past bij het onderwerp.
+        // 'body_full' = volledig uitgeschreven NL-body (7 posts, incl. de 3 featured).
+        // Waar 'body_full' ontbreekt valt de loop terug op een korte-maar-echte NL-body.
         // -----------------------------------------------------------------
         $categories = Category::all();
         $tagPool = ['camper', 'kindvriendelijk', 'wandelen', 'eten', 'cultuur', 'natuur'];
@@ -196,47 +198,350 @@ class DemoContentSeeder extends Seeder
         $tags = Tag::whereIn('slug', collect($tagPool)->map(fn ($t) => Str::slug($t))->all())->get();
 
         if (Post::count() === 0) {
-            $titles = [
-                // Bestaande 18
-                'Onze eerste dag in Rome', 'Pasta-paradise in Florence', 'Gondelvaart met de kinderen',
-                'Edinburgh: kastelen en koek', 'Wandelen op Skye', 'Highland-camperen in Glencoe',
-                'Ljubljana per fiets', 'Het meer van Bled bij zonsopkomst', 'Wat we leerden in Italië',
-                'Pakken voor een gezinscamperreis', 'Schotland in een week — kan dat?',
-                'Eten met kinderen onderweg', 'Beste fotospots in Bled', 'Vroeg opstaan loont',
-                'Onze 10 lessen van deze roadtrip', 'Wat we anders hadden gedaan',
-                'Boekentips voor onderweg', 'Veilig kamperen met kleine kinderen',
-                // Nieuwe 12 — spread over de 3 nieuwe destinations
-                'Op de Teide vulkaan in Tenerife', 'Vulkanische landschappen op Lanzarote',
-                'Wijngaarden in de as: La Geria', 'Camperspots op de Canarische Eilanden',
-                'Berlijn in twee dagen met kinderen', 'Wandelen door het Zwarte Woud',
-                'Titisee: rustpunt in het bos', 'Wat je moet weten over Berlijn',
-                'New York met kids: onze survivalgids', 'Miami art deco: kleur op South Beach',
-                'Onze eerste transatlantische vlucht', 'Familiereis naar de VS: onze kosten',
+            $locBySlug = $locations->keyBy('slug');
+            $catByName = $categories->keyBy('name');
+
+            // Elke spec: title, location-slug (of null), category-naam, excerpt, en optioneel body_full.
+            $postSpecs = [
+                // --- Italië ---
+                [
+                    'title' => 'Onze eerste dag in Rome',
+                    'location' => 'rome',
+                    'category' => 'Verslag',
+                    'excerpt' => 'Jetlag, gelato en het Colosseum in de avondzon — hoe onze eerste dag in Rome begon met chaos en eindigde in verwondering.',
+                    'body_full' => '<p>We waren om zeven uur \'s ochtends geland en hadden ons voorgenomen om rustig aan te doen. Dat plan hield precies tot het moment dat de kinderen door het raam van ons appartement de koepel van een kerk zagen en per se naar buiten wilden. Rome laat je niet uitrusten.</p>'
+                        .'<p>De ochtend brachten we door in de buurt rond Campo de\' Fiori, waar de markt net werd afgebroken en de geur van perziken en basilicum nog in de lucht hing. We kochten brood, tomaten en een handvol kersen, en aten die op een muurtje terwijl scooters langs raasden. De kinderen telden er meer dan honderd voordat ze de tel kwijtraakten.</p>'
+                        .'<h2>Het Colosseum in de avond</h2>'
+                        .'<p>We hadden expres kaartjes voor het einde van de dag geboekt, en dat was de beste beslissing van de reis. De drukte was weggeëbd, de stenen kleurden oranje in de laagstaande zon, en voor het eerst stonden we allemaal even stil. Zelfs de jongste, die de hele dag had geklaagd over zijn schoenen, zei niets meer.</p>'
+                        .'<p>Terug in het appartement vielen ze binnen tien minuten in slaap. Wij zaten nog even op het balkon met een glas wijn en de kaart van morgen. Dag één zat erop, en Rome had gewonnen.</p>',
+                ],
+                [
+                    'title' => 'Pasta-paradise in Florence',
+                    'location' => 'florence',
+                    'category' => 'Eten',
+                    'excerpt' => 'Van handgemaakte pici tot de beste bistecca van Toscane: een dag lang eten door Florence met twee hongerige kinderen op sleeptouw.',
+                    'body_full' => '<p>Florence is een stad om in te eten, en dat namen we serieus. We begonnen bij een kleine trattoria achter de Mercato Centrale, waar een oudere vrouw achter een houten tafel met haar handen pici rolde — dikke, ongelijke spaghetti die je nergens beter krijgt dan hier.</p>'
+                        .'<h2>De markt als speeltuin</h2>'
+                        .'<p>De overdekte markt bleek een uitstekende plek om kinderen te laten kiezen. Ze mochten allebei één ding aanwijzen: het werd pecorino met honing en een puntzak geroosterde kastanjes. We aten staand tussen de kramen en niemand keek ervan op.</p>'
+                        .'<p>\'s Avonds waagden we ons aan de beroemde bistecca alla fiorentina, een steak zo groot dat het hele gezin er samen van at. De kinderen waren vooral onder de indruk van de omvang. Wij vooral van de rekening, maar geen spijt.</p>',
+                ],
+                [
+                    'title' => 'Gondelvaart met de kinderen',
+                    'location' => 'venetie',
+                    'category' => 'Activiteit',
+                    'excerpt' => 'Een gondel is een cliché — en precies daarom deden we het toch. Over smalle kanalen, lage bruggen en de blik van twee kinderen die even helemaal stil waren.',
+                ],
+                [
+                    'title' => 'Wat we leerden in Italië',
+                    'location' => 'rome',
+                    'category' => 'Verslag',
+                    'excerpt' => 'Drie weken, drie steden en een camper vol herinneringen. Onze grootste lessen na een zomer door Toscane, Lazio en Veneto.',
+                ],
+                [
+                    'title' => 'Onze 10 lessen van deze roadtrip',
+                    'location' => 'florence',
+                    'category' => 'Verslag',
+                    'excerpt' => 'Van te vol geplande dagen tot de magie van niets doen: tien dingen die deze Italiaanse roadtrip ons heeft geleerd.',
+                ],
+                [
+                    'title' => 'Wat we anders hadden gedaan',
+                    'location' => 'venetie',
+                    'category' => 'Verslag',
+                    'excerpt' => 'Achteraf is alles makkelijker. De keuzes waar we op terugkijken en de dingen die we een volgende keer zeker anders aanpakken.',
+                ],
+                // --- Schotland ---
+                [
+                    'title' => 'Edinburgh: kastelen en koek',
+                    'location' => 'edinburgh',
+                    'category' => 'Verslag',
+                    'excerpt' => 'Regen, een kasteel op een rots en de beste shortbread die we ooit aten. Onze eerste dagen in de Schotse hoofdstad.',
+                ],
+                [
+                    'title' => 'Wandelen op Skye',
+                    'location' => 'isle-of-skye',
+                    'category' => 'Activiteit',
+                    'excerpt' => 'De Fairy Pools, een stevige wind en modder tot aan de enkels. Wandelen op Isle of Skye is ruig, nat en onvergetelijk.',
+                ],
+                [
+                    'title' => 'Highland-camperen in Glencoe',
+                    'location' => 'glencoe',
+                    'category' => 'Verslag',
+                    'excerpt' => 'Een stille camperplek diep in het dal, omringd door bergen en zonder een streepje bereik. Onze mooiste nacht van de hele reis.',
+                    'body_full' => '<p>Er zijn plekken waar je stopt omdat de kaart zegt dat het mooi is, en er zijn plekken waar je stopt omdat je gewoon niet verder kunt kijken zonder te stoppen. Glencoe was het tweede soort. We reden het dal in en werden om de paar honderd meter stiller.</p>'
+                        .'<h2>Geen bereik, geen zorgen</h2>'
+                        .'<p>Onze camperplek was niet meer dan een verhard stuk naast een beek. Geen voorzieningen, geen bereik, geen buren. De kinderen bouwden een dam van keien terwijl wij koffie zetten op het gasstel en naar de wolken keken die tegen de bergtoppen bleven hangen.</p>'
+                        .'<p>\'s Avonds werd het koud, veel kolder dan we in augustus hadden verwacht. We kropen met z\'n allen onder de dekens in het dak-bed en luisterden naar de regen op het canvas. Ergens in de nacht hield het op, en toen ik even naar buiten keek stond het dal vol sterren.</p>'
+                        .'<p>De volgende ochtend wilde niemand weg. Dat is het beste teken dat een plek klopt.</p>',
+                ],
+                [
+                    'title' => 'Schotland in een week — kan dat?',
+                    'location' => 'edinburgh',
+                    'category' => 'Verslag',
+                    'excerpt' => 'Highlands, kastelen én de hoofdstad in zeven dagen: ambitieus, maar haalbaar. Zo verdeelden we onze week door Schotland.',
+                ],
+                // --- Slovenië ---
+                [
+                    'title' => 'Ljubljana per fiets',
+                    'location' => 'ljubljana',
+                    'category' => 'Activiteit',
+                    'excerpt' => 'Een compacte hoofdstad is een fietsstad. Over de bruggen van Plečnik, langs de rivier en met een ijsje op het kasteelplein.',
+                ],
+                [
+                    'title' => 'Het meer van Bled bij zonsopkomst',
+                    'location' => 'bled',
+                    'category' => 'Verslag',
+                    'excerpt' => 'Om vijf uur uit bed voor een leeg meer, een kerkje in de mist en een spiegelgladde waterspiegel. Waarom vroeg opstaan in Bled de moeite waard is.',
+                    'body_full' => '<p>Iedereen fotografeert het meer van Bled, en dus wilden wij het anders. De enige manier om dat te doen, bleek: er eerder zijn dan iedereen. De wekker ging om half vijf.</p>'
+                        .'<h2>Een leeg meer</h2>'
+                        .'<p>We liepen in het donker naar de oever en waren volledig alleen. Het water lag doodstil, het kerkje op het eilandje dreef in een dunne mist, en de eerste zonnestralen kleurden de bergtoppen roze terwijl het meer zelf nog in schaduw lag. Geen boot, geen geluid, alleen wat eenden die traag hun kringen trokken.</p>'
+                        .'<p>De kinderen hadden we thuisgelaten bij oma, die met ons meereisde — dit was er een voor de volwassenen. We zeiden een half uur lang bijna niets. Toen de eerste toeristenbus arriveerde, pakten we onze spullen en liepen terug voor het ontbijt, met het gevoel dat we iets hadden gezien dat de rest van de dag zou missen.</p>',
+                ],
+                [
+                    'title' => 'Beste fotospots in Bled',
+                    'location' => 'bled',
+                    'category' => 'Tips',
+                    'excerpt' => 'Van het uitzichtpunt bij Mala Osojnica tot de steiger aan de oostkant: de plekken waar het meer van Bled zich op zijn mooist laat vastleggen.',
+                ],
+                // --- Canarische Eilanden ---
+                [
+                    'title' => 'Op de Teide vulkaan in Tenerife',
+                    'location' => 'tenerife',
+                    'category' => 'Activiteit',
+                    'excerpt' => 'Boven de wolken op de hoogste berg van Spanje: met de kabelbaan de Teide op, tussen lavavelden en een uitzicht dat niet lijkt te kloppen.',
+                    'body_full' => '<p>Vanaf de kust leek de Teide een verre, blauwe schaduw. Pas toen we de bergweg op reden, besefte we hoe hoog we gingen: de begroeiing verdween, de lucht werd ijler en het landschap veranderde in iets dat meer op Mars leek dan op een vakantie-eiland.</p>'
+                        .'<h2>Met de kabelbaan omhoog</h2>'
+                        .'<p>De kabelbaan brengt je in acht minuten naar bijna 3.500 meter. De kinderen drukten hun neus tegen het glas terwijl de lavavelden onder ons wegzakten. Boven aangekomen was het koud en waaide het hard, maar het uitzicht — een zee van wolken met andere eilandtoppen die er als eilandjes bovenuit staken — maakte alles goed.</p>'
+                        .'<p>We hadden geen vergunning voor het laatste stuk naar de echte top, dus daar bleven we onder. Eerlijk gezegd was dat ver genoeg. De hoogte deed zich voelen, en een van de kinderen werd wat duizelig. Rustig aan naar beneden, en op zeeniveau een dubbele portie patat als beloning.</p>',
+                ],
+                [
+                    'title' => 'Vulkanische landschappen op Lanzarote',
+                    'location' => 'lanzarote',
+                    'category' => 'Verslag',
+                    'excerpt' => 'Zwarte aarde tot aan de horizon, kraters en kronkelwegen: rijden door Timanfaya voelt als een tocht over een andere planeet.',
+                ],
+                [
+                    'title' => 'Wijngaarden in de as: La Geria',
+                    'location' => 'lanzarote',
+                    'category' => 'Eten',
+                    'excerpt' => 'Wijnstokken in trechters van vulkanische as, elk beschermd door een muurtje van steen. Hoe Lanzarote wijn maakt op een plek waar niets zou moeten groeien.',
+                ],
+                [
+                    'title' => 'Camperspots op de Canarische Eilanden',
+                    'location' => 'tenerife',
+                    'category' => 'Tips',
+                    'excerpt' => 'Waar je met de camper mag staan, waar je beter wegblijft en hoe je op de eilanden aan water en stroom komt. Onze praktische bevindingen.',
+                ],
+                // --- Duitsland ---
+                [
+                    'title' => 'Berlijn in twee dagen met kinderen',
+                    'location' => 'berlijn',
+                    'category' => 'Activiteit',
+                    'excerpt' => 'Muurresten, museumeiland en een middag in het park: hoe je Berlijn in twee dagen behapbaar houdt voor kleine benen.',
+                    'body_full' => '<p>Twee dagen is kort voor een stad als Berlijn, en met kinderen erbij moet je keuzes maken. Wij besloten om niet te proberen alles te zien, maar om per dag één groot ding en veel ruimte voor spelen te plannen.</p>'
+                        .'<h2>Dag één: geschiedenis in stukjes</h2>'
+                        .'<p>We liepen langs de East Side Gallery, waar de kinderen de geschilderde muurdelen vooral als een lange buitenexpositie zagen. Dat het ooit een echte grens was, kwam later pas binnen, toen we bij een overgebleven stuk muur stonden en uitlegden wat het betekende. Daarna: een uur ravotten in een speeltuin, want de aandacht was op.</p>'
+                        .'<h2>Dag twee: museum en park</h2>'
+                        .'<p>Het Naturkundemuseum, met zijn enorme dinoskeletten, was een schot in de roos. \'s Middags weken we uit naar het Tiergarten, waar we een boot huurden en de kinderen zelf mochten roeien — met wisselend succes. Berlijn bleek voor ons vooral een stad die je in porties moet eten.</p>',
+                ],
+                [
+                    'title' => 'Wandelen door het Zwarte Woud',
+                    'location' => 'zwarte-woud',
+                    'category' => 'Activiteit',
+                    'excerpt' => 'Dennengeur, zachte bospaden en een picknick tussen de heuvels. Onze mooiste wandelingen in het zuiden van Duitsland.',
+                ],
+                [
+                    'title' => 'Titisee: rustpunt in het bos',
+                    'location' => 'zwarte-woud',
+                    'category' => 'Verslag',
+                    'excerpt' => 'Na dagen op de weg was het bergmeer Titisee precies wat we nodig hadden: pootjebaden, een bootje en niks moeten.',
+                ],
+                [
+                    'title' => 'Wat je moet weten over Berlijn',
+                    'location' => 'berlijn',
+                    'category' => 'Tips',
+                    'excerpt' => 'Openbaar vervoer, kaartjes en de handigste buurten om te overnachten: praktische tips voordat je met het gezin naar Berlijn afreist.',
+                ],
+                // --- Verenigde Staten ---
+                [
+                    'title' => 'New York met kids: onze survivalgids',
+                    'location' => 'new-york',
+                    'category' => 'Verslag',
+                    'excerpt' => 'Wolkenkrabbers, gele taxi\'s en veel te veel indrukken: hoe we New York met twee kinderen overleefden — en er zelfs van genoten.',
+                    'body_full' => '<p>New York met kinderen klinkt als een test van je uithoudingsvermogen, en dat is het ook. Maar het is ook de stad waar hun ogen het grootst werden van de hele reis. We hadden onszelf één regel opgelegd: elke dag één hoogtepunt, en verder meebewegen met hun tempo.</p>'
+                        .'<h2>Omhoog kijken</h2>'
+                        .'<p>De eerste ochtend liepen we gewoon door Midtown, en de kinderen deden niets anders dan omhoog kijken. Central Park werd hun favoriet: ruimte om te rennen, eekhoorns om achterna te zitten, en een rots om vanaf te springen. De stad eromheen verdween voor hen even helemaal.</p>'
+                        .'<h2>Praktische overwinningen</h2>'
+                        .'<p>We ontdekten dat de metro met een kinderwagen een uitdaging is, maar dat de veerboot naar Staten Island gratis is en langs het Vrijheidsbeeld vaart — het beste uitzicht van de reis voor precies nul dollar. \'s Avonds waren we gesloopt, maar het soort gesloopt waar je later met een glimlach aan terugdenkt.</p>',
+                ],
+                [
+                    'title' => 'Miami art deco: kleur op South Beach',
+                    'location' => 'miami',
+                    'category' => 'Activiteit',
+                    'excerpt' => 'Pastelkleurige gevels, palmbomen en de warme Atlantische branding: een wandeling door de art-decowijk van Miami Beach.',
+                ],
+                [
+                    'title' => 'Onze eerste transatlantische vlucht',
+                    'location' => 'new-york',
+                    'category' => 'Verslag',
+                    'excerpt' => 'Acht uur in een vliegtuig met twee kinderen: onze voorbereiding, wat werkte en wat we compleet verkeerd hadden ingeschat.',
+                ],
+                [
+                    'title' => 'Familiereis naar de VS: onze kosten',
+                    'location' => 'miami',
+                    'category' => 'Verslag',
+                    'excerpt' => 'Vluchten, huurauto, hotels en eten: een eerlijk overzicht van wat een reis van tien dagen naar de Amerikaanse oostkust ons kostte.',
+                ],
+                // --- Algemene how-to posts (blijven in de 30, hangen aan een plausibele plek) ---
+                [
+                    'title' => 'Pakken voor een gezinscamperreis',
+                    'location' => 'glencoe',
+                    'category' => 'Tips',
+                    'excerpt' => 'Te veel meenemen is de klassieke fout. Onze uitgeklede paklijst voor een lange camperreis met kinderen, na jaren van vallen en opstaan.',
+                ],
+                [
+                    'title' => 'Eten met kinderen onderweg',
+                    'location' => 'florence',
+                    'category' => 'Eten',
+                    'excerpt' => 'Kieskeurige eters in een vreemd land: hoe we onderweg toch elke dag iets op tafel kregen waar iedereen blij van werd.',
+                ],
+                [
+                    'title' => 'Vroeg opstaan loont',
+                    'location' => 'bled',
+                    'category' => 'Tips',
+                    'excerpt' => 'De mooiste plekken zijn het mooist als niemand er is. Waarom we onderweg steeds vaker voor dag en dauw ons bed uit kropen.',
+                ],
+                [
+                    'title' => 'Boekentips voor onderweg',
+                    'location' => 'edinburgh',
+                    'category' => 'Tips',
+                    'excerpt' => 'Voorleesboeken tegen de verveling en reisverhalen voor de grote mensen: wat er bij ons in de camper meeging en het meest gelezen werd.',
+                ],
+                [
+                    'title' => 'Veilig kamperen met kleine kinderen',
+                    'location' => 'glencoe',
+                    'category' => 'Tips',
+                    'excerpt' => 'Van rondslingerende tentharingen tot water in de buurt: waar we op letten om het kamperen met jonge kinderen veilig én ontspannen te houden.',
+                ],
             ];
 
-            foreach ($titles as $i => $title) {
-                $location = $locations->random();
-                $author = $authors->random();
+            foreach ($postSpecs as $i => $spec) {
+                $location = $locBySlug->get($spec['location']);
+
+                $body = $spec['body_full']
+                    ?? '<p>'.e($spec['excerpt']).'</p>'
+                        .'<p>Dit verslag werken we binnenkort verder uit met de volledige verhalen, foto\'s en praktische details van deze etappe van onze reis.</p>';
 
                 $post = Post::create([
-                    'user_id' => $author->id,
-                    'destination_id' => $location->destination_id,
-                    'location_id' => $location->id,
-                    'title' => $title,
-                    'slug' => Str::slug($title),
-                    'excerpt' => "Korte intro voor: {$title}.",
-                    'body' => '<p>'.fake()->paragraphs(4, true).'</p>',
+                    'user_id' => $authors->random()->id,
+                    'destination_id' => $location?->destination_id,
+                    'location_id' => $location?->id,
+                    'title' => $spec['title'],
+                    'slug' => Str::slug($spec['title']),
+                    'excerpt' => $spec['excerpt'],
+                    'body' => $body,
                     'status' => 'published',
                     'published_at' => now()->subDays(rand(1, 180)),
                 ]);
 
-                // 1-2 categorieën
-                $post->categories()->sync($categories->random(rand(1, 2))->pluck('id'));
+                $category = $catByName->get($spec['category']);
+                if ($category) {
+                    $post->categories()->sync([$category->id]);
+                }
 
-                // 0-3 tags via HasTags trait
                 $post->syncTagsByName($tags->random(rand(0, 3))->pluck('name')->all());
             }
+
+            // -----------------------------------------------------------------
+            // REISTIPS — 5 losse tip-posts bovenop de 30 (F5-69).
+            // 3 bestemming-gebonden (1 met location), 2 algemeen (destination + location null).
+            // Categorie altijd 'Tips'; dit is de content voor /reistips (5.2.c).
+            // -----------------------------------------------------------------
+            $tipSpecs = [
+                [
+                    'title' => 'Camperen in Schotland met kinderen',
+                    'destination' => 'schotland',
+                    'location' => 'glencoe',
+                    'excerpt' => 'Wild kamperen, wisselend weer en muggen: alles wat we leerden over kamperen met kinderen in de Schotse Highlands.',
+                    'body' => '<p>Schotland en kamperen horen bij elkaar, maar met kinderen komt er wel wat bij kijken. Het weer draait in een uur van zon naar stortbui, en de beruchte midges — kleine steekmuggen — kunnen een avond flink verpesten als je onvoorbereid bent.</p>'
+                        .'<h2>Wild kamperen mag, met respect</h2>'
+                        .'<p>In Schotland is wildkamperen wettelijk toegestaan onder de Scottish Outdoor Access Code. Dat geeft enorme vrijheid, maar vraagt om verantwoordelijkheid: laat geen sporen achter, blijf uit de buurt van woningen en dek open vuur af. Wij kozen steevast plekken bij een beek, zodat de kinderen konden spelen terwijl wij de boel opzetten.</p>'
+                        .'<h2>Tegen de muggen</h2>'
+                        .'<p>Neem een goede anti-mug met DEET, plan je kampplek op een plek met wat wind, en zet de tent niet vlak naast stilstaand water. Een muggennet voor over de kinderwagen bleek goud waard. Met die voorbereiding werd het kamperen precies wat we hoopten: ruig, vrij en onvergetelijk.</p>',
+                ],
+                [
+                    'title' => 'Waar parkeer je je camper op Lanzarote',
+                    'destination' => 'canarische-eilanden',
+                    'location' => null,
+                    'excerpt' => 'Officiële plekken, verboden zones en handige aanrijpunten: onze praktische gids voor overnachten met de camper op Lanzarote.',
+                    'body' => '<p>Lanzarote is prachtig met de camper, maar de regels rond overnachten zijn strenger dan veel mensen denken. Vrij staan wordt op veel plekken actief ontmoedigd, zeker binnen de natuurparken. Een beetje voorbereiding voorkomt een nachtelijke wegstuur-actie.</p>'
+                        .'<h2>Gebruik de officiële plekken</h2>'
+                        .'<p>Er zijn een paar aangewezen camperplaatsen op het eiland waar je legaal kunt staan, met water en voorzieningen. Ze zijn beperkt in aantal, dus kom op tijd aan, vooral in het hoogseizoen. Reserveer waar dat kan.</p>'
+                        .'<p>Blijf weg van Timanfaya en de kust binnen de beschermde zones — daar wordt gecontroleerd en beboet. Onze vuistregel: overdag rijden en verkennen, en tegen de avond op tijd naar een vaste plek. Zo hou je het ontspannen.</p>',
+                ],
+                [
+                    'title' => 'Berlijn met het openbaar vervoer',
+                    'destination' => 'duitsland',
+                    'location' => null,
+                    'excerpt' => 'Eén kaartje voor het hele netwerk, kinderen vaak gratis: hoe je Berlijn slim en goedkoop doorkruist met U-Bahn, S-Bahn en tram.',
+                    'body' => '<p>Berlijn heeft een van de beste openbaarvervoersnetwerken van Europa, en voor een gezin is dat goud waard. U-Bahn, S-Bahn, tram en bus vallen onder één tariefsysteem, dus met het juiste kaartje reis je moeiteloos over.</p>'
+                        .'<h2>Het juiste kaartje</h2>'
+                        .'<p>Voor de meeste bezoeken volstaat een dagkaart voor tariefzone AB, die het hele centrum en de belangrijkste bezienswaardigheden dekt. Kinderen onder de zes reizen gratis, en er zijn voordelige groepskaarten voor gezinnen. Koop kaartjes bij de automaat of in de app, en vergeet niet ze te stempelen waar dat nodig is.</p>'
+                        .'<p>Met een beetje planning hoef je in Berlijn nauwelijks te lopen tussen de highlights — ideaal als de benen van de kleinsten het na een uur al opgeven.</p>',
+                ],
+                [
+                    'title' => 'Reizen met kleine kinderen: onze basisregels',
+                    'destination' => null,
+                    'location' => null,
+                    'excerpt' => 'Na jaren onderweg met jonge kinderen kwamen we tot een handvol regels die elke reis rustiger maken. Onze belangrijkste lessen op een rij.',
+                    'body' => '<p>Reizen met kleine kinderen is geen kwestie van geluk, maar van ritme. Na een paar reizen ontdekten we dat een handvol simpele regels het verschil maakt tussen een uitputtingsslag en een fijne vakantie.</p>'
+                        .'<h2>Plan de helft</h2>'
+                        .'<p>Onze belangrijkste les: plan hooguit de helft van wat je zou willen. Kinderen hebben lege tijd nodig — om te spelen, te treuzelen, of gewoon niks te doen. Een dag met één hoogtepunt en veel ruimte eromheen werkt bijna altijd beter dan een dag vol geplande activiteiten.</p>'
+                        .'<h2>Eten en slapen eerst</h2>'
+                        .'<p>Honger en vermoeidheid zijn de twee grootste bronnen van ellende onderweg. Wij hadden altijd een noodrantsoen bij de hand en hielden het slaapritme zo veel mogelijk vast, ook op reis. Saai misschien, maar het redde talloze middagen.</p>'
+                        .'<p>En de laatste: laat het los als een dag mislukt. Die zijn er. Morgen is weer een nieuwe kans.</p>',
+                ],
+                [
+                    'title' => 'Een lange autorit overleven met kinderen',
+                    'destination' => null,
+                    'location' => null,
+                    'excerpt' => 'Van slimme stops tot het eeuwige "zijn we er al bijna": onze beproefde aanpak om urenlange autoritten met kinderen draaglijk te houden.',
+                    'body' => '<p>Een lange autorit is voor veel gezinnen het minst geliefde deel van de reis. Toch hoeft het geen ramp te zijn. Met de juiste aanpak worden de uren op de weg soms zelfs een van de leukere herinneringen.</p>'
+                        .'<h2>Stop op tijd, niet als het moet</h2>'
+                        .'<p>Wacht niet tot de sfeer omslaat. Wij plannen elke twee uur een stop van een kwartier, ook als iedereen nog vrolijk is. Even rennen op een parkeerplaats, een appel eten, en weer verder. Voorkomen is beter dan sussen.</p>'
+                        .'<h2>Verveling is toegestaan</h2>'
+                        .'<p>We geven bewust niet de hele rit schermen. Een zakje met kleine verrassingen, een luisterboek dat we samen volgen, en het klassieke spel van nummerborden zoeken doen wonderen. En ja, "zijn we er al bijna" hoort er gewoon bij — dat hebben we losgelaten.</p>',
+                ],
+            ];
+
+            foreach ($tipSpecs as $spec) {
+                $destination = $spec['destination']
+                    ? Destination::where('slug', $spec['destination'])->first()
+                    : null;
+                $location = $spec['location']
+                    ? $locBySlug->get($spec['location'])
+                    : null;
+
+                $post = Post::create([
+                    'user_id' => $authors->random()->id,
+                    'destination_id' => $location?->destination_id ?? $destination?->id,
+                    'location_id' => $location?->id,
+                    'title' => $spec['title'],
+                    'slug' => Str::slug($spec['title']),
+                    'excerpt' => $spec['excerpt'],
+                    'body' => $spec['body'],
+                    'status' => 'published',
+                    'published_at' => now()->subDays(rand(1, 180)),
+                ]);
+
+                $tipsCategory = $catByName->get('Tips');
+                if ($tipsCategory) {
+                    $post->categories()->sync([$tipsCategory->id]);
+                }
+
+                $post->syncTagsByName($tags->random(rand(0, 2))->pluck('name')->all());
+            }
         }
+
         $posts = Post::all();
 
         // -----------------------------------------------------------------
