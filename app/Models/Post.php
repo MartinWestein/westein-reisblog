@@ -59,6 +59,12 @@ class Post extends Model implements HasMedia
         return $query->where('is_featured', true);
     }
 
+    public function scopePublished($query)
+    {
+        return $query->where('status', 'published')
+            ->where('published_at', '<=', now());
+    }
+
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()
