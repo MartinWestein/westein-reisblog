@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\PostController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -15,6 +16,19 @@ Route::get('/bestemmingen/{destination:slug}', [DestinationController::class, 's
 Route::get('/bestemmingen/{destination:slug}/{location:slug}', [LocationController::class, 'show'])
     ->scopeBindings()
     ->name('locations.show');
+// --- Publieke posts (5.2.a) ---
+// Location-post: 3-segment, scopeBindings dwingt dest->loc->post-hiërarchie af (F5-74).
+Route::get('/bestemmingen/{destination:slug}/{location:slug}/{post:slug}', [PostController::class, 'show'])
+    ->scopeBindings()
+    ->name('posts.show');
+
+// Reistips: categorie-leidende tip-URL (F5-72).
+Route::get('/reistips/{post:slug}', [PostController::class, 'showTip'])
+    ->name('reistips.show');
+
+// Blog-index (F5-70).
+Route::get('/verhalen', [PostController::class, 'index'])
+    ->name('posts.index');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/mijn-account', [AccountController::class, 'show'])->name('account.show');

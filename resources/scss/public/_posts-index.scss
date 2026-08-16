@@ -1,0 +1,25 @@
+// resources/scss/public/_posts-index.scss
+// Publieke /verhalen index-pagina (F5-70, F5-76): chronologische post-lijst,
+// hergebruikt .post-grid + .post-card uit _home.scss. Spiegelt _destinations-index.
+
+.posts-index {
+  padding: var(--space-5) 0;
+  background-color: var(--color-bg);
+}
+
+.posts-index__intro {
+  max-width: 640px;
+  margin-bottom: var(--space-4);
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--color-text);
+}
+
+.posts-index__pagination {
+  margin-top: var(--space-5);
+}
+
+.posts-index__empty {
+  margin-top: var(--space-4);
+  color: var(--color-muted);
+}

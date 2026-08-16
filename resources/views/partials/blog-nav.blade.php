@@ -19,6 +19,7 @@
             <ul class="blog-nav__menu navbar-nav ms-auto">
                 <li class="nav-item"><a class="nav-link {{ request()->is('/') ? 'active' : '' }}" href="{{ url('/') }}">Home</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->is('bestemmingen*') ? 'active' : '' }}" href="{{ url('/bestemmingen') }}">Bestemmingen</a></li>
+                <li class="nav-item"><a class="nav-link {{ request()->is('verhalen*') ? 'active' : '' }}" href="{{ url('/verhalen') }}">Verhalen</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->is('reistips*') ? 'active' : '' }}" href="{{ url('/reistips') }}">Reistips</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->is('reisroutes*') ? 'active' : '' }}" href="{{ url('/reisroutes') }}">Reisroutes</a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->is('fotos*') ? 'active' : '' }}" href="{{ url('/fotos') }}">Foto's</a></li>

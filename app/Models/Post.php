@@ -65,6 +65,35 @@ class Post extends Model implements HasMedia
             ->where('published_at', '<=', now());
     }
 
+    public function isPublished(): bool
+    {
+        return $this->status === 'published'
+            && $this->published_at !== null
+            && $this->published_at->lessThanOrEqualTo(now());
+    }
+
+    public function url(): string
+    {
+        // Tip-posts: categorie leidend, altijd /reistips/{slug} (F5-72).
+        if ($this->categories->contains('slug', 'tips')) {
+            return route('reistips.show', $this);
+        }
+
+        // Location-post: de enige ondersteunde bestemmingen-boom-vorm (F5-74).
+        if ($this->location_id !== null) {
+            return route('posts.show', [
+                $this->destination,
+                $this->location,
+                $this,
+            ]);
+        }
+
+        // Location-loze niet-tip: bestaat niet in het contentmodel (F5-74) — faal luid.
+        throw new \LogicException(
+            "Post [{$this->id}] heeft geen location en is geen tip; geen publieke URL mogelijk."
+        );
+    }
+
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()

@@ -22,10 +22,8 @@ class HomeController extends Controller
                 ->first(),
 
             'latestPosts' => Post::query()
-                ->where('status', 'published')
-                ->whereNotNull('published_at')
-                ->where('published_at', '<=', now())
-                ->with(['media', 'author', 'destination', 'location'])
+                ->published()
+                ->with(['media', 'author', 'destination', 'location', 'categories'])
                 ->latest('published_at')
                 ->limit(6)
                 ->get(),
