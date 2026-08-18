@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 8 augustus 2026 — Fase 5.1.e-ii afgerond (Leaflet-kaart op location-detail), suite 595 groen (1477 assertions), gepusht naar origin/main.
+**Laatst bijgewerkt:** 18 augustus 2026 — Fase 5.2.a afgerond (publieke blog-index `/verhalen` + post-detail-fundament + `url()`-helper), suite 614 groen (1505 assertions). Lokaal op commit `0c198cd`, één commit vóór op origin/main (5.2.0 al gepusht).
 **Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
 **Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → `fase-4-bouwplan.md`. Fase 5 → wordt na afronding van alle Fase-5-stappen in één keer geschreven (F5-1), niet incrementeel.
 
@@ -14,28 +14,22 @@ Fase 4 volledig afgerond en gemerged naar main (Stap 4.14).
 
 **Fase 5.0 (Fundament + homepage) afgerond** in vier sub-blokken met 24 beslissingen (F5-1 t/m F5-24). Testsuite ging van 526 → 553.
 
-**Fase 5.1.a (data-blokker) afgerond** — DemoContentSeeder verrijkt (6 destinations, 14 locations, 30 posts, 6 routes), 62 Pexels fixture-images gecommit, is_featured data-laag toegevoegd (kolommen + scopes). Beslissingen F5-25 t/m F5-32. Testsuite ongewijzigd op 553 (geen tests toegevoegd — data-only sub-blok).
+**Fase 5.1 volledig afgerond** — publieke bestemmingen- en locatie-pagina's live:
+- **5.1.a** (data-blokker) — DemoContentSeeder verrijkt (6 destinations, 14 locations, 30 posts, 6 routes), 62 Pexels fixture-images, is_featured data-laag. Beslissingen F5-25 t/m F5-32. Suite 553 (data-only).
+- **5.1.b** (is_featured admin-toggle UX) — drie sub-blokken (Destination/Route/Post) + twee chores. Beslissingen F5-33/F5-34. Suite 553 → 571.
+- **5.1.c** (`/bestemmingen` index) — één commit. Beslissingen F5-35 t/m F5-39. Suite 571 → 577.
+- **5.1.d** (`/bestemmingen/{destination}` detail) — één commit, voorafgegaan door descriptions-chore. Beslissingen F5-40 t/m F5-48. Suite 577 → 584.
+- **5.1.e-i** (`/bestemmingen/{destination}/{location}` detail, statisch) — hero + bento-gallery + breadcrumb-partial site-breed + terug-CTA. Beslissingen F5-49 t/m F5-57. Suite 584 → 593.
+- **5.1.e-ii** (Leaflet-kaart op location-detail) — vanilla-JS-module + OSM-tiles. Beslissingen F5-58 t/m F5-65. Suite 593 → 595.
 
-**Fase 5.1.b (is_featured admin-toggle UX) afgerond** in drie sub-blokken plus twee losse chores. Beslissingen F5-33 en F5-34. Testsuite ging van 553 → 571.
+**Fase 5.2 in uitvoering** — Posts + comments + blog-index + reistips.
 
-**Fase 5.1.c (publieke `/bestemmingen` index-pagina) deze sessie afgerond** in één sub-blok, één commit. Publieke `DestinationController` + view + SCSS-partial + zes Pest-tests. Beslissingen F5-35 t/m F5-39. Testsuite **577 groen (1429 assertions), deterministisch**.
+- **5.2.0 (blocker-chore) afgerond** — `scopePublished()` op Post (F5-67) + post-content-verrijking (F5-68) + reistips-seeding (F5-69). 30 posts kregen realistische NL-excerpts, 7 (incl. featured) volledige NL-body's, rest korte-maar-echte NL-body's; 5 losse reistips toegevoegd (3 bestemming-gebonden, 2 algemeen). Nul Lorem meer. Twee commits (`736680d` scope-infra, `00953c4` content-chore), beide gepusht. Suite 595 (geen tests toegevoegd — data/scope-chore).
+- **5.2.a (blog-index + post-detail-fundament) afgerond** — `$post->url()`-helper (F5-71/F5-72/F5-74), publieke routes (`posts.index` op `/verhalen`, `posts.show` 3-segment, `reistips.show`), publieke `PostController` met `show`/`showTip`/`renderDetail` (F5-78), kale detail-view (F5-73), herbruikbare `<x-public.post-card>` (F5-75), homepage-kaart gemigreerd naar de component (fixt de kapotte 2-segment-URL), "Verhalen"-nav-item (F5-79). 19 nieuwe tests. Eén commit `0c198cd`. Suite **595 → 614 (1505 assertions)**.
 
-Sub-blokken 5.1.b:
-- **5.1.b-i** Destination: checkbox in `_form.blade.php` Details-sectie, ster-badge linksboven op destination-card in de index, 6 nieuwe tests. Commit `a8a8dad`.
-- **5.1.b-ii** Route: checkbox in aparte "Uitlichten"-form-section tussen Publicatie en Reis, ster-badge inline naast route-naam in tabel-index, 6 nieuwe tests. Commit `d1348b3`. Test-conventie: `actingAs()`-import-stijl (verschilt van Destination).
-- **5.1.b-iii** Post: checkbox in nieuwe "Uitlichten"-form-section tussen Publicatie en Bestemming (bewust gescheiden van bestaande "Uitgelichte afbeelding" — verschillend concept), ster-badge inline naast titel in tabel-index, 6 nieuwe tests via `postPayload()`-helper. Commit `f8088fb`.
+- **Volgende: Fase 5.2.b** — post-detail áfmaken + comments. Scope: TipTap-body-rendering-strategie (purify-at-output ja/nee, prose-styling), post-hero (+ ontbrekende `large`-conversie op de `featured`-collectie — die capt nu op `medium`/800px), breadcrumb (F5-56-patroon: Bestemmingen → destination → location → posttitel), SEO-meta-strategie voor posts (F5-45 + em-dash-uitzondering F5-57 bij ambigue titels, plus `meta_title`-veld met fallback), gerelateerde posts, en het comments-systeem (approved-weergave + form voor ingelogde users, pending-moderatie, honeypot — leunt op het bestaande Comment-model met rol-gebaseerde auto-status en `approvedComments()`-relatie).
 
-Twee chores mee-gecommit tijdens 5.1.b:
-- `cf4dd7c` Pint autofix op FamilyMember.php (pre-existing style-issue, opgepikt tijdens 5.1.b-i Pint-run).
-- `cd4bdc0` HTML-entities `«` `»` in RouteController flash-messages vervangen door UTF-8-karakters. Blade `{{ }}` escapet `&` naar `&amp;`, dus entities lekten rauw naar de browser. Pre-existing, ontdekt tijdens 5.1.b-ii browser-check.
-
-Base-request-classes (`RouteRequest`, `PostRequest`) hoefden voor is_featured slechts één plek te editen — Store/Update erven automatisch. Destination heeft geen base, dus twee subclasses gepatched.
-
-- **Fase 5.1.d klaar** — publieke destination-detail-pagina live. Tests baseline 584 groen (1447 assertions). `origin/main` HEAD: `62eed5d`.
-- **Fase 5.1.e-i klaar** — publieke `/bestemmingen/{destination:slug}/{location:slug}` detail-pagina live (statisch deel). Route met `->scopeBindings()`, aparte `LocationController`, edge-to-edge 2:1 hero uit `gallery[0]`, bento-gallery (1 groot links + 3 klein rechts stacked), breadcrumb-partial site-breed geïntroduceerd (destination-detail meegekregen als retro-fit), terug-CTA naar parent destination. Baseline 593 groen (1471 assertions). Commit `d8605d2`; voorafgegaan door location-descriptions-chore `d8e6462`.
-- **Volgende: Fase 5.2** — Posts + comments + blog-index + reistips. Publieke blog-index, post-detail (TipTap-rendering, gerelateerde posts, comments — alleen ingelogde users), reistips als categorie binnen Posts. Breadcrumb-conventie (F5-56) en SEO-metadata-conventie (F5-45, met em-dash-niveau-uitzondering F5-57 waar van toepassing) volgen op post-detail. Loose end voor 5.2: post-URL-helper voor null-destination.
-
-State-check volgende sessie: `git log --oneline -8` (verwacht 5.1.e-ii-CLAUDE bovenaan op origin/main), `php artisan test` (verwacht 595), `Get-Content routes\web.php | Select-String "posts|blog|reistips"` als startpunt, en inspecteer de admin Post-module + masterplan §-blog voor de publieke post-scope.
+State-check volgende sessie: `git log --oneline -8` (verwacht `0c198cd` bovenaan; ná push van de CLAUDE.md-update staat die erboven), `git status` (verwacht clean), `php artisan test` (verwacht 614), `php artisan route:list | Select-String "posts|reistips|verhalen"` (verwacht posts.index/posts.show/reistips.show), en inspecteer het Comment-model + `resources/views/posts/show.blade.php` (de kale detail-view die 5.2.b afmaakt) als startpunt.
 
 ## Loose ends
 
@@ -44,35 +38,29 @@ Opgelost in Fase 5.0:
 - ~~`ExampleTest.php` verwijderen~~ (5.0.c)
 - ~~Sessies-invalidatie bij email-change door admin (F4-U18)~~ (5.0.d)
 
-Opgelost in Fase 5.1.a:
+Opgelost in Fase 5.1:
 - ~~`is_featured`-flag toevoegen aan Destination/Post/Route~~ (5.1.a — kolommen + scopes, 5.1.b — admin-toggle)
 - ~~`SubscriberDemoSeeder` weesbestand~~ (5.1.a — verwijderd)
-- ~~`config('app.faker_locale') = 'en_US'`~~ (5.1.a — via `.env` op `nl_NL`; localiseert alleen data-methodes, niet tekstgenerators — zie leerpunt)
+- ~~`config('app.faker_locale') = 'en_US'`~~ (5.1.a — via `.env` op `nl_NL`; localiseert alleen data-methodes, niet tekstgenerators — zie landmine)
+- ~~`.location-card__link` `href="#"` placeholder~~ (5.1.e-i — vervangen door `route('locations.show', ...)`)
+
+Opgelost in Fase 5.2:
+- ~~Post-URL-helper voor null-destination~~ (5.2.a — `$post->url()` model-methode, F5-71/F5-74; de drie post-vormen correct, location-loze niet-tip faalt luid)
+- ~~Faker-Lorem-valkuil op post-detail~~ (5.2.0 — F5-68 content-verrijking, nul Lorem meer)
+- ~~Home-item in blog-nav wel/niet houden~~ (F5-79 — blijft; "Verhalen" toegevoegd tussen Bestemmingen en Reistips)
 
 Nog open:
+- **Destination-brede post-URL (2-segment) uitgesteld** (F5-74) — `/bestemmingen/{dest}/{slug}` botst structureel met `locations.show` en komt niet voor in de data (elke niet-tip-post heeft een location). Later toe te voegen via gedeelde-route-resolver (met slug-namespace-validatie) of onderscheidend segment, zónder F5-74 terug te draaien. `url()` faalt luid als het geval ooit optreedt.
+- **Pages-routing bestaat nog niet** — `/over-ons`, `/contact`, `/privacy` (Pages in de seeder) hebben geen publieke route. Nav-items Reistips/Reisroutes/Foto's/Contact zijn nu dode links (bewust vooruit-gebouwde nav). Aandachtspunt: als er ooit een Pages-catch-all `/{page:slug}` bijkomt, moet die als láátste vóór de auth-groep in `routes/web.php`, ná alle named één-segment-routes (`/verhalen`, `/reistips/{post}`) — anders vangt de catch-all die weg.
+- **Cross-linking destination-detail → tips** (open sinds F5-72) — een tip mét `destination_id` heeft `/reistips/{slug}` als canonieke URL, maar de destination-detailpagina zou ernaar kunnen linken voor context. Nog niet gebouwd; kandidaat voor 5.2.c of later.
+- **Post-hero `large`-conversie ontbreekt** — de `featured`-media-collectie op Post registreert alleen `thumb` (400) + `medium` (800), geen `large`. Voor een edge-to-edge post-hero (5.2.b) zit het plafond op 800px, wat op 1440+ viewports upscalet. Afwegen in 5.2.b: `large`-conversie toevoegen (migratie-vrij, maar vereist re-conversie van bestaande media) of hero-breedte beperken.
 - **Publieke unsubscribe-route** `/nieuwsbrief/uitschrijven/{token}` (F4-N11) — landt in 5.5 (newsletter + contact).
-- **Tailwind 4.0 uit `package.json` verwijderen** — kandidaat voor 5.6 eindcheck of Fase 6.
-- **Hero-intro-tekst verfijnen** in `home.blade.php` — placeholder gemarkeerd met TODO.
-- **Post-URL-helper voor null-destination** — huidige URL-bouw met `optional($post->destination)->slug` geeft `/bestemmingen//slug` bij posts zonder destination. Oplossen in Fase 5.2 met een view-composer of model-methode.
-- **Home-item in blog-nav wel/niet houden** — Martin twijfelt, blijft voorlopig zichtbaar.
-- **Faker-Lorem-valkuil in 5.2 (post-detail-pagina)** — `fake()->paragraphs()` blijft Lorem Ipsum ondanks `nl_NL`-locale. Beslissen: custom NL-tekst-fixture-array, of Lorem accepteren als dev-placeholder tot productie-content in Fase 6.
-- **Flash-key inconsistentie in admin-controllers** — `RouteController` gebruikt `->with('success', ...)`, andere controllers (Destination, Location, Comment) gebruiken `->with('status', ...)`. De `admin._partials.flash`-partial rendert alleen `success/error/info/warning`, dus `status`-flash-messages worden nooit getoond. Impact: bij Destination/Location create/update/delete zie je geen feedback-melding. Fix in Fase 6-cleanup: kies één convention en migreer alle controllers.
-- **Lege `resources/views/public/`-directory** — vermoedelijk Fase 1-scaffolding-restant. Alle publieke views leven feitelijk in `resources/views/destinations/`, `resources/views/home.blade.php`, en `resources/views/partials/`. Kandidaat voor 5.6 eindcheck-cleanup: verwijderen of documenteren waarvoor de map bedoeld is.
-- **Sass 3.0-migratie voor Bootstrap 5.3 SCSS** — huidige `npm run build` produceert honderden deprecation warnings (`@import` → `@use`, `mix()` → `color.mix()`, `red()/green()/blue()` → `color.channel()`). Bootstrap's eigen SCSS is niet forward-compatible. Onze eigen partials gebruiken de nieuwe syntax al niet, dus dit is een Bootstrap-vendor-upgrade of migratie naar `@use` in eigen imports. Fase 6.
-- ~~`.location-card__link` `href="#"` placeholder~~ (5.1.e-i — vervangen door `route('locations.show', [$destination, $location])`).
-- **Sass 3.0-migratie (bestaande loose end, verduidelijkt)** — Vite build produceert 8+ deprecation warnings: `@import` (alle SCSS entry-imports), Bootstrap 5.3 SCSS `if()`-syntax, `mix()`/`unit()` globals, `red()`/`green()`/`blue()` color-channels. Migrator: `sass-migrator module` beschikbaar. Fase 6-cleanup.
-- **Import-conventie inconsistentie** — 6 van 8 public partials worden als `@import 'public/foo'` zonder underscore geïmporteerd, `_destinations-index` en `_destinations-show` als `@import 'public/_foo'` mét underscore. Functioneel identiek (Sass resolvet beide). Mee te nemen in Fase 6-cleanup.
-
-**5.1.e-ii — Leaflet-integratie op location-detail**. State-check + design-vragen (plaatsing op de pagina, init-strategie, kaart-grootte + default-zoom, marker-styling, test-strategy voor JS-inhoud).
-
-Scope 5.1.e-ii (voorlopig — te lock'en als F5-58+):
-- Leaflet-container in `locations/show.blade.php` (plaatsing tussen description en gallery of na gallery, te beslissen).
-- JS-init: aparte module `resources/js/leaflet-location.js` of inline `@push('scripts')` — publieke Vite-bundle, geen Alpine-wrapper nodig (geen form-context).
-- PNG-marker-assets via Vite-import + `L.Icon.Default.mergeOptions` (bestaande landmine).
-- Test-strategy: alleen HTML-container aanwezig + `data-lat`/`data-lng` attributes; geen JS-execution in Pest.
-- Cross-check: check of `app.js` een leaflet-import krijgt of dat het per-view lazy-loaded wordt (chunk-size overweging — admin.js is al 611 kB).
-
-State-check volgende sessie: `git log --oneline -8` (verwacht 5.1.e-i-CLAUDE bovenaan op origin/main), `php artisan test` (verwacht 593), `Get-Content routes\web.php | Select-String "bestemmingen"` (verwacht drie publieke routes: index + destinations.show + locations.show), en inspecteer `resources/js/app.js` + `resources/views/locations/show.blade.php` als startpunt.
+- **Hero-intro-tekst verfijnen** in `home.blade.php` + intro op `/verhalen`-index — placeholders met TODO gemarkeerd. Martin verfijnt later.
+- **Flash-key inconsistentie in admin-controllers** — `RouteController` gebruikt `->with('success', ...)`, andere (Destination, Location, Comment) gebruiken `->with('status', ...)`. De `admin._partials.flash`-partial rendert alleen `success/error/info/warning`, dus `status`-flash-messages worden nooit getoond. Fix in Fase 6-cleanup: kies één convention en migreer alle controllers.
+- **Lege `resources/views/public/`-directory** — vermoedelijk Fase 1-scaffolding-restant. Alle publieke views leven in `resources/views/{destinations,locations,posts}/`, `home.blade.php`, en `partials/`. Kandidaat voor 5.6 eindcheck-cleanup.
+- **Tailwind 4.0 uit `package.json` verwijderen** (`@tailwindcss/vite`, `tailwindcss`) — Laravel 11-scaffold-restant, we gebruiken Bootstrap. Kandidaat voor 5.6 of Fase 6.
+- **Sass 3.0-migratie voor Bootstrap 5.3 SCSS** — `npm run build` produceert honderden deprecation warnings: `@import` → `@use` (alle SCSS entry-imports), Bootstrap 5.3 SCSS `if()`-syntax, `mix()` → `color.mix()`, `unit()`-globals, `red()`/`green()`/`blue()` → `color.channel()`. Bootstrap's eigen SCSS is niet forward-compatible; onze eigen partials gebruiken de nieuwe syntax al niet. Migrator `sass-migrator module` beschikbaar. Vendor-upgrade of migratie naar `@use` in eigen imports. Fase 6-cleanup.
+- **Import-conventie inconsistentie** — sommige public partials worden als `@import 'public/foo'` zonder underscore geïmporteerd, andere (`_destinations-index`, `_destinations-show`, `_posts-index`) mét underscore. Functioneel identiek (Sass resolvet beide). Mee te nemen in Fase 6-cleanup.
 
 ---
 
@@ -399,6 +387,36 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 - **F5-64 Interactie-scope: scroll-wheel-zoom uit** — `scrollWheelZoom: false`; zoom-knoppen, drag-panning en touch-pinch default aan. Rationale: bij een full-width kaart midden in een verticaal scrollende pagina "vangt" scroll-wheel-zoom het wiel en hijackt de page-scroll (klassieke content-pagina-frustratie). Pinch (mobile) botst niet met page-scroll (één-vinger-swipe) en blijft aan. Mirrort admin route-waypoints.js.
 - **F5-65 Test-strategy: twee tests + view-guard** — Pest kan Leaflet-rendering niet testen (geen JS-execution), dus de contract-grens is "staan de coördinaten correct in de DOM?". Twee tests in `LocationsShowTest.php`: happy-path (`assertSee('data-location-map', false)` + `assertSee('41.9028')` / `'12.4964'`) en guard (`null` coördinaten → `assertDontSee('data-location-map', false)`). View krijgt `@if ($location->latitude && $location->longitude)` om het hele kaart-blok — voorkomt de Null-Island-bug (`NaN`-coördinaten → Leaflet centreert op `[0,0]`). Data-attributes bewust op één regel gehouden (assertSee-substring-landmine). Assert op korte substring i.p.v. volledige gecastte `decimal:7`-string (robuuster tegen cast-formattering).
 
+### 5.2 — Posts + comments + blog-index + reistips
+
+- **F5-66 Sub-blok-opdeling 5.2** (herzien door F5-73) — Vier sub-blokken: **5.2.0** (blocker-chore: `scopePublished()` + post-content-verrijking), **5.2.a** (publieke blog-index), **5.2.b** (post-detail + comments samen), **5.2.c** (reistips-categorie-view op `/reistips`). Gekozen boven vijf blokken (detail+comments delen pagina + route — apart committen laat een zichtbaar gat) en zes blokken (over-planning). Detail+comments is het grootste blok; intern gefaseerd (routing → rendering → comments-weergave → form), elk afzonderlijk testbaar vóór één gezamenlijke commit. **Herziening F5-73:** de post-detail-route + `url()` + kale detail-view zijn naar 5.2.a gehaald; 5.2.b maakt de detail-pagina áf.
+
+- **F5-67 scopePublished() dubbele check** — `scopePublished()` op Post filtert `where('status', 'published')->where('published_at', '<=', now())`. Spiegelt Route's `published()`-scope (F4-15). Dekt alle vier statussen af: `status`-check sluit draft/scheduled/archived uit (archived behoudt een oude `published_at <= now()` — zonder status-check zou die lekken), `published_at <= now()`-check is vangnet tegen een toekomst-datum per ongeluk gecombineerd met status `published`. NULL-`published_at` valt buiten `<= now()`. **Gekoppeld aan `isPublished()` (F5-77):** beide delen dezelfde twee condities zodat query-scope en single-record-check niet divergeren.
+
+- **F5-68 Content-verrijking 5.2.0 (niveau 2)** — Alle 30 posts realistische NL-excerpt (schoon op index + als `meta_description`-bron), subset van 7 (incl. de 3 featured) een volledig uitgeschreven NL-body met variatie (koppen, meerdere alinea's), rest een korte-maar-echte NL-body. Nul Lorem. Posts-loop herschreven van random-koppeling naar expliciete `$postSpecs`-array: elke titel aan de inhoudelijk juiste location, categorie passend bij het onderwerp. Gekozen boven alle-30-volledig (30 lange teksten is een andere schrijfwerk-orde dan de 20 korte van F5-47/F5-50) en gedeelde-body-pool (body's herhalen zichtbaar). Dev-fixtures; in Fase 6 vervangen door Martins echte reisverhalen. `migrate:fresh --seed` nodig (idempotente `if (Post::count() === 0)`-guard).
+
+- **F5-69 Reistips-seeding** — 5 tip-posts (categorie 'Tips') bovenop de bestaande 30 (die intact blijven). Mix conform de twee reële soorten: **3 bestemming-gebonden** (`destination_id` gevuld, waarvan 1 óók met `location_id`) + **2 algemeen** (beide null). Beide verschijnen op `/reistips`; de 2 algemene leveren op natuurlijke wijze de null-destination-fixture-data — inhoudelijk-correcte content (§3.4 staat destination-loze tips toe), niet als geforceerde test-hack. Oorspronkelijke lean (alle tips null) verworpen: verwrong data om de test te dienen.
+
+- **F5-70 Blog-index op /verhalen** — Publieke blog-index op `/verhalen` (route-naam `posts.index`). §3.5 specificeert geen kale blog-index-URL; ingevuld. Gekozen boven `/artikelen` (neutraler) en `/blog` (Engels, tegen NL-URL-conventie). Sluit aan op merktaal: hero "Onze Reisverhalen" (F5-22), footer-tagline "verhalen" (F5-20). `/verhalen` is puur de index-ingang; post-detail-URL's blijven de §3.5-bestemmingen-boom.
+
+- **F5-71 url() model-methode** — Post-URL-logica in `$post->url()` op Post. Handelt de post-vormen af: location-post → `route('posts.show', [dest, loc, post])` → `/bestemmingen/{dest}/{loc}/{slug}`, tip → `route('reistips.show', post)` → `/reistips/{slug}`, location-loze niet-tip → `LogicException`. Gekozen boven view-composer (URL is model-eigenschap, moet ook buiten views werken voor Fase-6 RSS/sitemap) en inline Blade-keten (conventie #1 + duplicatie). Lost de null-destination-loose-end structureel op; testbaar in isolatie. Controllers eager-loaden `categories`+`destination`+`location` om N+1 te voorkomen. Fixt meteen de bestaande kapotte homepage-kaart-URL.
+
+- **F5-72 Canonieke tip-URL: categorie leidend** — Elke post met categorie 'Tips' krijgt `/reistips/{slug}` als canonieke URL, óók met `destination_id`/`location_id`. `url()` checkt eerst op de tips-categorie; alleen niet-tips vallen door naar de bestemmingen-boom. Gekozen boven boom-leidend: één voorspelbare regel, `/reistips` wordt de volledige canonieke thuisbasis van élke tip (consistent met F5-3 hoofd-nav), SEO-helder (geen duplicate content). Destination-koppeling blijft nuttig voor context/filtering/cross-linking maar bepaalt de URL niet. Implicatie: `url()` heeft `categories` nodig (eager-load). Gehandhaafd in de controllers (F5-78): `show()` weigert tips, `showTip()` weigert niet-tips → 404.
+
+- **F5-73 Blok-grens 5.2.a/5.2.b herzien** — De post-detail-route + minimale controller + kale-maar-echte detail-view + `$post->url()` verhuizen naar 5.2.a, zodat de blog-index via `route()` klikbaar is — consistent met de rest van de app (overal benoemde routes) i.p.v. hardcoded pad-strings. 5.2.a levert index + werkende (kale) detail-pagina (titel/excerpt/body). **5.2.b** maakt de detail-pagina áf: TipTap-rendering-strategie, hero, breadcrumb, SEO-meta, gerelateerde posts + comments. Gekozen boven placeholder-variant: elk sub-blok blijft een compleet-werkend geheel (5.1-principe). Body-rendering in 5.2.a leunt op de purify-at-save die de admin al doet; de bewuste rendering-strategie-beslissing is geparkeerd voor 5.2.b.
+
+- **F5-74 Contentmodel: destination-paraplu, verhalen aan location** — Destination = paraplu (de reis), locations = de bezochte plekken, posts = verhalen per plek. Een verhaal hangt aan een location; puur destination-brede posts zijn een randgeval (kan onder een representatieve location, als reistip, of als tekst op de destination-detailpagina). Publieke post-routes in 5.2: **alleen** location-post `/bestemmingen/{destination:slug}/{location:slug}/{post:slug}` (3-segment, geen botsing met `locations.show`) + tip `/reistips/{post:slug}`. De 2-segment destination-post-URL wordt uitgesteld: botst structureel met `locations.show` (identieke vorm), komt niet voor in de data. Geen eenrichtingsdeur — later toe te voegen zonder F5-74 terug te draaien. `$post->url()` faalt luid als het geval optreedt.
+
+- **F5-75 Post-card component** — Post-card geëxtraheerd naar herbruikbare Blade-component `<x-public.post-card :post="$post" />`. Home-view, `/verhalen`-index en (5.2.b) gerelateerde posts delen 'm. Gebruikt `$post->url()` (F5-71), waarmee de bestaande kapotte 2-segment-URL op de homepage meteen gefixt is — één plek, drie klanten. Gekozen boven dupliceren: DRY, en de homepage moest tóch aangeraakt worden voor de URL-bugfix. Behoudt bestaande kaart-opbouw (featured-beeld medium + placeholder-fallback, destination-meta, titel, excerpt `Str::limit 120`, footer met auteur + `translatedFormat('j F Y')`).
+
+- **F5-76 Index-layout /verhalen** — Posts chronologisch (nieuwste `published_at` eerst), géén featured-voorrang (de index is het neutrale archief; featured-curatie blijft homepage-mechanisme). `paginate(12)` met `withQueryString()` (admin-patroon); 12 deelbaar door 2/3/4 voor nette grid-rijen. Categorie/tag-filtering **uitgesteld** naar een eigen sub-blok: §3.5 geeft `/categorie/{slug}` en `/tag/{slug}` eigen URL's, hoort niet als querystring-filter op `/verhalen`. Hergebruikt `.post-grid` + `.post-card` uit `_home.scss`.
+
+- **F5-77 Published-enforcement via controller-check** — Op de publieke detail-route: `abort_if(! $post->isPublished(), 404)`, niet via scoped binding (vereist custom `resolveRouteBinding`-machinerie) of global scope (zou de admin ook filteren). Route gebruikt gewone model-binding. `isPublished()`-helper op Post deelt exact dezelfde twee condities als `scopePublished()` (F5-67) — `status === 'published' && published_at <= now()` — zodat query-scope en single-record-check niet divergeren.
+
+- **F5-78 Controller-structuur publieke posts** — Eén `App\Http\Controllers\PostController` (naast de bestaande `Admin\PostController`) met `index`, `show`, `showTip`. `show()` (location-post-route) doet `abort_if(tip, 404)` — tips horen op `/reistips` (F5-72). `showTip()` doet `abort_unless(tip, 404)`. Beide handhaven de canonieke URL en voorkomen duplicate content; beide `abort_if(! isPublished, 404)` (F5-77). Gedeelde private `renderDetail($post)`-helper zodat detail-logica niet dupliceert. Alle drie de methoden eager-loaden `categories`+`destination`+`location`(+`author`). Gekozen boven één gecombineerde `show` (bindings verschillen 3-segment vs 1-segment) en gesplitste controllers (overkill voor familieblog-schaal). `show()` behoudt een defensieve `location_id !== $location->id`-vangnetcheck naast `scopeBindings` (dubbelop maar veilig).
+
+- **F5-79 "Verhalen"-nav-item** — Toegevoegd aan de blog-nav tussen Bestemmingen en Reistips (Home → Bestemmingen → Verhalen → Reistips → Reisroutes → Foto's → Contact). `request()->is('verhalen*')` voor de active-state. De nav linkt sowieso al vooruit naar nog-niet-gebouwde pagina's (Reistips/Reisroutes/Foto's/Contact zijn dode links); Verhalen is nu wél een levende link. Volgorde-logica: Bestemmingen (waar) → Verhalen (alle verhalen) → Reistips (praktisch).
+
 ## Herbruikbare admin-componenten
 Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 
@@ -460,6 +478,15 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 
 Media-URL fallback-patroon voor edge-to-edge hero-uses: `getFirstMediaUrl('hero', 'large') ?: getFirstMediaUrl('hero', 'medium') ?: getFirstMediaUrl('hero')`. Uitbreiding van het 5.1.c-patroon (dat alleen medium→original had), noodzakelijk omdat medium (1200px) upscalet op 1440+ viewports.
 
+_Toevoegingen uit 5.2.a:_
+- `$post->url()` (model-methode, F5-71/F5-72/F5-74) — canonieke publieke URL voor een post. Drie takken: location-post → `route('posts.show', [dest, loc, post])`, tip → `route('reistips.show', post)`, location-loze niet-tip → `LogicException`. Vereist eager-loaded `categories`+`destination`+`location`.
+- `$post->isPublished()` (model-methode, F5-77) — `status === 'published' && published_at <= now()`, deelt de waarheid met `scopePublished()`. Voor de single-record-404-check op de detail-route.
+- `<x-public.post-card :post="$post" />` (F5-75) — herbruikbare post-kaart (featured-beeld medium + placeholder-fallback, destination-meta, titel, excerpt `Str::limit 120`, footer auteur + datum). Gebruikt door home, `/verhalen`-index, en (5.2.b) gerelateerde posts. Linkt via `$post->url()`.
+- `App\Http\Controllers\PostController` (publiek, F5-78) — `index` (`/verhalen`), `show` (location-post), `showTip` (reistip) + private `renderDetail`. Canonieke-URL-handhaving (tips ↔ bestemmingen-boom) via `abort_if`/`abort_unless`.
+- Routes: `posts.index` (`/verhalen`), `posts.show` (`/bestemmingen/{destination:slug}/{location:slug}/{post:slug}`, `->scopeBindings()`), `reistips.show` (`/reistips/{post:slug}`).
+- `resources/views/posts/show.blade.php` — kale detail-view (F5-73), titel + excerpt + body via `{!! $post->body !!}` (leunt op purify-at-save). Wordt in 5.2.b afgemaakt met hero/breadcrumb/SEO/gerelateerde-posts/comments.
+- `resources/views/posts/index.blade.php` — `/verhalen`-index, hergebruikt `.post-grid` + `<x-public.post-card>`, `paginate(12)`.
+- `.posts-index` + `__intro` / `__pagination` / `__empty` (uit `_posts-index.scss`, spiegelt `_destinations-index.scss`) — index-wrapper-styling. Grid + kaarten al gedekt door `_home.scss`.
 ---
 
 ## Landmines & patronen — volgende sessie wakker schudden
@@ -587,6 +614,16 @@ Media-URL fallback-patroon voor edge-to-edge hero-uses: `getFirstMediaUrl('hero'
 
 ---
 
+### Landmines & observaties Fase 5.2
+
+- **`scopeBindings()` op een 3-segment-route accepteert de post-aan-location-koppeling runtime probleemloos.** De zorg was of Laravel de `{post}`-binding correct aan `{location}` scopet (post heeft `location_id`, de impliciete `location`-relatie). Zowel route-registratie (`route:list` zonder fout) als runtime (de cross-parent-404-test groen) bevestigen dat het werkt zonder custom `resolveRouteBinding`. De controller houdt een defensieve `location_id !== $location->id`-vangnetcheck (F5-78) — dubbelop maar goedkoop; niet nodig gebleken maar veilig.
+- **Seeder-posts krijgen bewust geen fixture-featured-images (F5-68/Optie A).** De `<x-public.post-card>` toont dan de `post-card__image-placeholder` (grijs vlak + `bi-image`-icoon) — dat is de correcte lege-staat, geen bug. Echte featured images komen via de admin (productie) of Martins content (Fase 6). De featured-image-strategie zelf (incl. de ontbrekende `large`-conversie, post-hero) hoort bij het 5.2.b-hero-gesprek.
+- **Twee `PostController`-klassen leven naast elkaar.** `App\Http\Controllers\PostController` (publiek, 5.2.a) en `App\Http\Controllers\Admin\PostController` (admin, Fase 4). Verschillende namespaces, geen conflict. Bij het aanmaken van de publieke: let op dat je 'm niet per ongeluk in de `Admin`-namespace zet.
+- **`@section('title', $x)` inline vs. `@section('content') ... @endsection` block.** De publieke views hebben twee inline title/meta-secties (geen `@endsection`) plus één block content-sectie (mét `@endsection`). Een naïeve `@section`/`@endsection`-balanscheck telt dan een "mismatch" die geen fout is. De titel-shell in `layouts.public` is `<title>@hasSection('title')@yield('title') — @endif{{ config('app.name') }}</title>` — een view die `@section('title','Verhalen')` zet, produceert `<title>Verhalen — Westein Reisblog</title>` (em-dash + spaties).
+- **`Category::factory()->create(['name' => 'Tips'])` levert slug `tips`** via `HasSlug` (`generateSlugsFrom('name')`). Nodig in tests voor de tip-detectie (`categories->contains('slug', 'tips')`). Geen expliciete slug meegeven nodig. Category gebruikt overigens `use HasFactory, HasSlug;` op één regel (enige comma-separated-traits-plek; niet aanraken).
+- **Geen catch-all in `routes/web.php`.** De nieuwe named één-segment-routes (`/verhalen`) botsen met niks. Zodra er ooit een Pages-catch-all `/{page:slug}` bijkomt (voor `/over-ons` etc.), moet die als láátste vóór de auth-groep staan — anders vangt 'ie `/verhalen` en `/reistips` weg. Zie loose-ends.
+- **`{{ $posts->links() }}` rendert Bootstrap-5-paginering** dankzij `Paginator::useBootstrapFive()` in `AppServiceProvider`. Geen extra config nodig; de admin-indexen leunen er al op.
+
 ## Roadmap — fase-status
 
 - ✅ **Fase 1 — Project setup & design system** _(afgerond 2 mei 2026)_
@@ -598,22 +635,25 @@ Media-URL fallback-patroon voor edge-to-edge hero-uses: `getFirstMediaUrl('hero'
 
 ### Fase 5 — overzicht
 
-| Stap      | Inhoud                                                                             | Suite     | Status |
-| --------- | ---------------------------------------------------------------------------------- | --------- | ------ |
-| **5.0.a** | Publieke layout + site-nav + blog-nav + footer                                     | 526 → 526 | ✅     |
-| **5.0.b** | `/mijn-account` met geïntegreerde 2FA                                              | 526 → 542 | ✅     |
-| **5.0.c** | Homepage + welcome-vervanging + ExampleTest opruimen                               | 542 → 553 | ✅     |
-| **5.0.d** | Sessies-invalidatie F4-U18 bij email-change door admin                             | 553 → 553 | ✅     |
-| **5.1.a** | DemoContentSeeder verrijken + fixture-images + is_featured data-laag               | 553 → 553 | ✅     |
-| **5.1.b** | is_featured admin-toggle UX (Destination + Route + Post, drie sub-blokken)         | 553 → 571 | ✅     |
-| **5.1.c** | `/bestemmingen` publieke index-pagina                                              | 571 → 577 | ✅     |
-| **5.1.d** | `/bestemmingen/{destination}` detail-pagina                                        | 577 → 584 | ✅     |
-| **5.1.e-i** | `/bestemmingen/{destination}/{location}` detail-pagina (statisch + breadcrumb)   | 584 → 593 | ✅     |
-| **5.1.e-ii** | Leaflet-kaart op location-detail                                                | 593 → 595 | ✅     |
-| **5.2**   | Posts + comments + blog-index + reistips                                           |           | ⏳     |
-| **5.3**   | Routes + fotogalerij                                                               |           | ⏳     |
-| **5.4**   | Auteurs + statische pagina's                                                       |           | ⏳     |
-| **5.5**   | Newsletter + contact                                                               |           | ⏳     |
-| **5.6**   | Eindcheck + `fase-5-bouwplan.md` schrijven                                         |           | ⏳     |
+| Stap         | Inhoud                                                                             | Suite     | Status |
+| ------------ | ---------------------------------------------------------------------------------- | --------- | ------ |
+| **5.0.a**    | Publieke layout + site-nav + blog-nav + footer                                     | 526 → 526 | ✅     |
+| **5.0.b**    | `/mijn-account` met geïntegreerde 2FA                                              | 526 → 542 | ✅     |
+| **5.0.c**    | Homepage + welcome-vervanging + ExampleTest opruimen                               | 542 → 553 | ✅     |
+| **5.0.d**    | Sessies-invalidatie F4-U18 bij email-change door admin                             | 553 → 553 | ✅     |
+| **5.1.a**    | DemoContentSeeder verrijken + fixture-images + is_featured data-laag               | 553 → 553 | ✅     |
+| **5.1.b**    | is_featured admin-toggle UX (Destination + Route + Post, drie sub-blokken)         | 553 → 571 | ✅     |
+| **5.1.c**    | `/bestemmingen` publieke index-pagina                                              | 571 → 577 | ✅     |
+| **5.1.d**    | `/bestemmingen/{destination}` detail-pagina                                        | 577 → 584 | ✅     |
+| **5.1.e-i**  | `/bestemmingen/{destination}/{location}` detail-pagina (statisch + breadcrumb)     | 584 → 593 | ✅     |
+| **5.1.e-ii** | Leaflet-kaart op location-detail                                                   | 593 → 595 | ✅     |
+| **5.2.0**    | Blocker-chore: `scopePublished()` + post-content-verrijking + reistips-seeding     | 595 → 595 | ✅     |
+| **5.2.a**    | Publieke blog-index `/verhalen` + post-detail-fundament + `url()`-helper           | 595 → 614 | ✅     |
+| **5.2.b**    | Post-detail afmaken (TipTap-rendering, hero, breadcrumb, SEO, gerelat.) + comments |           | ⏳     |
+| **5.2.c**    | Reistips-categorie-view `/reistips`                                                |           | ⏳     |
+| **5.3**      | Routes + fotogalerij                                                               |           | ⏳     |
+| **5.4**      | Auteurs + statische pagina's                                                       |           | ⏳     |
+| **5.5**      | Newsletter + contact                                                               |           | ⏳     |
+| **5.6**      | Eindcheck + `fase-5-bouwplan.md` schrijven                                         |           | ⏳     |
 
-**Totaal suite-status:** 593 groen (1471 assertions).
+**Totaal suite-status:** 614 groen (1505 assertions).
