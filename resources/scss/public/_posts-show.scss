@@ -13,11 +13,13 @@
   display: block;
   width: 100%;
   aspect-ratio: 2 / 1;
+  max-height: 62vh;
   object-fit: cover;
 }
 .post-detail__hero-placeholder {
   width: 100%;
   aspect-ratio: 2 / 1;
+  max-height: 62vh;
   background-color: var(--color-surface);
   display: flex;
   align-items: center;
