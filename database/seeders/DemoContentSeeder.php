@@ -747,9 +747,36 @@ class DemoContentSeeder extends Seeder
         // PAGES — 3 stuks (Over ons, Privacy, Contact)
         // -----------------------------------------------------------------
         $pageSpecs = [
-            ['slug' => 'over-ons', 'title' => 'Over ons', 'order' => 1, 'excerpt' => 'Maak kennis met de familie Westein.'],
-            ['slug' => 'privacy', 'title' => 'Privacyverklaring', 'order' => 2, 'excerpt' => 'Hoe we omgaan met je gegevens.'],
-            ['slug' => 'contact', 'title' => 'Contact', 'order' => 3, 'excerpt' => 'Hoe je ons bereikt.'],
+            [
+                'slug' => 'over-ons',
+                'title' => 'Over ons',
+                'order' => 1,
+                'excerpt' => 'Maak kennis met de familie Westein.',
+                'body' => '<p>Wij zijn de familie Westein: Jan, Marieke en onze kinderen Sophie en Tim. Sinds jaren trekken we er in de vakanties samen op uit, van roadtrips door Italië tot wandelingen in de Schotse Hooglanden. Dit blog is onze manier om die reizen vast te leggen en te delen met familie, vrienden en iedereen die net als wij graag op pad gaat.</p>'
+                    .'<p>Op deze pagina stellen we ons even voor. Klik op een naam om de verhalen van die reiziger te lezen.</p>',
+            ],
+            [
+                'slug' => 'privacy',
+                'title' => 'Privacyverklaring',
+                'order' => 2,
+                'excerpt' => 'Hoe we omgaan met je gegevens.',
+                'body' => '<p>Wij vinden de bescherming van je persoonsgegevens belangrijk. Op deze pagina leggen we kort uit welke gegevens we verzamelen en waarom.</p>'
+                    .'<h2>Welke gegevens we verwerken</h2>'
+                    .'<p>We verwerken alleen gegevens die je zelf aan ons doorgeeft: je naam en e-mailadres wanneer je een account aanmaakt of een reactie plaatst, en je e-mailadres wanneer je je aanmeldt voor onze nieuwsbrief. Bij een bericht via het contactformulier ontvangen we je naam, e-mailadres en de inhoud van je bericht.</p>'
+                    .'<h2>Waarvoor we ze gebruiken</h2>'
+                    .'<p>We gebruiken je gegevens uitsluitend om het blog te laten werken: om reacties te tonen, de nieuwsbrief te versturen en op je bericht te reageren. We verkopen je gegevens niet en delen ze niet met derden voor commerciële doeleinden.</p>'
+                    .'<h2>Nieuwsbrief en afmelden</h2>'
+                    .'<p>Aanmelden voor de nieuwsbrief gaat via een bevestigingsmail met dubbele opt-in. Onderaan elke nieuwsbrief staat een afmeldlink waarmee je je op elk moment kunt uitschrijven.</p>'
+                    .'<h2>Je rechten</h2>'
+                    .'<p>Je hebt het recht om je gegevens in te zien, te laten corrigeren of te laten verwijderen. Neem daarvoor contact met ons op via de contactpagina.</p>',
+            ],
+            [
+                'slug' => 'contact',
+                'title' => 'Contact',
+                'order' => 3,
+                'excerpt' => 'Hoe je ons bereikt.',
+                'body' => '<p>Leuk dat je contact met ons wilt opnemen. Heb je een vraag over een van onze reizen, een tip, of gewoon een leuke reactie? Vul het formulier hieronder in — we lezen alles en proberen binnen een paar dagen te reageren.</p>',
+            ],
         ];
         foreach ($pageSpecs as $spec) {
             Page::firstOrCreate(
@@ -757,21 +784,32 @@ class DemoContentSeeder extends Seeder
                 [
                     'title' => $spec['title'],
                     'excerpt' => $spec['excerpt'],
-                    'body' => '<p>'.fake()->paragraphs(3, true).'</p>',
+                    'body' => $spec['body'],
                     'published_at' => now()->subDays(30),
                     'order' => $spec['order'],
                 ],
             );
         }
-
         // -----------------------------------------------------------------
         // FAMILY MEMBERS — 4 stuks, 2 gekoppeld aan User
         // -----------------------------------------------------------------
         $familySpecs = [
-            ['name' => 'Jan', 'slug' => 'jan', 'role' => 'Vader & reisplanner', 'order' => 1, 'user' => $author1],
-            ['name' => 'Marieke', 'slug' => 'marieke', 'role' => 'Moeder & fotograaf', 'order' => 2, 'user' => $author2],
-            ['name' => 'Sophie', 'slug' => 'sophie', 'role' => 'Dochter', 'order' => 3, 'user' => null],
-            ['name' => 'Tim', 'slug' => 'tim', 'role' => 'Zoon', 'order' => 4, 'user' => null],
+            [
+                'name' => 'Jan', 'slug' => 'jan', 'role' => 'Vader & reisplanner', 'order' => 1, 'user' => $author1,
+                'bio' => 'Jan is de vaste chauffeur en routeplanner van het gezin. Hij houdt van roadtrips zonder strak schema, een goede kop koffie onderweg en het uitzoeken van de mooiste omwegen.',
+            ],
+            [
+                'name' => 'Marieke', 'slug' => 'marieke', 'role' => 'Moeder & fotograaf', 'order' => 2, 'user' => $author2,
+                'bio' => 'Marieke legt onze reizen vast met haar camera en zorgt dat we onderweg de leukste plekjes en lokale gerechten niet missen. De meeste foto\'s op dit blog zijn van haar hand.',
+            ],
+            [
+                'name' => 'Sophie', 'slug' => 'sophie', 'role' => 'Dochter', 'order' => 3, 'user' => null,
+                'bio' => 'Sophie is dol op natuur en avontuur, van boswandelingen tot een frisse duik in zee. Ze houdt een eigen reisdagboek bij en verzamelt onderweg de mooiste verhalen.',
+            ],
+            [
+                'name' => 'Tim', 'slug' => 'tim', 'role' => 'Zoon', 'order' => 4, 'user' => null,
+                'bio' => 'Tim is de jongste avonturier van het gezin en altijd in voor iets nieuws: een bergpad, een boottocht of een onbekend gerecht. Zolang er wat te ontdekken valt, is Tim erbij.',
+            ],
         ];
         foreach ($familySpecs as $spec) {
             FamilyMember::firstOrCreate(
@@ -780,7 +818,7 @@ class DemoContentSeeder extends Seeder
                     'user_id' => $spec['user']?->id,
                     'name' => $spec['name'],
                     'role' => $spec['role'],
-                    'bio' => fake()->paragraph(2),
+                    'bio' => $spec['bio'],
                     'order' => $spec['order'],
                 ],
             );

@@ -12,7 +12,6 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             CategorySeeder::class,
             DemoContentSeeder::class,
-            FamilyMemberSeeder::class,
         ]);
     }
 }
