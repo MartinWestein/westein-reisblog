@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 22 augustus 2026 — Fase 5.2.c afgerond (reistips-index op `/reistips` + cross-linking destination-detail → tips), suite 644 groen (1597 assertions). Lokaal + origin/main op commit `33c2fb5`.
+**Laatst bijgewerkt:** 22 augustus 2026 — Fase 5.2.c afgerond (reistips-index op `/reistips` + cross-linking destination-detail → tips) + hero-hoogte-plafond op de detail-pagina's (F5-97). Suite 644 groen (1597 assertions). Lokaal + origin/main op commit `8e54e5f`.
 **Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
 **Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → `fase-4-bouwplan.md`. Fase 5 → wordt na afronding van alle Fase-5-stappen in één keer geschreven (F5-1), niet incrementeel.
 
@@ -33,7 +33,7 @@ Fase 4 volledig afgerond en gemerged naar main (Stap 4.14).
 
 - **Volgende: Fase 5.3** — routes + fotogalerij.
 
-State-check volgende sessie: `git log --oneline -6` (verwacht `33c2fb5` of de CLAUDE.md-docs-commit daarboven, clean), `git status` (clean), `php artisan test` (verwacht 644), en oriënteer op de Route-modellen (`routes`/`route_waypoints`) + de admin-Route-CRUD (Fase 4) + `<x-admin.route-thumb>` als vertrekpunt voor de publieke `/reisroutes`-index + detail (Leaflet-polylijn, leun op `leaflet-location.js` uit 5.1.e-ii).
+State-check volgende sessie: `git log --oneline -6` (verwacht `8e54e5f` of de CLAUDE.md-docs-commit daarboven, clean), `git status` (clean), `php artisan test` (verwacht 644), en oriënteer op de Route-modellen (`routes`/`route_waypoints`) + de admin-Route-CRUD (Fase 4) + `<x-admin.route-thumb>` als vertrekpunt voor de publieke `/reisroutes`-index + detail (Leaflet-polylijn, leun op `leaflet-location.js` uit 5.1.e-ii).
 
 ## Loose ends
 
@@ -458,6 +458,9 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 - **F5-95 Nav + breadcrumb levend** — de "Reistips"-nav-link was al gebouwd (F5-79) met `href="/reistips"` + active-state `reistips*`; alleen de route ontbrak, dus nav vergde geen edit. De niet-klikbare "Reistips"-breadcrumb-kruimel op de tip-detail (F5-83) kreeg een `url` naar `route('reistips.index')` en is nu een echte link — daarmee is F5-83 afgemaakt.
 
 - **F5-96 Cross-linking destination-detail → tips (2e commit)** — `DestinationController@show` laadt de gepubliceerde tips van die bestemming; `destinations/show.blade.php` toont ze in een strook "Reistips voor deze reis" tussen de locations-strook en de terug-CTA, via `<x-public.post-card>` die naar de canonieke `/reistips/{slug}` linkt (`$post->url()`, F5-72). Géén cap (nut-strook, geen teaser — alle praktische tips voor die reis horen zichtbaar; aantallen zijn klein), verborgen bij 0 tips. Sluit de loose-end die sinds F5-72 open stond. Nieuw `.destination-detail__tips`-klasje in `_destinations-show.scss`, spiegelt de padding van `.destination-detail__locations`.
+### Hero-verfijning (chore na 5.2.c)
+
+- **F5-97 Hoogte-plafond op de detail-hero's (verfijnt F5-48)** — de edge-to-edge 2:1 hero groeide breedte-gedreven zonder plafond, waardoor 'ie op brede desktopschermen de hele vouw vulde en alle tekst zónder scroll-cue verborg (F5-48 was afgewogen op 1440px, niet op bredere schermen). Fix: `max-height: 62vh` op `.destination-detail__hero-image`/`-placeholder`, `.location-detail__hero-image`/`-placeholder` en `.post-detail__hero-image`/`-placeholder`. De verhouding blijft 2:1 (via `aspect-ratio`); het plafond bepaalt de effectieve hoogte = `min(breedte/2, 62vh)`, `object-fit: cover` crop de foto. Label + titel piepen nu altijd net onder de vouw mee als scroll-signaal; de breadcrumb dekt de titel-context al, dus geen tekst-overlay nodig (overlay-variant verworpen, consistent met F5-40). Mobiel onveranderd (2:1 van een smal scherm is al lager dan 62vh). Bewust literale waarde in de drie partials i.p.v. een CSS-variabele in het themed `design-tokens.scss` — helderder en risicolozer voor drie hero's; hoist naar een variabele als het ooit veel getuned wordt. Commit `8e54e5f`.
 
 ## Herbruikbare admin-componenten
 Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
@@ -500,7 +503,7 @@ Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
   - `.post-card` en `.route-card` — grid-card-patronen met hover-lift + shadow (hergebruikbaar in bestemmingen-index 5.1, blog-index 5.2, routes-index 5.3).
 - `resources/views/account/show.blade.php` + `_partials/` — one-page account met kaart-patroon; kaart-styling `.account-card` (header + body-blokken) is generiek herbruikbaar.
 - **`layouts.public` `@section('title')` / `@section('meta_description')` conventie** — elke publieke pagina zet z'n eigen title en description; layout heeft fallbacks.
-- `.destination-detail__hero` (edge-to-edge, `aspect-ratio: 2/1`, F5-48) — hero-container voor detail-pagina's; buiten `.container` gerenderd voor volle viewport-breedte. Placeholder-variant met `.bi-image` icoon bij ontbrekende media.
+- `.destination-detail__hero` (edge-to-edge, `aspect-ratio: 2/1`, F5-48) — hero-container voor detail-pagina's; buiten `.container` gerenderd voor volle viewport-breedte. Placeholder-variant met `.bi-image` icoon bij ontbrekende media. Hero-image/placeholder heeft sinds F5-97 `max-height: 62vh` (geldt site-breed voor de drie detail-hero's) zodat de foto de vouw niet volledig vult.
 - `.destination-detail__intro` — sectie-container voor label + h1 + description-alinea, `padding: var(--space-5) 0 var(--space-4)`.
 - `.destination-detail__description` — description-alinea styling: `max-width: 720px`, `font-size: 1.1rem`, `line-height: 1.65`. Leesbaar voor 2-3 zins-alinea's.
 - `.destination-detail__locations` — sectie-container voor locations-strook onder de intro.
