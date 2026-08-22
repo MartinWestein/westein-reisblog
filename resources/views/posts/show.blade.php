@@ -70,6 +70,63 @@
         </div>
     </article>
 
+    {{-- Reacties (5.2.b-ii): threaded 1 niveau (F5-86), oudste eerst (F5-89),
+         eigen pending zichtbaar (F5-87), inlog-oproep voor gasten (F5-88). --}}
+    <section id="reacties" class="post-comments" aria-labelledby="post-comments-title">
+        <div class="container">
+            <p class="section-label">Reacties</p>
+            <h2 id="post-comments-title" class="section-title">
+                {{ $commentsCount }} {{ $commentsCount === 1 ? 'reactie' : 'reacties' }}
+            </h2>
+
+            @if (session('comment_success'))
+                <div class="post-comments__flash" role="status">
+                    <i class="bi bi-check-circle me-1" aria-hidden="true"></i>{{ session('comment_success') }}
+                </div>
+            @endif
+
+            @forelse ($comments as $comment)
+                <article id="reactie-{{ $comment->id }}" class="comment">
+                    <x-public.comment :comment="$comment">
+                        @auth
+                            <div class="comment__actions" x-data="{ replying: false }">
+                                <button type="button" class="comment__reply-toggle"
+                                        @click="replying = !replying"
+                                        x-text="replying ? 'Annuleren' : 'Reageren'">Reageren</button>
+                                <div class="comment__reply-form" x-show="replying" x-cloak>
+                                    <x-public.comment-form :post="$post" :parent="$comment" />
+                                </div>
+                            </div>
+                        @endauth
+                    </x-public.comment>
+
+                    @if ($comment->replies->isNotEmpty())
+                        <div class="comment__replies">
+                            @foreach ($comment->replies as $reply)
+                                <div id="reactie-{{ $reply->id }}">
+                                    <x-public.comment :comment="$reply" />
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </article>
+            @empty
+                <p class="post-comments__empty">Er zijn nog geen reacties. Wees de eerste!</p>
+            @endforelse
+
+            @auth
+                <div class="post-comments__form">
+                    <h3 class="post-comments__form-title">Laat een reactie achter</h3>
+                    <x-public.comment-form :post="$post" />
+                </div>
+            @else
+                <div class="post-comments__login">
+                    <p class="mb-0">Wil je reageren? <a href="{{ route('login') }}">Log in</a> of <a href="{{ route('register') }}">maak een account</a> aan.</p>
+                </div>
+            @endauth
+        </div>
+    </section>
+        
     {{-- Gerelateerde posts (F5-85): verborgen bij 0 --}}
     @if ($related->isNotEmpty())
         <section class="post-detail__related" aria-labelledby="post-detail-related-title">

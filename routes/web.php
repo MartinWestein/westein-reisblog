@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PostController;
 use Illuminate\Support\Facades\Route;
+use Spatie\Honeypot\ProtectAgainstSpam;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -33,8 +35,12 @@ Route::get('/verhalen', [PostController::class, 'index'])
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/mijn-account', [AccountController::class, 'show'])->name('account.show');
     Route::put('/mijn-account/gegevens', [AccountController::class, 'updateProfile'])->name('account.update-profile');
-
     Route::redirect('/profiel/2fa', '/mijn-account#2fa', 301)->name('profile.two-factor');
+
+    // Publieke reactie plaatsen (F5-90): post via slug-binding, honeypot-beschermd.
+    Route::post('/reacties/{post:slug}', [CommentController::class, 'store'])
+        ->middleware(ProtectAgainstSpam::class)
+        ->name('comments.store');
 });
 
 // EOF

@@ -12,7 +12,6 @@ class PostController extends Controller
 {
     /**
      * Publieke blog-index op /verhalen (F5-70, F5-76).
-     * Chronologisch (nieuwste eerst), 12 per pagina, alleen gepubliceerd.
      */
     public function index(): View
     {
@@ -27,9 +26,7 @@ class PostController extends Controller
     }
 
     /**
-     * Location-post detail: /bestemmingen/{destination}/{location}/{post} (F5-74).
-     * scopeBindings dwingt de dest->loc-hiërarchie af; hier weigeren we tips
-     * (die horen canoniek op /reistips, F5-72) en niet-gepubliceerde posts (F5-77).
+     * Location-post detail (F5-74). Weigert tips (F5-72) en niet-gepubliceerd (F5-77).
      */
     public function show(Destination $destination, Location $location, Post $post): View
     {
@@ -41,7 +38,7 @@ class PostController extends Controller
     }
 
     /**
-     * Reistip detail: /reistips/{post} (F5-72). Weigert niet-tips en niet-gepubliceerd.
+     * Reistip detail (F5-72). Weigert niet-tips en niet-gepubliceerd.
      */
     public function showTip(Post $post): View
     {
@@ -52,22 +49,24 @@ class PostController extends Controller
     }
 
     /**
-     * Gedeelde detail-render (F5-78). 5.2.b-i: hero, breadcrumb, SEO-meta,
-     * body-prose en gerelateerde posts. Comments volgen in 5.2.b-ii.
+     * Gedeelde detail-render (F5-78): hero, breadcrumb, SEO-meta, body-prose,
+     * gerelateerde posts (5.2.b-i) + comments (5.2.b-ii).
      */
     private function renderDetail(Post $post): View
     {
         $post->loadMissing(['author', 'destination', 'location', 'categories', 'media']);
 
         $related = $this->relatedPosts($post);
+        $comments = $this->visibleComments($post);
+        $commentsCount = $post->approvedComments()->count();
 
-        return view('posts.show', compact('post', 'related'));
+        return view('posts.show', compact('post', 'related', 'comments', 'commentsCount'));
     }
 
     /**
      * Gerelateerde posts (F5-85): max 3, nieuwste eerst, alleen gepubliceerd,
-     * de post zelf uitgesloten. Location-post -> andere posts uit dezelfde
-     * destination (de reis), excl. tips. Reistip -> andere reistips.
+     * de post zelf uitgesloten. Location-post -> zelfde destination excl. tips,
+     * reistip -> andere reistips.
      */
     private function relatedPosts(Post $post): Collection
     {
@@ -88,5 +87,35 @@ class PostController extends Controller
         }
 
         return $query->get();
+    }
+
+    /**
+     * Zichtbare comments (F5-87 + F5-89): top-level + hun replies, oudste eerst.
+     * approved voor iedereen + eigen pending voor de ingelogde auteur;
+     * rejected/spam altijd verborgen.
+     */
+    private function visibleComments(Post $post): Collection
+    {
+        $userId = auth()->id();
+
+        // Herbruikbaar zichtbaarheids-filter, netjes gegroepeerd tussen haakjes.
+        $visible = function ($query) use ($userId) {
+            $query->where('status', 'approved')
+                ->when($userId, function ($q) use ($userId) {
+                    $q->orWhere(fn ($inner) => $inner
+                        ->where('status', 'pending')
+                        ->where('user_id', $userId));
+                });
+        };
+
+        return $post->comments()
+            ->whereNull('parent_id')
+            ->where($visible)
+            ->with([
+                'author',
+                'replies' => fn ($q) => $q->where($visible)->with('author')->orderBy('created_at'),
+            ])
+            ->orderBy('created_at')
+            ->get();
     }
 }
