@@ -6,6 +6,7 @@ use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\RouteController;
 use Illuminate\Support\Facades\Route;
 use Spatie\Honeypot\ProtectAgainstSpam;
 
@@ -15,6 +16,7 @@ Route::get('/bestemmingen', [DestinationController::class, 'index'])
     ->name('destinations.index');
 Route::get('/bestemmingen/{destination:slug}', [DestinationController::class, 'show'])
     ->name('destinations.show');
+
 Route::get('/bestemmingen/{destination:slug}/{location:slug}', [LocationController::class, 'show'])
     ->scopeBindings()
     ->name('locations.show');
@@ -35,6 +37,16 @@ Route::get('/reistips/{post:slug}', [PostController::class, 'showTip'])
 // Blog-index (F5-70).
 Route::get('/verhalen', [PostController::class, 'index'])
     ->name('posts.index');
+
+// --- Publieke reisroutes (5.3.a) ---
+// reisroutes.index als named één-segment-route: vóór reisroutes.show én vóór
+// een toekomstige /{page:slug}-catch-all (zie loose-ends).
+Route::get('/reisroutes', [RouteController::class, 'index'])
+    ->name('reisroutes.index');
+
+// Route-detail (5.3.a kaal, 5.3.b compleet met Leaflet + notes + cross-links).
+Route::get('/reisroutes/{route:slug}', [RouteController::class, 'show'])
+    ->name('reisroutes.show');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/mijn-account', [AccountController::class, 'show'])->name('account.show');

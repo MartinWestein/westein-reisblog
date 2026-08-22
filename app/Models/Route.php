@@ -92,19 +92,19 @@ class Route extends Model implements HasMedia
 
     public function registerMediaConversions(?Media $media = null): void
     {
-        $this->addMediaConversion('webp-1600')
-            ->fit(Fit::Max, 1600, 900)
+        $this->addMediaConversion('large')
+            ->fit(Fit::Max, 2400, 1350)
             ->format('webp')
             ->quality(82)
             ->performOnCollections('hero');
 
-        $this->addMediaConversion('webp-800')
-            ->fit(Fit::Max, 800, 450)
+        $this->addMediaConversion('medium')
+            ->fit(Fit::Max, 1200, 675)
             ->format('webp')
             ->quality(82)
             ->performOnCollections('hero');
 
-        $this->addMediaConversion('webp-400')
+        $this->addMediaConversion('thumb')
             ->fit(Fit::Max, 400, 225)
             ->format('webp')
             ->quality(82)
@@ -116,10 +116,11 @@ class Route extends Model implements HasMedia
      * valt anders terug op de eerste-waypoint-galleryfoto. Returnt null als beide ontbreken
      * (caller toont placeholder).
      *
-     * Let op: `$conversion` moet bestaan op zowel Route.hero als Location.gallery,
-     * anders valt Spatie terug op het originele bestand. Alignen we tijdens views-stap.
+     * Sinds 5.3.a delen Route.hero en Location.gallery dezelfde conversienamen
+     * (thumb/medium/large), dus de fallback levert nu ook een geschaalde WebP
+     * i.p.v. het origineel.
      */
-    public function displayHeroUrl(string $conversion = 'webp-400'): ?string
+    public function displayHeroUrl(string $conversion = 'medium'): ?string
     {
         $own = $this->getFirstMediaUrl('hero', $conversion);
         if ($own !== '') {
@@ -147,5 +148,16 @@ class Route extends Model implements HasMedia
         return $query->where('is_published', true)
             ->whereNotNull('published_at')
             ->where('published_at', '<=', now());
+    }
+
+    /**
+     * Single-record-variant van scopePublished() (F5-77-patroon).
+     * Zelfde drie condities, voor de 404-check op de publieke detail-route.
+     */
+    public function isPublished(): bool
+    {
+        return $this->is_published
+            && $this->published_at !== null
+            && $this->published_at <= now();
     }
 }

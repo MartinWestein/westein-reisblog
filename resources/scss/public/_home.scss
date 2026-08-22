@@ -268,10 +268,13 @@
   box-shadow: var(--shadow-md);
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-
   &:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-lg);
+  }
+  &--featured {
+    outline: 2px solid var(--color-accent-1);
+    outline-offset: -2px;
   }
 
   &__link {
@@ -285,6 +288,22 @@
     }
   }
 
+  &__image-wrap {
+    position: relative;
+  }
+  &__badge {
+    position: absolute;
+    top: var(--space-3);
+    left: var(--space-3);
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    .bi {
+      font-size: 0.85rem;
+    }
+  }
   &__image {
     width: 100%;
     aspect-ratio: 16 / 9;

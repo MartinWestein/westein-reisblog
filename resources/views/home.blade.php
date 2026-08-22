@@ -97,50 +97,7 @@
 
                 <div class="route-grid">
                     @foreach ($featuredRoutes as $route)
-                        <article class="route-card">
-                            <a href="{{ url('/reisroutes/'.$route->slug) }}"
-                               class="route-card__link"
-                               aria-labelledby="route-card-title-{{ $route->id }}">
-
-                                @php
-                                    $routeUrl = $route->displayHeroUrl('webp-800') ?? $route->displayHeroUrl();
-                                @endphp
-
-                                @if ($routeUrl)
-                                    <img src="{{ $routeUrl }}"
-                                         alt="{{ $route->name }}"
-                                         class="route-card__image"
-                                         loading="lazy">
-                                @else
-                                    <div class="route-card__image-placeholder" aria-hidden="true">
-                                        <i class="bi bi-geo-alt"></i>
-                                    </div>
-                                @endif
-
-                                <div class="route-card__body">
-                                    @if ($route->destination)
-                                        <p class="route-card__meta">{{ $route->destination->name }}</p>
-                                    @endif
-
-                                    <h3 id="route-card-title-{{ $route->id }}" class="route-card__title">
-                                        {{ $route->name }}
-                                    </h3>
-
-                                    @if ($route->description)
-                                        <p class="route-card__excerpt">{{ Str::limit(strip_tags($route->description), 140) }}</p>
-                                    @endif
-
-                                    @if ($route->travel_date)
-                                        <p class="route-card__footer">
-                                            <i class="bi bi-calendar-event"></i>
-                                            <time datetime="{{ $route->travel_date->toIso8601String() }}">
-                                                {{ $route->travel_date->translatedFormat('F Y') }}
-                                            </time>
-                                        </p>
-                                    @endif
-                                </div>
-                            </a>
-                        </article>
+                        <x-public.route-card :route="$route" />
                     @endforeach
                 </div>
             </div>

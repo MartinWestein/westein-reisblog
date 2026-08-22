@@ -1,0 +1,22 @@
+// resources/scss/public/_routes-index.scss
+// Publieke /reisroutes index-pagina (5.3.a): featured-voorrang route-lijst,
+// hergebruikt .route-grid + <x-public.route-card> uit _home.scss.
+// Spiegelt _posts-index. Geen paginering (kleine evergreen set).
+
+.routes-index {
+  padding: var(--space-5) 0;
+  background-color: var(--color-bg);
+}
+
+.routes-index__intro {
+  max-width: 640px;
+  margin-bottom: var(--space-4);
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--color-text);
+}
+
+.routes-index__empty {
+  margin-top: var(--space-4);
+  color: var(--color-muted);
+}

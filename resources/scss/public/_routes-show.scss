@@ -1,0 +1,94 @@
+// resources/scss/public/_routes-show.scss
+// Publieke /reisroutes/{slug} detail-pagina (5.3.a kaal, 5.3.b compleet).
+// Edge-to-edge 2:1 hero (F5-40/F5-48 + F5-97-plafond) buiten de container;
+// daaronder breadcrumb + intro + geordende waypoint-namenlijst + terug-CTA.
+// Hero gespiegeld van _locations-show.
+
+.route-detail__hero {
+  width: 100%;
+  background-color: var(--color-bg);
+  overflow: hidden;
+}
+
+.route-detail__hero-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  max-height: 62vh;
+  object-fit: cover;
+}
+
+.route-detail__hero-placeholder {
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  max-height: 62vh;
+  background-color: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  .bi {
+    font-size: 3rem;
+    color: rgba(20, 33, 61, 0.15);
+  }
+}
+
+.route-detail__intro {
+  padding: var(--space-5) 0 var(--space-3);
+}
+
+.route-detail__title {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  line-height: 1.15;
+  margin-bottom: var(--space-2);
+}
+
+.route-detail__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-muted);
+  font-size: 0.95rem;
+  margin-bottom: var(--space-3);
+  .bi {
+    font-size: 0.95rem;
+  }
+}
+
+.route-detail__meta-sep {
+  margin: 0 0.15rem;
+}
+
+.route-detail__description {
+  max-width: 720px;
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.65;
+  color: var(--color-text);
+}
+
+.route-detail__waypoints {
+  padding: var(--space-3) 0 var(--space-5);
+}
+
+.route-detail__waypoints-title {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  margin-bottom: var(--space-3);
+}
+
+.route-waypoint-list {
+  max-width: 720px;
+  margin: 0;
+  padding-left: 1.5rem;
+  &__item {
+    margin-bottom: 0.4rem;
+    line-height: 1.5;
+    color: var(--color-text);
+  }
+}
+
+.route-detail__back {
+  padding: var(--space-3) 0 var(--space-5);
+  text-align: center;
+}
