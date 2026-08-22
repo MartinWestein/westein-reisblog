@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 18 augustus 2026 — Fase 5.2.a afgerond (publieke blog-index `/verhalen` + post-detail-fundament + `url()`-helper), suite 614 groen (1505 assertions). Lokaal op commit `0c198cd`, één commit vóór op origin/main (5.2.0 al gepusht).
+**Laatst bijgewerkt:** 22 augustus 2026 — Fase 5.2.b afgerond (post-detail compleet + publiek comments-systeem), suite 633 groen (1568 assertions). Lokaal + origin/main op commit `8471464`.
 **Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
 **Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → `fase-4-bouwplan.md`. Fase 5 → wordt na afronding van alle Fase-5-stappen in één keer geschreven (F5-1), niet incrementeel.
 
@@ -27,9 +27,11 @@ Fase 4 volledig afgerond en gemerged naar main (Stap 4.14).
 - **5.2.0 (blocker-chore) afgerond** — `scopePublished()` op Post (F5-67) + post-content-verrijking (F5-68) + reistips-seeding (F5-69). 30 posts kregen realistische NL-excerpts, 7 (incl. featured) volledige NL-body's, rest korte-maar-echte NL-body's; 5 losse reistips toegevoegd (3 bestemming-gebonden, 2 algemeen). Nul Lorem meer. Twee commits (`736680d` scope-infra, `00953c4` content-chore), beide gepusht. Suite 595 (geen tests toegevoegd — data/scope-chore).
 - **5.2.a (blog-index + post-detail-fundament) afgerond** — `$post->url()`-helper (F5-71/F5-72/F5-74), publieke routes (`posts.index` op `/verhalen`, `posts.show` 3-segment, `reistips.show`), publieke `PostController` met `show`/`showTip`/`renderDetail` (F5-78), kale detail-view (F5-73), herbruikbare `<x-public.post-card>` (F5-75), homepage-kaart gemigreerd naar de component (fixt de kapotte 2-segment-URL), "Verhalen"-nav-item (F5-79). 19 nieuwe tests. Eén commit `0c198cd`. Suite **595 → 614 (1505 assertions)**.
 
-- **Volgende: Fase 5.2.b** — post-detail áfmaken + comments. Scope: TipTap-body-rendering-strategie (purify-at-output ja/nee, prose-styling), post-hero (+ ontbrekende `large`-conversie op de `featured`-collectie — die capt nu op `medium`/800px), breadcrumb (F5-56-patroon: Bestemmingen → destination → location → posttitel), SEO-meta-strategie voor posts (F5-45 + em-dash-uitzondering F5-57 bij ambigue titels, plus `meta_title`-veld met fallback), gerelateerde posts, en het comments-systeem (approved-weergave + form voor ingelogde users, pending-moderatie, honeypot — leunt op het bestaande Comment-model met rol-gebaseerde auto-status en `approvedComments()`-relatie).
+- **5.2.b (post-detail afmaken + comments) afgerond** — in twee commits (F5-80). **5.2.b-i** (`0c7cedf`): edge-to-edge hero + `large`-conversie op `featured` (F5-82), breadcrumb (F5-83), SEO-meta via override-kolommen (F5-84), body-prose-scope + purify-at-save (F5-81), gerelateerde posts (F5-85). 7 tests. **5.2.b-ii** (`8471464`): publiek comments-systeem — `POST /reacties/{post:slug}` + `CommentController@store` + `StoreCommentRequest` + honeypot (F5-90), volledige 1-niveau-threading met reply-toggle (F5-86), eigen pending zichtbaar met label (F5-87), inlog-oproep voor gasten (F5-88), oudste-eerst (F5-89), `<x-public.comment>` + `<x-public.comment-form>`. 12 tests. Suite **614 → 633 (1568 assertions)**.
 
-State-check volgende sessie: `git log --oneline -8` (verwacht `0c198cd` bovenaan; ná push van de CLAUDE.md-update staat die erboven), `git status` (verwacht clean), `php artisan test` (verwacht 614), `php artisan route:list | Select-String "posts|reistips|verhalen"` (verwacht posts.index/posts.show/reistips.show), en inspecteer het Comment-model + `resources/views/posts/show.blade.php` (de kale detail-view die 5.2.b afmaakt) als startpunt.
+- **Volgende: Fase 5.2.c** — reistips-categorie-view op `/reistips`. Maakt meteen de niet-klikbare "Reistips"-breadcrumb-kruimel (F5-83) en de nav-link levend, en biedt de plek voor cross-linking destination-detail → tips (open sinds F5-72).
+
+State-check volgende sessie: `git log --oneline -6` (verwacht `8471464` of de CLAUDE.md-docs-commit daarboven, clean), `git status` (clean), `php artisan test` (verwacht 633), `php artisan route:list | Select-String "reistips|verhalen|comments"` (verwacht reistips.show/posts.index/comments.store), en inspecteer `PostController@index` + de afwezige `/reistips`-index als startpunt voor de categorie-filter-aanpak van 5.2.c..
 
 ## Loose ends
 
@@ -48,12 +50,12 @@ Opgelost in Fase 5.2:
 - ~~Post-URL-helper voor null-destination~~ (5.2.a — `$post->url()` model-methode, F5-71/F5-74; de drie post-vormen correct, location-loze niet-tip faalt luid)
 - ~~Faker-Lorem-valkuil op post-detail~~ (5.2.0 — F5-68 content-verrijking, nul Lorem meer)
 - ~~Home-item in blog-nav wel/niet houden~~ (F5-79 — blijft; "Verhalen" toegevoegd tussen Bestemmingen en Reistips)
+- **Post-hero `large`-conversie ontbreekt** — de `featured`-media-collectie op Post registreert alleen `thumb` (400) + `medium` (800), geen `large`. Voor een edge-to-edge post-hero (5.2.b) zit het plafond op 800px, wat op 1440+ viewports upscalet. Afwegen in 5.2.b: `large`-conversie toevoegen (migratie-vrij, maar vereist re-conversie van bestaande media) of hero-breedte beperken.
 
 Nog open:
 - **Destination-brede post-URL (2-segment) uitgesteld** (F5-74) — `/bestemmingen/{dest}/{slug}` botst structureel met `locations.show` en komt niet voor in de data (elke niet-tip-post heeft een location). Later toe te voegen via gedeelde-route-resolver (met slug-namespace-validatie) of onderscheidend segment, zónder F5-74 terug te draaien. `url()` faalt luid als het geval ooit optreedt.
 - **Pages-routing bestaat nog niet** — `/over-ons`, `/contact`, `/privacy` (Pages in de seeder) hebben geen publieke route. Nav-items Reistips/Reisroutes/Foto's/Contact zijn nu dode links (bewust vooruit-gebouwde nav). Aandachtspunt: als er ooit een Pages-catch-all `/{page:slug}` bijkomt, moet die als láátste vóór de auth-groep in `routes/web.php`, ná alle named één-segment-routes (`/verhalen`, `/reistips/{post}`) — anders vangt de catch-all die weg.
 - **Cross-linking destination-detail → tips** (open sinds F5-72) — een tip mét `destination_id` heeft `/reistips/{slug}` als canonieke URL, maar de destination-detailpagina zou ernaar kunnen linken voor context. Nog niet gebouwd; kandidaat voor 5.2.c of later.
-- **Post-hero `large`-conversie ontbreekt** — de `featured`-media-collectie op Post registreert alleen `thumb` (400) + `medium` (800), geen `large`. Voor een edge-to-edge post-hero (5.2.b) zit het plafond op 800px, wat op 1440+ viewports upscalet. Afwegen in 5.2.b: `large`-conversie toevoegen (migratie-vrij, maar vereist re-conversie van bestaande media) of hero-breedte beperken.
 - **Publieke unsubscribe-route** `/nieuwsbrief/uitschrijven/{token}` (F4-N11) — landt in 5.5 (newsletter + contact).
 - **Hero-intro-tekst verfijnen** in `home.blade.php` + intro op `/verhalen`-index — placeholders met TODO gemarkeerd. Martin verfijnt later.
 - **Flash-key inconsistentie in admin-controllers** — `RouteController` gebruikt `->with('success', ...)`, andere (Destination, Location, Comment) gebruiken `->with('status', ...)`. De `admin._partials.flash`-partial rendert alleen `success/error/info/warning`, dus `status`-flash-messages worden nooit getoond. Fix in Fase 6-cleanup: kies één convention en migreer alle controllers.
@@ -417,6 +419,30 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 
 - **F5-79 "Verhalen"-nav-item** — Toegevoegd aan de blog-nav tussen Bestemmingen en Reistips (Home → Bestemmingen → Verhalen → Reistips → Reisroutes → Foto's → Contact). `request()->is('verhalen*')` voor de active-state. De nav linkt sowieso al vooruit naar nog-niet-gebouwde pagina's (Reistips/Reisroutes/Foto's/Contact zijn dode links); Verhalen is nu wél een levende link. Volgorde-logica: Bestemmingen (waar) → Verhalen (alle verhalen) → Reistips (praktisch).
 
+### 5.2.b — post-detail afmaken + comments
+
+- **F5-80 Twee commits** — 5.2.b intern opgedeeld in twee commit-korrels: 5.2.b-i (detail-pagina áf: hero, breadcrumb, SEO-meta, body-prose, gerelateerde posts) en 5.2.b-ii (comments). Gekozen boven één gezamenlijke commit (F5-66's default) omdat comments een eigen volwaardig write-path is; elk blok blijft een compleet-werkend, groen geheel (5.1-principe). Boven drie commits (comments-weergave los van write-path — zou een zichtbaar gat laten).
+
+- **F5-81 Body-rendering: purify-at-save** — de detail-view rendert `{!! $post->body !!}`; de body is bij admin-opslag al door Purifier-'rich' gehaald (F4-3, single source of truth op de input-grens). Geen dubbel-purify-at-output: kost CPU per render, botst met de Fase-6 response-cache, en riskeert legitieme markup (tabellen, `img-align-*`) te strippen bij config-drift. Prose via een `.post-detail__body`-SCSS-scope. Kanttekening: seeder-body's (5.2.0) gingen niet door de admin-Purifier maar zijn eigen vertrouwde fixture-content; productie loopt wél via de admin.
+
+- **F5-82 Post-hero: edge-to-edge 2:1 + large-conversie** — volle-breedte 2:1 hero uit `featured` met placeholder-variant, consistent met destination/location-detail (F5-40/F5-48/F5-52). `large` (2400px, matcht de hero-conventie uit 5.1.d) toegevoegd aan `registerMediaConversions()` op Post. Nu goedkoop: geen featured images in de DB (F5-68/Optie A), dus `media:regenerate` is no-op — conversie geldt voor toekomstige uploads. Gekozen boven contained-hero-op-medium en geen-hero.
+
+- **F5-83 Breadcrumb spiegelt de canonieke URL** — location-post: Bestemmingen → destination → location → posttitel (4 niveaus). Reistip: Reistips → titel, waarbij "Reistips" nu een niet-klikbare kruimel is (`<x-public.breadcrumb>` rendert url-loze items als platte tekst) en in 5.2.c een link naar `/reistips` wordt. Gekozen boven tip-roott-in-Verhalen en boven een live `/reistips`-link die tot 5.2.c op 404 landt.
+
+- **F5-84 SEO-meta: override-kolommen, geen auto-context** — `title = meta_title ?: title`, `meta_description = Str::limit(strip_tags(meta_description ?: excerpt), 160)`. Benut de posts-only override-kolommen (§3.3) die destinations/locations niet hebben. F5-57's em-dash-context NIET automatisch op posts (titels zijn beschrijvende zinnen → redundantie + Google-truncate); de `meta_title`-kolom is de handmatige escape.
+
+- **F5-85 Gerelateerde posts: per-type** — location-post → andere gepubliceerde posts uit dezelfde destination (de reis), excl. de post zelf én excl. tips. Reistip → andere reistips. Max 3, nieuwste eerst, `<x-public.post-card>` hergebruikt (F5-75), verborgen bij 0. `PostController::relatedPosts()`. Gekozen boven getrapt (plek→reis) en zelfde-categorie-voor-alles.
+
+- **F5-86 Comments: volledige 1-niveau-threading** — approved top-level + approved replies ingesprongen, plus een reply-form per top-level comment via Alpine-toggle (`x-data="{ replying: false }"`). Leunt op het Comment-model (booted()-auto-status, `replies()`, `scopeTopLevel`). Gekozen boven top-level-only-posten en plat-zonder-threading.
+
+- **F5-87 Eigen pending zichtbaar met label** — auteur ziet z'n eigen pending comment met "wacht op goedkeuring"-badge; anderen niet. `PostController::visibleComments()`: top-level + replies waar `status = approved` OR (`pending` AND `user_id = auth()->id()`), genest, oudste eerst; rejected/spam altijd verborgen. Plus flash na plaatsing. Gekozen boven alleen-flash en niets-bijzonders.
+
+- **F5-88 Uitgelogd: reacties publiek + inlog-oproep** — approved reacties zichtbaar voor iedereen (lees-waarde + SEO); voor gasten wordt het form vervangen door een "Log in / maak een account"-blokje. Gekozen boven geen-oproep en comments-verbergen-voor-gasten.
+
+- **F5-89 Volgorde: oudste eerst** — top-level chronologisch oudste bovenaan, replies chronologisch onder parent. Na plaatsing ankert de redirect naar `#reactie-{id}`. Gekozen boven nieuwste-eerst voor de lage reactie-volumes van een familieblog.
+
+- **F5-90 Write-path: POST /reacties/{post:slug}** — één losstaande route, post via (globaal unieke) slug-binding, ontkoppeld van de twee weergave-URL-vormen. Nieuwe publieke `CommentController@store` in de auth+verified-groep, `ProtectAgainstSpam`-middleware (`@honeypot` geleend uit auth/register), `StoreCommentRequest` (body-regels + `parent_id` hoort bij dezelfde post & is top-level; error-bag `comment`; `prepareForValidation` maakt lege parent_id null). Redirect naar `$post->url().'#reactie-{id}'` met flash. Auto-status via het model. Gekozen boven flat-met-post_id-in-body (tamper-oppervlak) en genest-onder-de-weergave-URL (dubbele routes + binding-overlap).
+
 ## Herbruikbare admin-componenten
 Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 
@@ -487,7 +513,15 @@ _Toevoegingen uit 5.2.a:_
 - `resources/views/posts/show.blade.php` — kale detail-view (F5-73), titel + excerpt + body via `{!! $post->body !!}` (leunt op purify-at-save). Wordt in 5.2.b afgemaakt met hero/breadcrumb/SEO/gerelateerde-posts/comments.
 - `resources/views/posts/index.blade.php` — `/verhalen`-index, hergebruikt `.post-grid` + `<x-public.post-card>`, `paginate(12)`.
 - `.posts-index` + `__intro` / `__pagination` / `__empty` (uit `_posts-index.scss`, spiegelt `_destinations-index.scss`) — index-wrapper-styling. Grid + kaarten al gedekt door `_home.scss`.
----
+
+_Toevoegingen uit 5.2.b:_
+- `.post-detail__hero` / `__hero-image` / `__hero-placeholder` (F5-82) — edge-to-edge 2:1 post-hero uit de `featured`-collectie; `large ?: medium ?: original`-fallback. `large` (2400px) toegevoegd aan `registerMediaConversions()` op Post.
+- `.post-detail__intro` / `__excerpt` / `__meta` + `.post-detail__body` prose-scope (F5-81) — typografie voor TipTap-'rich'-output (koppen/alinea's/lijsten/links/blockquote/inline-images `img-align-*`/tabellen), `max-width: 720px`. In `_posts-show.scss`.
+- `.post-detail__related` (F5-85) — gerelateerde-posts-strook op `--color-surface`, hergebruikt `.post-grid` + `<x-public.post-card>`.
+- `<x-public.comment :comment="$comment">` (F5-86) — één reactie: avatar-initialen + meta + tekst (`nl2br(e())`) + pending-badge; `$slot` voor reply-toggle/-form (alleen top-level meegegeven).
+- `<x-public.comment-form :post :parent>` (F5-90) — herbruikbaar reactieformulier (top-level + reply), `@honeypot`, error-bag `comment`, `route('comments.store', $post)`.
+- `App\Http\Controllers\CommentController@store` + `App\Http\Requests\StoreCommentRequest` (F5-90) — publieke comment-write-path. `PostController::visibleComments()` + `relatedPosts()` (F5-85/F5-87). Comments-SCSS (`.post-comments`, `.comment__*`, `.comment-form`) ---
+in `_posts-show.scss`.
 
 ## Landmines & patronen — volgende sessie wakker schudden
 
@@ -623,6 +657,9 @@ _Toevoegingen uit 5.2.a:_
 - **`Category::factory()->create(['name' => 'Tips'])` levert slug `tips`** via `HasSlug` (`generateSlugsFrom('name')`). Nodig in tests voor de tip-detectie (`categories->contains('slug', 'tips')`). Geen expliciete slug meegeven nodig. Category gebruikt overigens `use HasFactory, HasSlug;` op één regel (enige comma-separated-traits-plek; niet aanraken).
 - **Geen catch-all in `routes/web.php`.** De nieuwe named één-segment-routes (`/verhalen`) botsen met niks. Zodra er ooit een Pages-catch-all `/{page:slug}` bijkomt (voor `/over-ons` etc.), moet die als láátste vóór de auth-groep staan — anders vangt 'ie `/verhalen` en `/reistips` weg. Zie loose-ends.
 - **`{{ $posts->links() }}` rendert Bootstrap-5-paginering** dankzij `Paginator::useBootstrapFive()` in `AppServiceProvider`. Geen extra config nodig; de admin-indexen leunen er al op.
+- **FormRequest onder de verkeerde namespace/map = `ReflectionException` "Class ... does not exist".** `StoreCommentRequest` belandde eerst in `app\Http\Requests\Admin\` terwijl de controller `App\Http\Requests\StoreCommentRequest` type-hintte — PSR-4 map ≠ namespace, dus Composer vond de class niet en de POST gaf een 500 (de GET-pagina rendert wél, want die raakt de class niet). Fix: bestand naar `app\Http\Requests\` verplaatsen + `namespace App\Http\Requests;`. Reflex bij "Class ... does not exist" op een net-toegevoegde class: check of map en namespace matchen.
+- **Honeypot staat in tests default AAN.** `phpunit.xml` zet geen `HONEYPOT_ENABLED`, dus `config('honeypot.enabled')` is `true` in de suite en `ProtectAgainstSpam` draait mee. Zet 'm per test-file uit met `config(['honeypot.enabled' => false])` in `beforeEach` zodat je de eigen logica toetst. Een "honeypot blokkeert spam"-test is bros door `randomize_name_field_name` (onvoorspelbare veldnaam) — die werking leunt op Spatie's eigen suite + browser-verificatie.
+- **De publieke layout rendert geen globale flash.** `layouts.public` heeft geen flash-partial (anders dan admin). Publieke flash moet je zelf renderen — de comment-flow toont `session('comment_success')` scoped in de comments-sectie (past ook bij het `#reactie-{id}`-anker). Latere publieke flows die flash nodig hebben: overweeg een publieke flash-partial in `layouts.public`, of render scoped.
 
 ## Roadmap — fase-status
 
@@ -649,11 +686,11 @@ _Toevoegingen uit 5.2.a:_
 | **5.1.e-ii** | Leaflet-kaart op location-detail                                                   | 593 → 595 | ✅     |
 | **5.2.0**    | Blocker-chore: `scopePublished()` + post-content-verrijking + reistips-seeding     | 595 → 595 | ✅     |
 | **5.2.a**    | Publieke blog-index `/verhalen` + post-detail-fundament + `url()`-helper           | 595 → 614 | ✅     |
-| **5.2.b**    | Post-detail afmaken (TipTap-rendering, hero, breadcrumb, SEO, gerelat.) + comments |           | ⏳     |
+| **5.2.b**    | Post-detail afmaken (hero, breadcrumb, SEO) + comments (threaded + honeypot)       | 614 → 633 | ✅     |
 | **5.2.c**    | Reistips-categorie-view `/reistips`                                                |           | ⏳     |
 | **5.3**      | Routes + fotogalerij                                                               |           | ⏳     |
 | **5.4**      | Auteurs + statische pagina's                                                       |           | ⏳     |
 | **5.5**      | Newsletter + contact                                                               |           | ⏳     |
 | **5.6**      | Eindcheck + `fase-5-bouwplan.md` schrijven                                         |           | ⏳     |
 
-**Totaal suite-status:** 614 groen (1505 assertions).
+**Totaal suite-status:** 633 groen (1568 assertions).
