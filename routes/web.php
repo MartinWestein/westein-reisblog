@@ -24,6 +24,10 @@ Route::get('/bestemmingen/{destination:slug}/{location:slug}/{post:slug}', [Post
     ->scopeBindings()
     ->name('posts.show');
 
+// Reistips-index (5.2.c): named één-segment-route, vóór reistips.show én
+// vóór een toekomstige /{page:slug}-catch-all (zie loose-ends).
+Route::get('/reistips', [PostController::class, 'indexTips'])
+    ->name('reistips.index');
 // Reistips: categorie-leidende tip-URL (F5-72).
 Route::get('/reistips/{post:slug}', [PostController::class, 'showTip'])
     ->name('reistips.show');

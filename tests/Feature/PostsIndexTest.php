@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Category;
 use App\Models\Destination;
 use App\Models\Location;
 use App\Models\Post;
@@ -52,4 +53,28 @@ it('pagineert de index bij meer dan 12 posts', function () {
 
     // Pagina 2 is bereikbaar.
     get('/verhalen?page=2')->assertOk();
+});
+
+it('toont geen reistips op de verhalen-index', function () {
+    $tips = Category::factory()->create(['name' => 'Tips']);
+    $destination = Destination::factory()->create(['slug' => 'italie', 'name' => 'Italie']);
+    $location = Location::factory()->for($destination)->create(['slug' => 'rome', 'name' => 'Rome']);
+
+    // Een gewoon verhaal verschijnt; een tip in dezelfde reis niet.
+    Post::factory()->published()->create([
+        'destination_id' => $destination->id,
+        'location_id' => $location->id,
+        'title' => 'Een gewoon reisverhaal',
+    ]);
+    $tip = Post::factory()->published()->create([
+        'destination_id' => $destination->id,
+        'location_id' => $location->id,
+        'title' => 'Een reistip die hier niet hoort',
+    ]);
+    $tip->categories()->attach($tips);
+
+    get('/verhalen')
+        ->assertOk()
+        ->assertSee('Een gewoon reisverhaal')
+        ->assertDontSee('Een reistip die hier niet hoort');
 });

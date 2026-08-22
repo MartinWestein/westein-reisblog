@@ -12,17 +12,38 @@ class PostController extends Controller
 {
     /**
      * Publieke blog-index op /verhalen (F5-70, F5-76).
+     * Weert tips (F5-94/5.2.c): die hebben hun eigen thuisbasis op /reistips.
      */
     public function index(): View
     {
         $posts = Post::query()
             ->published()
+            ->whereDoesntHave('categories', fn ($q) => $q->where('slug', 'tips'))
             ->with(['author', 'destination', 'location', 'categories', 'media'])
             ->orderByDesc('published_at')
             ->paginate(12)
             ->withQueryString();
 
         return view('posts.index', compact('posts'));
+    }
+
+    /**
+     * Publieke reistips-index op /reistips (F5-72, 5.2.c).
+     * Spiegelt index(): alle gepubliceerde posts in de categorie 'Tips',
+     * chronologisch nieuwste eerst. Bevat zowel bestemming-gebonden als
+     * algemene tips (F5-69).
+     */
+    public function indexTips(): View
+    {
+        $tips = Post::query()
+            ->published()
+            ->whereHas('categories', fn ($q) => $q->where('slug', 'tips'))
+            ->with(['author', 'destination', 'location', 'categories', 'media'])
+            ->orderByDesc('published_at')
+            ->paginate(12)
+            ->withQueryString();
+
+        return view('reistips.index', compact('tips'));
     }
 
     /**

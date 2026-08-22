@@ -14,11 +14,11 @@
         $heroAlt = $post->featured_image_alt ?: $post->title;
     @endphp
 
-    {{-- Breadcrumb: spiegelt de canonieke URL (F5-83). Tip roott in 'Reistips'
-         (nu niet-klikbaar tot 5.2.c de index levert). --}}
+    {{-- Breadcrumb: spiegelt de canonieke URL (F5-83). Tip roott in 'Reistips',
+         nu een echte link naar de index (5.2.c). --}}
     @if ($isTip)
         <x-public.breadcrumb :items="[
-            ['label' => 'Reistips'],
+            ['label' => 'Reistips', 'url' => route('reistips.index')],
             ['label' => $post->title],
         ]" />
     @else

@@ -242,3 +242,15 @@ it('verbergt de gerelateerde-sectie als er geen gerelateerde posts zijn', functi
         ->assertDontSee('Meer uit deze reis')
         ->assertDontSee('post-detail__related', false);
 });
+
+it('linkt de Reistips-breadcrumb-kruimel naar de reistips-index', function () {
+    $tips = Category::factory()->create(['name' => 'Tips']);
+    $post = Post::factory()->tipsGeneral()->published()->create([
+        'title' => 'Reizen met kleine kinderen',
+    ]);
+    $post->categories()->attach($tips);
+
+    get('/reistips/'.$post->slug)
+        ->assertOk()
+        ->assertSee('href="'.route('reistips.index').'"', false);
+});
