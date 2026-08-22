@@ -122,6 +122,11 @@
   }
 }
 
+.destination-detail__tips {
+  padding: var(--space-4) 0 var(--space-5);
+  background-color: var(--color-bg);
+}
+
 .destination-detail__back {
   padding: var(--space-4) 0 var(--space-5);
   background-color: var(--color-bg);

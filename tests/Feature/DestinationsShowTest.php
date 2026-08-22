@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\Category;
 use App\Models\Destination;
 use App\Models\Location;
+use App\Models\Post;
 
 use function Pest\Laravel\get;
 
@@ -89,4 +91,83 @@ it('renders a breadcrumb at the top with the destinations index link', function 
     $response->assertSee('aria-label="Kruimelspoor"', false);
     $response->assertSee(route('destinations.index'), false);
     $response->assertSee('Kruimeltest');
+});
+
+it('shows destination-bound tips in the tips strook linking to reistips', function () {
+    $tips = Category::factory()->create(['name' => 'Tips']);
+    $destination = Destination::factory()->create(['slug' => 'italie', 'name' => 'Italie']);
+    $location = Location::factory()->for($destination)->create(['slug' => 'rome', 'name' => 'Rome']);
+
+    $tip = Post::factory()->published()->create([
+        'destination_id' => $destination->id,
+        'location_id' => $location->id,
+        'title' => 'Fotospots in Rome',
+    ]);
+    $tip->categories()->attach($tips);
+
+    get('/bestemmingen/italie')
+        ->assertOk()
+        ->assertSee('Reistips voor deze reis')
+        ->assertSee('Fotospots in Rome')
+        ->assertSee(route('reistips.show', $tip), false);
+});
+
+it('does not show tips from other destinations in the tips strook', function () {
+    $tips = Category::factory()->create(['name' => 'Tips']);
+    Destination::factory()->create(['slug' => 'italie', 'name' => 'Italie']);
+    $slovenie = Destination::factory()->create(['slug' => 'slovenie', 'name' => 'Slovenie']);
+    $bled = Location::factory()->for($slovenie)->create(['slug' => 'bled', 'name' => 'Bled']);
+
+    $otherTip = Post::factory()->published()->create([
+        'destination_id' => $slovenie->id,
+        'location_id' => $bled->id,
+        'title' => 'Fotospots in Bled',
+    ]);
+    $otherTip->categories()->attach($tips);
+
+    get('/bestemmingen/italie')
+        ->assertOk()
+        ->assertDontSee('Fotospots in Bled');
+});
+
+it('does not show unpublished tips in the tips strook', function () {
+    $tips = Category::factory()->create(['name' => 'Tips']);
+    $destination = Destination::factory()->create(['slug' => 'italie', 'name' => 'Italie']);
+    $location = Location::factory()->for($destination)->create(['slug' => 'rome', 'name' => 'Rome']);
+
+    $draftTip = Post::factory()->draft()->create([
+        'destination_id' => $destination->id,
+        'location_id' => $location->id,
+        'title' => 'Nog niet af tip',
+    ]);
+    $draftTip->categories()->attach($tips);
+
+    get('/bestemmingen/italie')
+        ->assertOk()
+        ->assertDontSee('Nog niet af tip');
+});
+
+it('does not show regular non-tip posts in the tips strook', function () {
+    Category::factory()->create(['name' => 'Tips']);
+    $destination = Destination::factory()->create(['slug' => 'italie', 'name' => 'Italie']);
+    $location = Location::factory()->for($destination)->create(['slug' => 'rome', 'name' => 'Rome']);
+
+    Post::factory()->published()->create([
+        'destination_id' => $destination->id,
+        'location_id' => $location->id,
+        'title' => 'Een gewoon reisverhaal',
+    ]);
+
+    get('/bestemmingen/italie')
+        ->assertOk()
+        ->assertDontSee('Reistips voor deze reis');
+});
+
+it('hides the tips section when the destination has no tips', function () {
+    Destination::factory()->create(['slug' => 'italie', 'name' => 'Italie']);
+
+    get('/bestemmingen/italie')
+        ->assertOk()
+        ->assertDontSee('Reistips voor deze reis')
+        ->assertDontSee('destination-detail__tips', false);
 });

@@ -77,6 +77,23 @@
         </section>
     @endif
 
+    {{-- Praktische tips voor deze reis (F5-96 cross-linking, open sinds F5-72).
+         Tips hangen aan deze bestemming maar linken naar hun canonieke
+         /reistips/{slug}-URL via de post-card ($post->url()). Verborgen bij 0. --}}
+    @if ($tips->isNotEmpty())
+        <section class="destination-detail__tips" aria-labelledby="destination-detail-tips-title">
+            <div class="container">
+                <p class="section-label">Praktisch</p>
+                <h2 id="destination-detail-tips-title" class="section-title">Reistips voor deze reis</h2>
+                <div class="post-grid">
+                    @foreach ($tips as $tip)
+                        <x-public.post-card :post="$tip" />
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+    
     {{-- Terug-CTA (F5-43) --}}
     <div class="destination-detail__back">
         <div class="container">
