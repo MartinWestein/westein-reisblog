@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 22 augustus 2026 — Fase 5.2.c afgerond (reistips-index op `/reistips` + cross-linking destination-detail → tips) + hero-hoogte-plafond op de detail-pagina's (F5-97). Suite 644 groen (1597 assertions). Lokaal + origin/main op commit `8e54e5f`.
+**Laatst bijgewerkt:** 22 augustus 2026 — Fase 5.3 volledig afgerond: publieke reisroutes (`/reisroutes` index + detail met Leaflet-polylijn) en fotogalerij (`/fotos` met progressive filters + eigen Alpine-lightbox). Suite 665 groen (1653 assertions). Lokaal + origin/main op commit `b6f00fa`.
 **Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
 **Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → `fase-4-bouwplan.md`. Fase 5 → wordt na afronding van alle Fase-5-stappen in één keer geschreven (F5-1), niet incrementeel.
 
@@ -31,9 +31,15 @@ Fase 4 volledig afgerond en gemerged naar main (Stap 4.14).
 
 - **5.2.c (reistips-categorie-view op `/reistips`) afgerond** — in twee commits. **5.2.c-i** (`01a2fd1`): `indexTips()` op de publieke `PostController` + `reistips.index`-route (`/reistips`), nieuwe view `reistips/index.blade.php` (hergebruikt `.post-grid` + `<x-public.post-card>`), tips geweerd uit `/verhalen`, "Reistips"-breadcrumb-kruimel op tip-detail nu een echte link (F5-91 t/m F5-95). 6 tests. **5.2.c-ii** (`33c2fb5`): cross-linking — tips-strook "Reistips voor deze reis" op destination-detail, linkt naar de canonieke `/reistips/{slug}` (F5-96, sluit de F5-72-loose-end). 5 tests. Suite **633 → 644 (1597 assertions)**.
 
-- **Volgende: Fase 5.3** — routes + fotogalerij.
+- **Fase 5.3 volledig afgerond** — publieke reisroutes + fotogalerij:
+  - **5.3.0** (blocker-chore, `fa7d16a`) — alle 6 seeder-routes gepubliceerd (`is_published`+`published_at=travel_date`); lucht `/reisroutes` én het homepage-featured-routes-blok op. Descriptions waren al echt-NL (geen Lorem-chore). F5-99. Suite 644 (data-only).
+  - **5.3.a** (`4ed204f`) — `/reisroutes`-index (featured-voorrang + badge) + kale route-detail; `<x-public.route-card>` geëxtraheerd, Route.hero-conversies gealigneerd, `isPublished()`. F5-98 t/m F5-103. Suite 644 → 655.
+  - **5.3.b** (`aee7a77`) — route-detail compleet: `leaflet-route.js` (genummerde markers + polylijn), waypoint-links + notes, bestemming-link, "Verhalen van deze reis"-strook. F5-104/F5-105. Suite 655 → 659.
+  - **5.3.c** (`b6f00fa`) — `/fotos`-galerij: progressive bestemming/locatie-pills, uniform 3:2-grid, eigen Alpine-lightbox (`photo-lightbox.js`). F5-106/F5-107. Suite 659 → 665.
 
-State-check volgende sessie: `git log --oneline -6` (verwacht `8e54e5f` of de CLAUDE.md-docs-commit daarboven, clean), `git status` (clean), `php artisan test` (verwacht 644), en oriënteer op de Route-modellen (`routes`/`route_waypoints`) + de admin-Route-CRUD (Fase 4) + `<x-admin.route-thumb>` als vertrekpunt voor de publieke `/reisroutes`-index + detail (Leaflet-polylijn, leun op `leaflet-location.js` uit 5.1.e-ii).
+- **Volgende: Fase 5.4** — auteurs + statische pagina's.
+
+State-check volgende sessie: `git log --oneline -6` (verwacht `b6f00fa` of de CLAUDE.md-docs-commit daarboven, clean), `git status` (clean), `php artisan test` (verwacht 665). Oriëntatie 5.4: FamilyMembers (`/auteurs/{slug}`, "Over ons") + Pages (Over ons/Privacy/Contact). **Let op de catch-all-volgorde**: een eventuele Pages-`/{page:slug}` moet als láátste vóór de auth-groep, ná álle named één-segment-routes (`/verhalen`, `/reistips`, `/reisroutes`, `/fotos`) — anders vangt 'ie die weg. Contact is nu nog de enige dode nav-link.
 
 ## Loose ends
 
@@ -54,10 +60,13 @@ Opgelost in Fase 5.2:
 - ~~Home-item in blog-nav wel/niet houden~~ (F5-79 — blijft; "Verhalen" toegevoegd tussen Bestemmingen en Reistips)
 - ~~Post-hero `large`-conversie ontbreekt~~ — de `featured`-media-collectie op Post registreert alleen `thumb` (400) + `medium` (800), geen `large`. Voor een edge-to-edge post-hero (5.2.b) zit het plafond op 800px, wat op 1440+ viewports upscalet. Afwegen in 5.2.b: `large`-conversie toevoegen (migratie-vrij, maar vereist re-conversie van bestaande media) of hero-breedte beperken.
 - ~~Cross-linking destination-detail → tips~~ (5.2.c-ii — tips-strook "Reistips voor deze reis" op destination-detail, F5-96)
+Opgelost in Fase 5.3:
+- ~~Reisroutes + Foto's dode nav-links~~ (5.3.a/5.3.c — `/reisroutes` en `/fotos` zijn nu levende routes; alleen Contact blijft dood tot 5.4).
+- ~~Route.hero ↔ Location.gallery conversie-mismatch ("alignen we tijdens views-stap")~~ (F5-103 — Route.hero-conversies hernoemd naar thumb/medium/large).
 
 Nog open:
 - **Destination-brede post-URL (2-segment) uitgesteld** (F5-74) — `/bestemmingen/{dest}/{slug}` botst structureel met `locations.show` en komt niet voor in de data (elke niet-tip-post heeft een location). Later toe te voegen via gedeelde-route-resolver (met slug-namespace-validatie) of onderscheidend segment, zónder F5-74 terug te draaien. `url()` faalt luid als het geval ooit optreedt.
-- **Pages-routing bestaat nog niet** — `/over-ons`, `/contact`, `/privacy` (Pages in de seeder) hebben geen publieke route. Nav-items Reistips/Reisroutes/Foto's/Contact zijn nu dode links (bewust vooruit-gebouwde nav). Aandachtspunt: als er ooit een Pages-catch-all `/{page:slug}` bijkomt, moet die als láátste vóór de auth-groep in `routes/web.php`, ná alle named één-segment-routes (`/verhalen`, `/reistips/{post}`) — anders vangt de catch-all die weg.
+- **Pages-routing bestaat nog niet** — `/over-ons`, `/contact`, `/privacy` (Pages in de seeder) hebben geen publieke route; Contact is de enige resterende dode nav-link. Landt in 5.4. Aandachtspunt: de named één-segment-routes zijn nu `/verhalen`, `/reistips`, `/reisroutes`, `/fotos` — een toekomstige Pages-catch-all `/{page:slug}` moet als láátste vóór de auth-groep in `routes/web.php`, ná al deze, anders vangt de catch-all ze weg.
 - **Publieke unsubscribe-route** `/nieuwsbrief/uitschrijven/{token}` (F4-N11) — landt in 5.5 (newsletter + contact).
 - **Hero-intro-tekst verfijnen** in `home.blade.php` + intro op `/verhalen`-index — placeholders met TODO gemarkeerd. Martin verfijnt later.
 - **Flash-key inconsistentie in admin-controllers** — `RouteController` gebruikt `->with('success', ...)`, andere (Destination, Location, Comment) gebruiken `->with('status', ...)`. De `admin._partials.flash`-partial rendert alleen `success/error/info/warning`, dus `status`-flash-messages worden nooit getoond. Fix in Fase 6-cleanup: kies één convention en migreer alle controllers.
@@ -114,6 +123,7 @@ Schaalbare, veilige Laravel-reisblog voor familievakanties Westein. Server-side 
 - Waarschuw bij secrets in chat. Adviseer roteren.
 - Bestandsnamen exact in casing (Git en Pest zijn case-sensitive).
 - **State-check (`git log`, file-existence, `php artisan test`) als allereerste stap bij elke sessie** — niet design-vragen, niet ontwerp, eerst feiten van de werkelijke codebase.
+- **Test-cadans.** `--filter=<Module>` tijdens het bouwen (snelle feedback op alleen het relevante gebied); de volledige `php artisan test` als poort **vóór elke commit** (de tel die we per sub-blok bijhouden). Pure SCSS-/JS-/Blade-markup-stukjes: suite overslaan — die kunnen geen PHP-test breken, browser-eyeball volstaat. Optioneel `php artisan test --parallel` (mits `brianium/paratest`) om de volledige run te versnellen.
 
 ---
 
@@ -462,6 +472,28 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 
 - **F5-97 Hoogte-plafond op de detail-hero's (verfijnt F5-48)** — de edge-to-edge 2:1 hero groeide breedte-gedreven zonder plafond, waardoor 'ie op brede desktopschermen de hele vouw vulde en alle tekst zónder scroll-cue verborg (F5-48 was afgewogen op 1440px, niet op bredere schermen). Fix: `max-height: 62vh` op `.destination-detail__hero-image`/`-placeholder`, `.location-detail__hero-image`/`-placeholder` en `.post-detail__hero-image`/`-placeholder`. De verhouding blijft 2:1 (via `aspect-ratio`); het plafond bepaalt de effectieve hoogte = `min(breedte/2, 62vh)`, `object-fit: cover` crop de foto. Label + titel piepen nu altijd net onder de vouw mee als scroll-signaal; de breadcrumb dekt de titel-context al, dus geen tekst-overlay nodig (overlay-variant verworpen, consistent met F5-40). Mobiel onveranderd (2:1 van een smal scherm is al lager dan 62vh). Bewust literale waarde in de drie partials i.p.v. een CSS-variabele in het themed `design-tokens.scss` — helderder en risicolozer voor drie hero's; hoist naar een variabele als het ooit veel getuned wordt. Commit `8e54e5f`.
 
+### 5.3 — Routes + fotogalerij
+
+- **F5-98 Sub-blok-opdeling 5.3** — vier sub-blokken: 5.3.0 (publish-chore), 5.3.a (routes-index + kale detail), 5.3.b (route-detail compleet met Leaflet-polylijn), 5.3.c (fotogalerij + lightbox). Routes en galerij zijn losse concerns; detail+Leaflet apart isoleert het JS-risico (5.1.e-precedent). Elk sub-blok een eigen commit.
+
+- **F5-99 5.3.0 blocker-chore: routes publiceren** — alle 6 seeder-routes op `is_published=true` + `published_at=travel_date` (alle data in het verleden → meteen `<= now`). Zonder dit gaf `Route::published()` een lege set → lege `/reisroutes`-index én leeg homepage-featured-routes-blok (F5-23) in dev. Descriptions waren al echt-NL (géén Lorem-chore nodig, i.t.t. F5-47/F5-50 — gecheckt vóór de bouw). `migrate:fresh --seed`. Gekozen `published_at=travel_date` boven `now()` (semantisch "gepubliceerd sinds de reis", voedt `orderedByTravelDate` consistent) en boven een draft-fixture (tests bouwen hun eigen draft). Commit `fa7d16a`.
+
+- **F5-100 5.3.a-grens (F5-73-precedent)** — index + kale-maar-werkende detail samen: `reisroutes.index` (`/reisroutes`) + `reisroutes.show` (`/reisroutes/{route:slug}`) + kale detail-view (hero + description + platte waypoint-namen + breadcrumb + terug-CTA). Homepage route-card + featured gemigreerd van hardcoded `url('/reisroutes/…')` naar `route('reisroutes.show', $route)`. 5.3.b maakt de detail compleet. Gekozen boven index-only (een index vol 404-links is een zwakkere tussenstand dan één dode nav-link).
+
+- **F5-101 Routes-index-sortering + featured** — `orderByDesc('is_featured')->orderByDesc('travel_date')` + F5-34 ster-badge + perzik-outline op featured route-cards. Model = `/bestemmingen` (F5-37/F5-35): routes zijn evergreen containers zoals bestemmingen, niet artikelen (F5-76 `/verhalen`). De /bestemmingen-precedent accepteert de overlap homepage-featured + index-voorrang al (F5-21+F5-37). Geen paginering (kleine evergreen set); `.route-grid` als-is (2-koloms).
+
+- **F5-102 `<x-public.route-card>` geëxtraheerd** — route-kaart uit `home.blade.php` naar een herbruikbare component (F5-75-model, parallel aan post-card), met de F5-34 featured-badge erin. Home + `/reisroutes`-index (+ 5.3.b gerelateerde routes) delen 'm; badge-logica op één plek; fixt meteen de hardcoded homepage-URL.
+
+- **F5-103 Route.hero-conversies gealigneerd + `isPublished()`** — Route.hero-conversies `webp-1600/800/400` → `thumb`/`medium`/`large` (gelijk aan Location.gallery + Destination.hero), zodat `displayHeroUrl()`-fallback een geschaalde WebP levert i.p.v. het origineel (lost de "alignen we tijdens views-stap"-TODO op; alle 6 routes zijn heroless → fallback altijd actief). `media:regenerate` no-op (geen route-hero's in DB). Plus `isPublished()` op Route (F5-77-patroon, deelt de condities van `scopePublished()`) voor de 404-check op de detail-route.
+
+- **F5-104 Route-kaart: genummerde markers + polylijn (5.3.b)** — publieke `resources/js/leaflet-route.js` (read-only variant van `admin/route-waypoints.js`): genummerde divIcon-markers **1-2-3** + rechte polylijn (perzik) + `fitBounds` + naam-hover-tooltip. Genummerd i.p.v. default-pin+permanente-tooltip (F5-60): bij een route heeft de stopvolgorde echte informatiewaarde (niet cosmetisch). Data via `data-waypoints`-JSON-attribuut (`@json`), DOM-guard, géén marker-PNG-fix (divIcons). Waypoint-lijst opgewaardeerd: genummerd, elke stop linkt naar z'n location-detail (met de pivot-`notes`); bestemmingsnaam in de meta nu een link.
+
+- **F5-105 "Verhalen van deze reis"-strook (5.3.b)** — op de route-detail een strook met gepubliceerde posts uit de bestemming van de route (excl. tips), max 3, nieuwste eerst, via `<x-public.post-card>` (F5-85-model), verborgen bij 0. Sluit de kring route ↔ verhalen. `RouteController::relatedPosts()`.
+
+- **F5-106 Fotogalerij-lightbox: eigen Alpine (5.3.c)** — `resources/js/photo-lightbox.js`, géén nieuwe dependency (F4-1). Overlay + prev/next + ESC/pijltjes + klik-buiten + scroll-lock + "bekijk locatie"-link. Progressive enhancement: tegels zijn gewone links naar de location-detail, Alpine onderschept de klik (werkt zonder JS). Gekozen boven een JS-lightbox-lib (eerste externe frontend-dependency, tegen de minimal-lijn) en boven geen-lightbox (masterplan noemde 'm expliciet).
+
+- **F5-107 Foto-filtering: progressive pills (5.3.c)** — bestemming-pills + locatie-sub-pills (verschijnen bij een actieve bestemming), querystring `?bestemming=&locatie=` server-side (F4-2). Realiseert de masterplan-filter (bestemming/locatie) volledig. Foto-bron = location-`gallery`-collecties (F5-28), query via Locations zodat elke foto z'n location+destination-context draagt. Uniform 3:2-grid, lazy-loaded, geen paginering. `PhotoController` (publiek, niet-`Admin`-namespace), route `fotos.index` op `/fotos`. Ongeldige bestemming-slug valt netjes terug op alles.
+
 ## Herbruikbare admin-componenten
 Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 
@@ -546,6 +578,16 @@ _Toevoegingen uit 5.2.c:_
 - Route `reistips.index` (`/reistips`, F5-91) — named één-segment-route pal vóór `reistips.show`; moet vóór een toekomstige `/{page:slug}`-catch-all blijven.
 - `resources/views/reistips/index.blade.php` (F5-92/F5-93) — hergebruikt `.post-grid` + `<x-public.post-card>` + `.posts-index`-styling; één chronologisch grid, intro-placeholder met TODO (Martin verfijnt later).
 - `.destination-detail__tips` (F5-96) — tips-strook op destination-detail (tussen locations en terug-CTA), hergebruikt `.post-grid` + `<x-public.post-card>`. In `_destinations-show.scss`.
+
+_Toevoegingen uit 5.3:_
+- `App\Http\Controllers\RouteController` (publiek, F5-100/F5-105) — `index` (`/reisroutes`, featured-voorrang) + `show` (route-detail) + private `relatedPosts`. Naast de bestaande `Admin\RouteController` (andere namespace).
+- `<x-public.route-card :route>` (F5-102) — route-kaart met F5-34 featured-badge, linkt via `route('reisroutes.show', $route)`. Gebruikt door home + `/reisroutes`-index. `.route-card__image-wrap` + `__badge` + `.route-card--featured` (outline) in `_home.scss`.
+- `resources/js/leaflet-route.js` (F5-104) — publieke genummerde-marker + polylijn-kaart; data via `data-waypoints`. `.route-marker`/`__num` + `.route-detail__map`-styling in `_routes-show.scss`.
+- `Route::isPublished()` (F5-103) — single-record-variant van `scopePublished()`. Route.hero-conversies zijn nu `thumb`/`medium`/`large`.
+- `App\Http\Controllers\PhotoController` + route `fotos.index` (`/fotos`, F5-107) — gallery-media van alle locaties, gefilterd op bestemming/locatie via querystring.
+- `resources/js/photo-lightbox.js` (F5-106) — Alpine-lightbox-factory (`Alpine.data('photoLightbox', …)` in `app.js`), progressive enhancement.
+- Views: `routes/index`, `routes/show`, `photos/index`. SCSS-partials: `_routes-index`, `_routes-show`, `_photos-index`.
+
 ---
 
 ## Landmines & patronen — volgende sessie wakker schudden
@@ -687,6 +729,14 @@ _Toevoegingen uit 5.2.c:_
 - **De publieke layout rendert geen globale flash.** `layouts.public` heeft geen flash-partial (anders dan admin). Publieke flash moet je zelf renderen — de comment-flow toont `session('comment_success')` scoped in de comments-sectie (past ook bij het `#reactie-{id}`-anker). Latere publieke flows die flash nodig hebben: overweeg een publieke flash-partial in `layouts.public`, of render scoped.
 - **`/verhalen` en `/reistips` delen het Post-model maar zijn wederzijds exclusief gefilterd (F5-94).** `index()` weert tips (`whereDoesntHave('categories', slug='tips')`), `indexTips()` toont alleen tips (`whereHas`). Bij de uitgestelde categorie/tag-index (F5-76) deze twee grenzen consistent houden zodat content niet in twee neutrale archieven tegelijk opduikt.
 
+### Landmines geleerd in Fase 5.3
+
+- **`route(...)` vereist de slug-kolom in de eager-load-select.** `route('locations.show', [$dest, $loc])` faalt met `UrlGenerationException: Missing parameter: location` als de select de location's `slug` niet meepakt (binding op slug). Selecteer altijd `slug` mee bij modellen die je in `route()` gebruikt. Symptoom trad pas op bij het renderen van de link, niet bij de query. (5.3.b)
+- **Een Leaflet-container heeft een expliciete CSS-hoogte nodig.** Een `[data-…map]`-div zonder hoogte → Leaflet rendert in 0px, dus je ziet een lege gap i.p.v. een kaart. Geef de container hoogte in de SCSS; op een fresh page-load met die hoogte init Leaflet correct (geen `invalidateSize()` nodig). (5.3.b/5.3.c)
+- **`@json($x)` in een HTML-attribuut is veilig** dankzij de default HEX-flags (`JSON_HEX_TAG|APOS|AMP|QUOT`): apostrofs/quotes worden `\u00xx`, dus `data-x='@json(...)'` in single quotes breekt niet, en bare getallen blijven leesbaar (`assertSee` op een coördinaat werkt). Gebruikt voor `data-waypoints`. (5.3.b)
+- **CRLF op nieuw-aangemaakte files.** VS Code schrijft nieuwe bestanden soms met CRLF; git waarschuwt bij `add` en normaliseert naar LF (conventie #9 blijft gedekt). Zet VS Code's default EOL op `\n` om de waarschuwing te vermijden.
+- **Media in tests: `Storage::fake('public')` + `UploadedFile::fake()->image()` + `addMedia()->toMediaCollection('gallery')`.** Werkt met de nonQueued-conversies (F4-N7, GD draait sync in de test). Nodig om galerij-/media-afhankelijke views te testen. (5.3.c `PhotosIndexTest`)
+
 ## Roadmap — fase-status
 
 - ✅ **Fase 1 — Project setup & design system** _(afgerond 2 mei 2026)_
@@ -714,9 +764,12 @@ _Toevoegingen uit 5.2.c:_
 | **5.2.a**    | Publieke blog-index `/verhalen` + post-detail-fundament + `url()`-helper           | 595 → 614 | ✅     |
 | **5.2.b**    | Post-detail afmaken (hero, breadcrumb, SEO) + comments (threaded + honeypot)       | 614 → 633 | ✅     |
 | **5.2.c**    | Reistips-categorie-view `/reistips` + cross-linking destination → tips             | 633 → 644 | ✅     |
-| **5.3**      | Routes + fotogalerij                                                               |           | ⏳     |
+| **5.3.0**    | Blocker-chore: routes publiceren (is_published + published_at)                     | 644 → 644 | ✅     |
+| **5.3.a**    | Publieke `/reisroutes`-index + kale route-detail                                   | 644 → 655 | ✅     |
+| **5.3.b**    | Route-detail compleet: Leaflet-polylijn + waypoint-links + verhalen-strook         | 655 → 659 | ✅     |
+| **5.3.c**    | Fotogalerij `/fotos` + progressive filters + Alpine-lightbox                       | 659 → 665 | ✅     |
 | **5.4**      | Auteurs + statische pagina's                                                       |           | ⏳     |
 | **5.5**      | Newsletter + contact                                                               |           | ⏳     |
 | **5.6**      | Eindcheck + `fase-5-bouwplan.md` schrijven                                         |           | ⏳     |
 
-**Totaal suite-status:** 644 groen (1597 assertions).
+**Totaal suite-status:** 665 groen (1653 assertions).
