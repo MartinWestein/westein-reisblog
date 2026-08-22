@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 22 augustus 2026 — Fase 5.2.b afgerond (post-detail compleet + publiek comments-systeem), suite 633 groen (1568 assertions). Lokaal + origin/main op commit `8471464`.
+**Laatst bijgewerkt:** 22 augustus 2026 — Fase 5.2.c afgerond (reistips-index op `/reistips` + cross-linking destination-detail → tips), suite 644 groen (1597 assertions). Lokaal + origin/main op commit `33c2fb5`.
 **Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
 **Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → `fase-4-bouwplan.md`. Fase 5 → wordt na afronding van alle Fase-5-stappen in één keer geschreven (F5-1), niet incrementeel.
 
@@ -29,9 +29,11 @@ Fase 4 volledig afgerond en gemerged naar main (Stap 4.14).
 
 - **5.2.b (post-detail afmaken + comments) afgerond** — in twee commits (F5-80). **5.2.b-i** (`0c7cedf`): edge-to-edge hero + `large`-conversie op `featured` (F5-82), breadcrumb (F5-83), SEO-meta via override-kolommen (F5-84), body-prose-scope + purify-at-save (F5-81), gerelateerde posts (F5-85). 7 tests. **5.2.b-ii** (`8471464`): publiek comments-systeem — `POST /reacties/{post:slug}` + `CommentController@store` + `StoreCommentRequest` + honeypot (F5-90), volledige 1-niveau-threading met reply-toggle (F5-86), eigen pending zichtbaar met label (F5-87), inlog-oproep voor gasten (F5-88), oudste-eerst (F5-89), `<x-public.comment>` + `<x-public.comment-form>`. 12 tests. Suite **614 → 633 (1568 assertions)**.
 
-- **Volgende: Fase 5.2.c** — reistips-categorie-view op `/reistips`. Maakt meteen de niet-klikbare "Reistips"-breadcrumb-kruimel (F5-83) en de nav-link levend, en biedt de plek voor cross-linking destination-detail → tips (open sinds F5-72).
+- **5.2.c (reistips-categorie-view op `/reistips`) afgerond** — in twee commits. **5.2.c-i** (`01a2fd1`): `indexTips()` op de publieke `PostController` + `reistips.index`-route (`/reistips`), nieuwe view `reistips/index.blade.php` (hergebruikt `.post-grid` + `<x-public.post-card>`), tips geweerd uit `/verhalen`, "Reistips"-breadcrumb-kruimel op tip-detail nu een echte link (F5-91 t/m F5-95). 6 tests. **5.2.c-ii** (`33c2fb5`): cross-linking — tips-strook "Reistips voor deze reis" op destination-detail, linkt naar de canonieke `/reistips/{slug}` (F5-96, sluit de F5-72-loose-end). 5 tests. Suite **633 → 644 (1597 assertions)**.
 
-State-check volgende sessie: `git log --oneline -6` (verwacht `8471464` of de CLAUDE.md-docs-commit daarboven, clean), `git status` (clean), `php artisan test` (verwacht 633), `php artisan route:list | Select-String "reistips|verhalen|comments"` (verwacht reistips.show/posts.index/comments.store), en inspecteer `PostController@index` + de afwezige `/reistips`-index als startpunt voor de categorie-filter-aanpak van 5.2.c..
+- **Volgende: Fase 5.3** — routes + fotogalerij.
+
+State-check volgende sessie: `git log --oneline -6` (verwacht `33c2fb5` of de CLAUDE.md-docs-commit daarboven, clean), `git status` (clean), `php artisan test` (verwacht 644), en oriënteer op de Route-modellen (`routes`/`route_waypoints`) + de admin-Route-CRUD (Fase 4) + `<x-admin.route-thumb>` als vertrekpunt voor de publieke `/reisroutes`-index + detail (Leaflet-polylijn, leun op `leaflet-location.js` uit 5.1.e-ii).
 
 ## Loose ends
 
@@ -50,12 +52,12 @@ Opgelost in Fase 5.2:
 - ~~Post-URL-helper voor null-destination~~ (5.2.a — `$post->url()` model-methode, F5-71/F5-74; de drie post-vormen correct, location-loze niet-tip faalt luid)
 - ~~Faker-Lorem-valkuil op post-detail~~ (5.2.0 — F5-68 content-verrijking, nul Lorem meer)
 - ~~Home-item in blog-nav wel/niet houden~~ (F5-79 — blijft; "Verhalen" toegevoegd tussen Bestemmingen en Reistips)
-- **Post-hero `large`-conversie ontbreekt** — de `featured`-media-collectie op Post registreert alleen `thumb` (400) + `medium` (800), geen `large`. Voor een edge-to-edge post-hero (5.2.b) zit het plafond op 800px, wat op 1440+ viewports upscalet. Afwegen in 5.2.b: `large`-conversie toevoegen (migratie-vrij, maar vereist re-conversie van bestaande media) of hero-breedte beperken.
+- ~~Post-hero `large`-conversie ontbreekt~~ — de `featured`-media-collectie op Post registreert alleen `thumb` (400) + `medium` (800), geen `large`. Voor een edge-to-edge post-hero (5.2.b) zit het plafond op 800px, wat op 1440+ viewports upscalet. Afwegen in 5.2.b: `large`-conversie toevoegen (migratie-vrij, maar vereist re-conversie van bestaande media) of hero-breedte beperken.
+- ~~Cross-linking destination-detail → tips~~ (5.2.c-ii — tips-strook "Reistips voor deze reis" op destination-detail, F5-96)
 
 Nog open:
 - **Destination-brede post-URL (2-segment) uitgesteld** (F5-74) — `/bestemmingen/{dest}/{slug}` botst structureel met `locations.show` en komt niet voor in de data (elke niet-tip-post heeft een location). Later toe te voegen via gedeelde-route-resolver (met slug-namespace-validatie) of onderscheidend segment, zónder F5-74 terug te draaien. `url()` faalt luid als het geval ooit optreedt.
 - **Pages-routing bestaat nog niet** — `/over-ons`, `/contact`, `/privacy` (Pages in de seeder) hebben geen publieke route. Nav-items Reistips/Reisroutes/Foto's/Contact zijn nu dode links (bewust vooruit-gebouwde nav). Aandachtspunt: als er ooit een Pages-catch-all `/{page:slug}` bijkomt, moet die als láátste vóór de auth-groep in `routes/web.php`, ná alle named één-segment-routes (`/verhalen`, `/reistips/{post}`) — anders vangt de catch-all die weg.
-- **Cross-linking destination-detail → tips** (open sinds F5-72) — een tip mét `destination_id` heeft `/reistips/{slug}` als canonieke URL, maar de destination-detailpagina zou ernaar kunnen linken voor context. Nog niet gebouwd; kandidaat voor 5.2.c of later.
 - **Publieke unsubscribe-route** `/nieuwsbrief/uitschrijven/{token}` (F4-N11) — landt in 5.5 (newsletter + contact).
 - **Hero-intro-tekst verfijnen** in `home.blade.php` + intro op `/verhalen`-index — placeholders met TODO gemarkeerd. Martin verfijnt later.
 - **Flash-key inconsistentie in admin-controllers** — `RouteController` gebruikt `->with('success', ...)`, andere (Destination, Location, Comment) gebruiken `->with('status', ...)`. De `admin._partials.flash`-partial rendert alleen `success/error/info/warning`, dus `status`-flash-messages worden nooit getoond. Fix in Fase 6-cleanup: kies één convention en migreer alle controllers.
@@ -443,6 +445,20 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 
 - **F5-90 Write-path: POST /reacties/{post:slug}** — één losstaande route, post via (globaal unieke) slug-binding, ontkoppeld van de twee weergave-URL-vormen. Nieuwe publieke `CommentController@store` in de auth+verified-groep, `ProtectAgainstSpam`-middleware (`@honeypot` geleend uit auth/register), `StoreCommentRequest` (body-regels + `parent_id` hoort bij dezelfde post & is top-level; error-bag `comment`; `prepareForValidation` maakt lege parent_id null). Redirect naar `$post->url().'#reactie-{id}'` met flash. Auto-status via het model. Gekozen boven flat-met-post_id-in-body (tamper-oppervlak) en genest-onder-de-weergave-URL (dubbele routes + binding-overlap).
 
+### 5.2.c — reistips-categorie-view op /reistips
+
+- **F5-91 Route + controller: indexTips() op de publieke PostController** — `reistips.index` op `/reistips` → `PostController@indexTips`, dat `index()` spiegelt: `published()` + `whereHas('categories', slug='tips')` + dezelfde eager-loads + `orderByDesc('published_at')` + `paginate(12)->withQueryString()`. Gekozen boven een aparte controller (F5-78 koos bewust één publieke PostController; tweede controller voor één lees-view is overkill) en boven een getakte `index()` (vermengt twee verantwoordelijkheden). Route als named één-segment-route pal vóór `reistips.show`, en daarmee vóór een toekomstige `/{page:slug}`-catch-all (loose-end).
+
+- **F5-92 Index-layout: hergebruik post-card + post-grid** — nieuwe view `reistips/index.blade.php` spiegelt `posts/index.blade.php` (section-label + section-title + intro-placeholder + grid + paginering + empty-state) en hergebruikt `.post-grid` + `<x-public.post-card>` + de `.posts-index`-wrapperstyling. Geen eigen tip-kaart: de post-card handelt de null-destination al af (`@if ($post->destination)` → meta-regel valt weg bij algemene tips, verschijnt bij de bestemming-gebonden). DRY en visueel consistent met `/verhalen`.
+
+- **F5-93 Groepering: één chronologisch grid** — alle tips door elkaar, nieuwste `published_at` eerst, geen bestemming-gebonden-vs.-algemeen-splitsing. Spiegelt F5-76 (index als neutraal archief). Het bestemming-onderscheid blijft zichtbaar via de destination-meta op de kaart; twee half-lege secties (3 vs. 2 tips) oogden dun. Schaalt vanzelf mee bij groei.
+
+- **F5-94 Tips geweerd uit /verhalen** — `index()` kreeg `whereDoesntHave('categories', slug='tips')`. `/verhalen` = reisverslagen, `/reistips` = tips: schone scheiding conform de nav-split (F5-3) en de canonieke-URL-intentie (F5-72), nu `/reistips` de tips-thuisbasis is. Raakt F5-76's "neutraal archief"-framing bewust — voorkeur ging naar geen overlap tussen twee neutrale archieven. `index()` en `indexTips()` staan naast elkaar: alleen `whereDoesntHave` vs. `whereHas` + view verschillen, zodat beide grenzen leesbaar blijven.
+
+- **F5-95 Nav + breadcrumb levend** — de "Reistips"-nav-link was al gebouwd (F5-79) met `href="/reistips"` + active-state `reistips*`; alleen de route ontbrak, dus nav vergde geen edit. De niet-klikbare "Reistips"-breadcrumb-kruimel op de tip-detail (F5-83) kreeg een `url` naar `route('reistips.index')` en is nu een echte link — daarmee is F5-83 afgemaakt.
+
+- **F5-96 Cross-linking destination-detail → tips (2e commit)** — `DestinationController@show` laadt de gepubliceerde tips van die bestemming; `destinations/show.blade.php` toont ze in een strook "Reistips voor deze reis" tussen de locations-strook en de terug-CTA, via `<x-public.post-card>` die naar de canonieke `/reistips/{slug}` linkt (`$post->url()`, F5-72). Géén cap (nut-strook, geen teaser — alle praktische tips voor die reis horen zichtbaar; aantallen zijn klein), verborgen bij 0 tips. Sluit de loose-end die sinds F5-72 open stond. Nieuw `.destination-detail__tips`-klasje in `_destinations-show.scss`, spiegelt de padding van `.destination-detail__locations`.
+
 ## Herbruikbare admin-componenten
 Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 
@@ -520,8 +536,14 @@ _Toevoegingen uit 5.2.b:_
 - `.post-detail__related` (F5-85) — gerelateerde-posts-strook op `--color-surface`, hergebruikt `.post-grid` + `<x-public.post-card>`.
 - `<x-public.comment :comment="$comment">` (F5-86) — één reactie: avatar-initialen + meta + tekst (`nl2br(e())`) + pending-badge; `$slot` voor reply-toggle/-form (alleen top-level meegegeven).
 - `<x-public.comment-form :post :parent>` (F5-90) — herbruikbaar reactieformulier (top-level + reply), `@honeypot`, error-bag `comment`, `route('comments.store', $post)`.
-- `App\Http\Controllers\CommentController@store` + `App\Http\Requests\StoreCommentRequest` (F5-90) — publieke comment-write-path. `PostController::visibleComments()` + `relatedPosts()` (F5-85/F5-87). Comments-SCSS (`.post-comments`, `.comment__*`, `.comment-form`) ---
-in `_posts-show.scss`.
+- `App\Http\Controllers\CommentController@store` + `App\Http\Requests\StoreCommentRequest` (F5-90) — publieke comment-write-path. `PostController::visibleComments()` + `relatedPosts()` (F5-85/F5-87). Comments-SCSS (`.post-comments`, `.comment__*`, `.comment-form`) in `_posts-show.scss`.
+
+_Toevoegingen uit 5.2.c:_
+- `PostController::indexTips()` (F5-91) — publieke reistips-index op `/reistips`; spiegelt `index()` met `whereHas('categories', slug='tips')`. `index()` weert nu tips (`whereDoesntHave`, F5-94).
+- Route `reistips.index` (`/reistips`, F5-91) — named één-segment-route pal vóór `reistips.show`; moet vóór een toekomstige `/{page:slug}`-catch-all blijven.
+- `resources/views/reistips/index.blade.php` (F5-92/F5-93) — hergebruikt `.post-grid` + `<x-public.post-card>` + `.posts-index`-styling; één chronologisch grid, intro-placeholder met TODO (Martin verfijnt later).
+- `.destination-detail__tips` (F5-96) — tips-strook op destination-detail (tussen locations en terug-CTA), hergebruikt `.post-grid` + `<x-public.post-card>`. In `_destinations-show.scss`.
+---
 
 ## Landmines & patronen — volgende sessie wakker schudden
 
@@ -660,6 +682,7 @@ in `_posts-show.scss`.
 - **FormRequest onder de verkeerde namespace/map = `ReflectionException` "Class ... does not exist".** `StoreCommentRequest` belandde eerst in `app\Http\Requests\Admin\` terwijl de controller `App\Http\Requests\StoreCommentRequest` type-hintte — PSR-4 map ≠ namespace, dus Composer vond de class niet en de POST gaf een 500 (de GET-pagina rendert wél, want die raakt de class niet). Fix: bestand naar `app\Http\Requests\` verplaatsen + `namespace App\Http\Requests;`. Reflex bij "Class ... does not exist" op een net-toegevoegde class: check of map en namespace matchen.
 - **Honeypot staat in tests default AAN.** `phpunit.xml` zet geen `HONEYPOT_ENABLED`, dus `config('honeypot.enabled')` is `true` in de suite en `ProtectAgainstSpam` draait mee. Zet 'm per test-file uit met `config(['honeypot.enabled' => false])` in `beforeEach` zodat je de eigen logica toetst. Een "honeypot blokkeert spam"-test is bros door `randomize_name_field_name` (onvoorspelbare veldnaam) — die werking leunt op Spatie's eigen suite + browser-verificatie.
 - **De publieke layout rendert geen globale flash.** `layouts.public` heeft geen flash-partial (anders dan admin). Publieke flash moet je zelf renderen — de comment-flow toont `session('comment_success')` scoped in de comments-sectie (past ook bij het `#reactie-{id}`-anker). Latere publieke flows die flash nodig hebben: overweeg een publieke flash-partial in `layouts.public`, of render scoped.
+- **`/verhalen` en `/reistips` delen het Post-model maar zijn wederzijds exclusief gefilterd (F5-94).** `index()` weert tips (`whereDoesntHave('categories', slug='tips')`), `indexTips()` toont alleen tips (`whereHas`). Bij de uitgestelde categorie/tag-index (F5-76) deze twee grenzen consistent houden zodat content niet in twee neutrale archieven tegelijk opduikt.
 
 ## Roadmap — fase-status
 
@@ -687,10 +710,10 @@ in `_posts-show.scss`.
 | **5.2.0**    | Blocker-chore: `scopePublished()` + post-content-verrijking + reistips-seeding     | 595 → 595 | ✅     |
 | **5.2.a**    | Publieke blog-index `/verhalen` + post-detail-fundament + `url()`-helper           | 595 → 614 | ✅     |
 | **5.2.b**    | Post-detail afmaken (hero, breadcrumb, SEO) + comments (threaded + honeypot)       | 614 → 633 | ✅     |
-| **5.2.c**    | Reistips-categorie-view `/reistips`                                                |           | ⏳     |
+| **5.2.c**    | Reistips-categorie-view `/reistips` + cross-linking destination → tips             | 633 → 644 | ✅     |
 | **5.3**      | Routes + fotogalerij                                                               |           | ⏳     |
 | **5.4**      | Auteurs + statische pagina's                                                       |           | ⏳     |
 | **5.5**      | Newsletter + contact                                                               |           | ⏳     |
 | **5.6**      | Eindcheck + `fase-5-bouwplan.md` schrijven                                         |           | ⏳     |
 
-**Totaal suite-status:** 633 groen (1568 assertions).
+**Totaal suite-status:** 644 groen (1597 assertions).
