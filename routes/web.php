@@ -5,6 +5,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\RouteController;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +48,11 @@ Route::get('/reisroutes', [RouteController::class, 'index'])
 // Route-detail (5.3.a kaal, 5.3.b compleet met Leaflet + notes + cross-links).
 Route::get('/reisroutes/{route:slug}', [RouteController::class, 'show'])
     ->name('reisroutes.show');
+
+// --- Publieke fotogalerij (5.3.c) ---
+// Named één-segment-route, vóór een toekomstige /{page:slug}-catch-all.
+Route::get('/fotos', [PhotoController::class, 'index'])
+    ->name('fotos.index');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/mijn-account', [AccountController::class, 'show'])->name('account.show');

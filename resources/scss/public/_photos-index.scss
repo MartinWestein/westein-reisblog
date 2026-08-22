@@ -1,0 +1,202 @@
+// resources/scss/public/_photos-index.scss
+// Publieke fotogalerij /fotos (5.3.c): bestemming/locatie-filter-pills +
+// uniform 3:2 foto-grid. Lightbox-styling komt in 5.3.c-ii.
+
+.photos-index {
+  padding: var(--space-5) 0;
+  background-color: var(--color-bg);
+}
+
+.photos-index__intro {
+  max-width: 640px;
+  margin-bottom: var(--space-4);
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--color-text);
+}
+
+.photo-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: var(--space-3);
+  &--sub {
+    margin-bottom: var(--space-4);
+  }
+}
+
+.photo-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  transition: background-color 0.15s ease, color 0.15s ease;
+  &:hover,
+  &:focus {
+    background-color: color-mix(in oklab, var(--color-accent-1) 20%, var(--color-surface));
+    color: var(--color-text);
+  }
+  &.is-active {
+    background-color: var(--color-accent-1);
+    color: #fff;
+  }
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  @media (max-width: 991.98px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  @media (max-width: 575.98px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.photo-grid__item {
+  display: block;
+  overflow: hidden;
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-md);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+.photo-grid__image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+
+.photos-index__empty {
+  margin-top: var(--space-4);
+  color: var(--color-muted);
+}
+
+// --- Lightbox (5.3.c-ii) ---
+.photo-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.photo-lightbox__backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(20, 33, 61, 0.92);
+}
+
+.photo-lightbox__figure {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  max-width: min(1100px, 92vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.photo-lightbox__image {
+  display: block;
+  max-width: 100%;
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+}
+
+.photo-lightbox__caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.photo-lightbox__location-link {
+  color: var(--color-accent-1);
+  text-decoration: none;
+  font-weight: 600;
+  &:hover,
+  &:focus {
+    color: #fff;
+    text-decoration: underline;
+  }
+}
+
+.photo-lightbox__close,
+.photo-lightbox__nav {
+  position: absolute;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  &:hover,
+  &:focus {
+    background-color: rgba(255, 255, 255, 0.25);
+  }
+}
+
+.photo-lightbox__close {
+  top: var(--space-3);
+  right: var(--space-3);
+}
+
+.photo-lightbox__nav--prev {
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.photo-lightbox__nav--next {
+  right: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+@media (max-width: 575.98px) {
+  .photo-lightbox__nav {
+    top: auto;
+    bottom: var(--space-3);
+    transform: none;
+  }
+  .photo-lightbox__nav--prev {
+    left: var(--space-4);
+  }
+  .photo-lightbox__nav--next {
+    right: var(--space-4);
+  }
+}
+
+// Scroll-lock terwijl de lightbox open is.
+body.has-lightbox-open {
+  overflow: hidden;
+}
