@@ -603,6 +603,8 @@ class DemoContentSeeder extends Seeder
                 'slug' => 'italie-roadtrip-2024',
                 'description' => 'Drie weken door Toscane, Lazio en Veneto.',
                 'travel_date' => '2024-07-15',
+                'is_published' => true,
+                'published_at' => '2024-07-15',
             ]);
             $italyRoute->locations()->attach([
                 $locations[0]->id => ['order' => 1, 'notes' => 'Start in Rome'],
@@ -617,6 +619,8 @@ class DemoContentSeeder extends Seeder
                 'slug' => 'highlands-tour-2023',
                 'description' => 'Tien dagen door de Schotse Highlands.',
                 'travel_date' => '2023-08-10',
+                'is_published' => true,
+                'published_at' => '2023-08-10',
             ]);
             $scotRoute->locations()->attach([
                 $locations[3]->id => ['order' => 1, 'notes' => 'Start in Edinburgh'],
@@ -631,6 +635,8 @@ class DemoContentSeeder extends Seeder
                 'slug' => 'slovenie-meren-tour-2024',
                 'description' => 'Een week rond de mooiste meren van de Julische Alpen.',
                 'travel_date' => '2024-06-10',
+                'is_published' => true,
+                'published_at' => '2024-06-10',
             ]);
             $sloRoute->locations()->attach([
                 $locations[6]->id => ['order' => 1, 'notes' => 'Aankomst in Ljubljana'],
@@ -644,6 +650,8 @@ class DemoContentSeeder extends Seeder
                 'slug' => 'canarische-eilandhoppen-2024',
                 'description' => 'Twee eilanden vergelijken: Tenerife en Lanzarote.',
                 'travel_date' => '2024-02-15',
+                'is_published' => true,
+                'published_at' => '2024-02-15',
             ]);
             $canaryRoute->locations()->attach([
                 $locations[8]->id => ['order' => 1, 'notes' => 'Vlucht naar Tenerife'],
@@ -657,6 +665,8 @@ class DemoContentSeeder extends Seeder
                 'slug' => 'duitsland-camperreis-2022',
                 'description' => 'Van hoofdstad naar de dennenbossen met de camper.',
                 'travel_date' => '2022-08-05',
+                'is_published' => true,
+                'published_at' => '2022-08-05',
             ]);
             $duiRoute->locations()->attach([
                 $locations[10]->id => ['order' => 1, 'notes' => 'Start in Berlijn'],
@@ -670,6 +680,8 @@ class DemoContentSeeder extends Seeder
                 'slug' => 'amerikaanse-oostkust-2019',
                 'description' => 'Van New York naar Miami — tien dagen langs de oostkust.',
                 'travel_date' => '2019-07-20',
+                'is_published' => true,
+                'published_at' => '2019-07-20',
             ]);
             $usaRoute->locations()->attach([
                 $locations[12]->id => ['order' => 1, 'notes' => 'Landen in New York'],
