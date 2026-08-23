@@ -21,3 +21,17 @@
         a { color: var(--color-accent-1); }
     }
 }
+
+// Contactformulier (5.4.b-ii)
+
+.contact-page {
+    .static-page__body { margin-bottom: var(--space-4); }
+}
+
+.contact-form {
+    max-width: 640px;
+
+    &__field { margin-bottom: var(--space-3); }
+    &__success { margin-bottom: var(--space-4); }
+    &__submit { margin-top: var(--space-2); }
+}

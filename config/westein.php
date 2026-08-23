@@ -61,6 +61,16 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Contact
+    |--------------------------------------------------------------------------
+    | Ontvanger van contactformulier-berichten (F5-113). Mail-only, queued.
+    */
+    'contact' => [
+        'recipient' => env('CONTACT_RECIPIENT', 'website.support@ml-westein.nl'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Nieuwsbrief
     |--------------------------------------------------------------------------
     | Knoppen voor de nieuwsbrief-rendering en -dispatch. Houd hier ook

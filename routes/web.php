@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuthorController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocationController;
@@ -60,6 +61,12 @@ Route::get('/fotos', [PhotoController::class, 'index'])
 // Named routes, vóór een toekomstige /{page:slug}-catch-all (5.4.b).
 Route::get('/over-ons', [AuthorController::class, 'overview'])->name('about');
 Route::get('/auteurs/{familyMember:slug}', [AuthorController::class, 'show'])->name('authors.show');
+
+// --- Contact (5.4.b-ii) ---
+Route::get('/contact', [ContactController::class, 'show'])->name('contact');
+Route::post('/contact', [ContactController::class, 'send'])
+    ->middleware(['throttle:6,1', ProtectAgainstSpam::class])
+    ->name('contact.send');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/mijn-account', [AccountController::class, 'show'])->name('account.show');
