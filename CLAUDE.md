@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 23 augustus 2026 — Fase 5.4 volledig afgerond: auteurs (`/auteurs/{slug}`) + Over ons (`/over-ons`), statische pagina's via catch-all (`/{page:slug}`, Privacy) en een open contactformulier (`/contact`, honeypot + throttle, mail-only). Suite 682 groen (1700 assertions). Lokaal + origin/main op commit `b726b56`.
+**Laatst bijgewerkt:** 23 augustus 2026 — Fase 5.5 volledig afgerond: publieke nieuwsbrief-aanmelding met double-opt-in (`/nieuwsbrief`, `/nieuwsbrief/bevestigen/{token}`) + publieke unsubscribe (`/nieuwsbrief/uitschrijven/{token}`, sluit F4-N11). Leunt volledig op de bestaande datalaag + Actions uit Fase 4; geen model-/migratie-/action-werk. Suite 693 groen (1750 assertions). Lokaal op `51e2406` (5.5.a `e219179`, 5.5.b `51e2406`).
 **Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
 **Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → `fase-4-bouwplan.md`. Fase 5 → wordt na afronding van alle Fase-5-stappen in één keer geschreven (F5-1), niet incrementeel.
 
@@ -43,9 +43,13 @@ Fase 4 volledig afgerond en gemerged naar main (Stap 4.14).
   - **5.4.b-i** (`1ed0628`) — statische pagina's via catch-all `/{page:slug}` (single-segment, sluit `reserved_slugs` uit via lookahead-constraint) + `Page::isPublished()`. F5-111. Suite 673 → 679.
   - **5.4.b-ii** (`b726b56`) — open contactformulier `/contact` (honeypot + throttle, `ContactMail` queued, mail-only). F5-112/F5-113. Suite 679 → 682.
 
-- **Volgende: Fase 5.5** — newsletter + publieke unsubscribe. Contact is al in 5.4.b-ii geleverd, dus 5.5 = publieke nieuwsbrief-aanmelding (Subscriber double-opt-in, F4-17) + unsubscribe-route (`/nieuwsbrief/uitschrijven/{token}`, F4-N11).
+- **Fase 5.5 volledig afgerond** — publieke nieuwsbrief-kant (contact was al in 5.4.b):
+  - **5.5.a** (`e219179`) — publieke aanmelding + double-opt-in-bevestiging: `GET/POST /nieuwsbrief` (throttle:6,1 + honeypot) + `GET /nieuwsbrief/bevestigen/{token}`, unique-loze `SubscribeRequest`, publieke `NewsletterSubscriptionController` (show/store/confirm), eigen resultaatpagina's, footer-link. Leunt op bestaande `SubscribeAction`/`SendConfirmationMailAction`/`ConfirmSubscriptionAction`. Sluit de confirm-placeholder die de admin-mail al gebruikte. F5-117 t/m F5-122. Suite 682 → 690.
+  - **5.5.b** (`51e2406`) — publieke unsubscribe: `GET /nieuwsbrief/uitschrijven/{token}` + `unsubscribe()` + eigen resultaatpagina, leunt op bestaande `UnsubscribeAction` (idempotent). Sluit F4-N11 (testmail-footer-placeholder landt nu netjes i.p.v. 404). F5-123. Suite 690 → 693.
 
-State-check volgende sessie: `git log --oneline -6` (verwacht `b726b56` of de CLAUDE.md-docs-commit daarboven, clean), `git status` (clean), `php artisan test` (verwacht 682). **Let op:** er staat nu een catch-all `/{page:slug}` (fallback voor statische pagina's) als laatste route — nieuwe publieke één-segment-routes moeten ná registratie ook in `config('westein.reserved_slugs')` (anders blokkeert F4-11 niet, en is een gelijknamige pagina onbereikbaar).
+- **Volgende: Fase 5.6** — eindcheck + `fase-5-bouwplan.md` schrijven (F5-1). Kandidaat-cleanups (flash-key-inconsistentie, lege `resources/views/public/`-dir, Tailwind uit `package.json`, Sass-`@use`-migratie) staan bij de loose-ends; in 5.6 besluiten wat mee gaat vs. Fase 6.
+
+State-check volgende sessie: `git log --oneline -6` (verwacht `51e2406` of de CLAUDE.md-docs-commit daarboven, clean), `git status` (clean), `php artisan test` (verwacht 693). **Let op:** er staat nu een catch-all `/{page:slug}` (fallback voor statische pagina's) als laatste route — nieuwe publieke één-segment-routes moeten ná registratie ook in `config('westein.reserved_slugs')` (anders blokkeert F4-11 niet, en is een gelijknamige pagina onbereikbaar).
 
 ## Loose ends
 
@@ -76,9 +80,12 @@ Opgelost in Fase 5.4:
 - ~~Contact dode nav-link~~ (5.4.b — laatste dode nav-link nu levend).
 - ~~Catch-all-volgorde-waarschuwing~~ — opgelost én gecorrigeerd: de oude aanname ("catch-all als láátste vóór de auth-groep") klopte niet, want `admin.php` laadt ná `web.php`. Nu een single-segment GET-catch-all die `reserved_slugs` uitsluit via een lookahead-constraint (F5-111). Zie landmines.
 
+Opgelost in Fase 5.5:
+- ~~Publieke unsubscribe-route `/nieuwsbrief/uitschrijven/{token}` (F4-N11)~~ (5.5.b — live, testmail-placeholder landt nu netjes).
+- ~~Confirm-route-placeholder in `SubscriberConfirmationMail`~~ (5.5.a — `/nieuwsbrief/bevestigen/{token}` live, admin-verzonden bevestigingsmail werkt end-to-end).
+
 Nog open:
 - **Destination-brede post-URL (2-segment) uitgesteld** (F5-74) — `/bestemmingen/{dest}/{slug}` botst structureel met `locations.show` en komt niet voor in de data (elke niet-tip-post heeft een location). Later toe te voegen via gedeelde-route-resolver (met slug-namespace-validatie) of onderscheidend segment, zónder F5-74 terug te draaien. `url()` faalt luid als het geval ooit optreedt.
-- **Publieke unsubscribe-route** `/nieuwsbrief/uitschrijven/{token}` (F4-N11) — landt in 5.5 (newsletter + contact).
 - **Hero-intro-tekst verfijnen** in `home.blade.php` + intro op `/verhalen`-index — placeholders met TODO gemarkeerd. Martin verfijnt later.
 - **Flash-key inconsistentie in admin-controllers** — `RouteController` gebruikt `->with('success', ...)`, andere (Destination, Location, Comment) gebruiken `->with('status', ...)`. De `admin._partials.flash`-partial rendert alleen `success/error/info/warning`, dus `status`-flash-messages worden nooit getoond. Fix in Fase 6-cleanup: kies één convention en migreer alle controllers.
 - **Lege `resources/views/public/`-directory** — vermoedelijk Fase 1-scaffolding-restant. Alle publieke views leven in `resources/views/{destinations,locations,posts}/`, `home.blade.php`, en `partials/`. Kandidaat voor 5.6 eindcheck-cleanup.
@@ -525,6 +532,22 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 
 - **F5-116 5.4.0 blocker-chore: content + seeder-consolidatie** — FamilyMember-bio's en Page-body's waren Lorem (`fake()->paragraph`/`paragraphs`, F5-32-valkuil) → echte NL. Plus: er draaiden **twee** FamilyMember-seeders (`DemoContentSeeder` keyt op slug, los `FamilyMemberSeeder` op naam) → 8 i.p.v. 4 familieleden. `FamilyMemberSeeder` verwijderd uit `DatabaseSeeder` + bestand opgeruimd; familie enkel nog via `DemoContentSeeder` (4 leden, jan/marieke gekoppeld aan User). Data-only. Commit `7281f52`.
 
+### 5.5 — Newsletter + publieke unsubscribe
+
+- **F5-117 Sub-blok-opdeling 5.5** — twee sub-blokken: 5.5.a (publieke aanmelding + double-opt-in-bevestiging) en 5.5.b (unsubscribe). Contact was al in 5.4.b-ii geleverd, dus 5.5 is puur de nieuwsbrief-kant. **Géén 5.5.0 content-chore**: er is geen publiek-zichtbare seeder-data (abonnees worden nergens getoond), alleen inline UI-copy in de views. **Géén model-/migratie-/action-werk**: de datalaag (Subscriber met `confirmation_token`/`confirmed_at`/`unsubscribe_token`/`unsubscribed_at`, auto-token-generatie in `booted()`, status-afleiding + scopes) én de vier Actions (`SubscribeAction`, `ConfirmSubscriptionAction`, `UnsubscribeAction`, `SendConfirmationMailAction`) bestonden al F4-17-compleet uit Fase 4. 5.5 = publieke routes + controller + één Form Request + views + tests.
+
+- **F5-118 Plaatsing aanmeldformulier** — eigen `/nieuwsbrief`-pagina (spiegelt `/contact`), footer-link in de Info-kolom, **géén hoofdnav-item** (nav zit al vol op 7 items; een nieuwsbrief-aanmelding hoort per webconventie in de footer). `nieuwsbrief` stond al in `reserved_slugs` → de single-segment catch-all `/{page:slug}` kaapt 'm niet; de 2/3-segment confirm/unsubscribe-routes sowieso niet. Publieke routes staan vóór de catch-all in `web.php`. Gekozen boven een site-brede footer-strook (site-brede form-complexiteit + flash op elke pagina) en een homepage-blok (minder canoniek thuis voor de confirm/unsubscribe-landingspagina's).
+
+- **F5-119 Publieke SubscribeRequest is unique-loos** — aparte `App\Http\Requests\SubscribeRequest` (publiek, `authorize()=true`), bewust zónder de `Rule::unique` die de admin-`StoreSubscriberRequest` wél heeft: publiek weigeren op een duplicaat lekt e-mail-enumeratie ("dit adres bestaat al"). `email:rfc` zonder dns (F4-18), `prepareForValidation` normaliseert email (lowercase+trim) en naam (trim→null). Naam optioneel.
+
+- **F5-120 Anti-enumeratie in store()** — de controller toont ALTIJD dezelfde generieke "check je inbox"-melding, ongeacht of het adres nieuw, onbevestigd of al bevestigd is. Flow: `SubscribeAction->execute()` (idempotent) + `SendConfirmationMailAction->execute()` (skipt zelf al-bevestigd/uitgeschreven, dus naar een bevestigd adres gaat géén mail). **F4-17-nuance:** `SubscribeAction` zet een uitgeschreven adres bij publieke zelf-heraanmelding terug naar **pending** (`confirmed_at=null`, vers token) → verplichte herbevestiging. Dat is géén "silent reactivate" (die F4-17 verbiedt bij CSV-import) — de persoon meldt zich zélf opnieuw aan en moet opnieuw door double-opt-in. Twee verschillende paden, allebei AVG-correct.
+
+- **F5-121 Eigen resultaatpagina's voor confirm + unsubscribe** — geen redirect-met-flash: deze URL's worden vanuit een e-mail aangeklikt, niet vanaf de site, dus een eigen Blade-resultaatpagina leest beter. `newsletter/confirmed.blade.php` en `newsletter/unsubscribed.blade.php`, beide met een `$subscriber`-null-tak voor de neutrale foutmelding. **Confirm is one-shot** (`ConfirmSubscriptionAction` wist het token bij succes) → tweede klik = neutrale "ongeldig of al gebruikt". **Unsubscribe is idempotent** (`UnsubscribeAction` wist het token nóóit) → tweede klik = zelfde "je bent uitgeschreven"-pagina. De neutrale unsubscribe-tak biedt een contact-link (AVG: iemand die eruit wil maar een kapotte link heeft).
+
+- **F5-122 Spam/rate-limiting + scoped flash** — de POST `/nieuwsbrief` spiegelt contact (F5-113): `->middleware(['throttle:6,1', ProtectAgainstSpam::class])` (honeypot via `@honeypot` in de form). Scoped `newsletter_success`-flash (de publieke layout heeft geen globale flash-partial); de aanmeldpagina rendert 'm zelf. `reserved_slugs` was al compleet — geen wijziging nodig.
+
+- **F5-123 Sluit F4-N11 (5.5.b)** — `/nieuwsbrief/uitschrijven/{token}` is nu live. De newsletter-testmail-footer (F4-N11) linkt naar een 64-nullen-token; die landt nu op de neutrale "deze uitschrijflink werkt niet"-pagina i.p.v. 404. Impliciet sloot 5.5.a ook de confirm-placeholder: `SubscriberConfirmationMail` (die de admin via `send-confirmation`/`send-bulk-confirmations` al verstuurde) bouwde al een `confirmUrl` naar `/nieuwsbrief/bevestigen/{token}` die tot nu 404'de — de bevestigingsknop werkt nu end-to-end.
+
 ## Herbruikbare admin-componenten
 Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 
@@ -631,6 +654,13 @@ _Toevoegingen uit 5.4:_
 - `config('westein.contact.recipient')` — ontvanger contactformulier (env `CONTACT_RECIPIENT`).
 - `reserved_slugs` uitgebreid met `verhalen`, `over-ons`, `contact`, `mijn-account`.
 
+_Toevoegingen uit 5.5:_
+- `App\Http\Controllers\NewsletterSubscriptionController` (publiek) — `show` (`/nieuwsbrief`), `store` (double-opt-in stap 1, anti-enumeratie), `confirm` (`/nieuwsbrief/bevestigen/{token}`), `unsubscribe` (`/nieuwsbrief/uitschrijven/{token}`). Leunt op de vier bestaande `Actions\Subscribers\*`.
+- `App\Http\Requests\SubscribeRequest` (publiek, unique-loos, `email:rfc` zonder dns) — F5-119.
+- Views: `newsletter/show` (form + intro + scoped `newsletter_success`-flash), `newsletter/confirmed`, `newsletter/unsubscribed` (beide eigen resultaatpagina met neutrale null-tak). SCSS-partial `_newsletter.scss` (`.newsletter-page`/`.newsletter-form`/`.newsletter-result`).
+- Routes: `newsletter.show` (GET `/nieuwsbrief`), `newsletter.subscribe` (POST `/nieuwsbrief`, throttle:6,1 + honeypot), `newsletter.confirm` (`/nieuwsbrief/bevestigen/{token}`), `newsletter.unsubscribe` (`/nieuwsbrief/uitschrijven/{token}`).
+- Footer: Nieuwsbrief-link in de Info-kolom.
+
 ---
 
 ## Landmines & patronen — volgende sessie wakker schudden
@@ -725,6 +755,7 @@ _Toevoegingen uit 5.4:_
 - **`@@extends`-mojibake compileert tot letterlijke `@extends`-output.** Blade behandelt `@@` als escape voor letterlijk `@`. Als je bij het plakken van een view per ongeluk een dubbele `@` op regel 1 krijgt (VS Code Blade-autocomplete + shift-select-fouten), rendert de hele view als plaintext — je krijgt geen layout, geen extends, gewoon de source-code als HTTP-response. Diagnose: `Format-Hex path\view.blade.php | Select-Object -First 2` — eerste bytes moeten `40 65` zijn (@e), niet `40 40 65` (@@e). Fix: verwijder de extra `@`. Kan óók gebeuren in `@section`, `@include` etc.
 - **PowerShell here-strings + `[System.IO.File]::WriteAllText` verwijderen lege regels in git-commit-messages.** Symptoom: commit-message opgeslagen correct qua inhoud (alle bullets aanwezig, geen data-verlies), maar de blank-line ná de titel-regel ontbreekt in `git log --format=%B`. Betekent dat GitHub-web-UI en andere tools titel + body als één blok tonen. Vermoedelijk normaliseert `WriteAllText`+`git commit -F` opeenvolgende newlines. Praktische workaround: in VS Code een `COMMIT_EDITMSG_TEMP.txt` editen met de gewenste layout, dan `git commit -F path`. Voor familieblog-schaal is dit cosmetisch en niet blokkerend — voor OSS-projecten met PR-reviews wel relevant.
 - **Streaming-race bij grote code-blokken tijdens copy-paste.** Symptoom: de gebruiker plakt een codeblok terwijl Claude nog aan het genereren is; de laatste regels ontbreken en het bestand krijgt een afgekapte versie. Blade-views produceren dan `syntax error, unexpected end of file`; PHP-classes zijn syntactisch invalid. Preventie: Claude eindigt grote codeblokken met een expliciete "einde-marker" (`--- EINDE VAN CODE-BLOK, veilig om te kopiëren ---`) of vraagt om bevestiging vóór verifiëren. Diagnose bij symptoom: `Get-Content path | Measure-Object -Line` + `Get-Content path | Select-Object -Last 10` om te zien of het bestand overtuigend eindigt (met `@endsection`, `}`, of ander verwacht slot-teken).
+- **Windows auto-gc lockt tijdens `git commit`.** Bij een grotere commit triggert git's `gc.auto` een repack; op Windows kan git de nu-lege `.git\objects\xx`-mapjes daarna niet verwijderen omdat een ander proces file-handles vasthoudt (meestal Defender real-time scan, soms VS Code's git-integratie/indexer). Symptoom: een lange stroom `Deletion of directory '.git/objects/xx' failed. Should I try again? (y/n)`. **De commit zélf slaagt** (objecten zitten al in de packfile) — alleen de gc-opruiming faalt. Antwoord de prompts met `n`, verifieer met `git fsck --full` (alleen "dangling"-meldingen = onschuldig). Preventie: `git config gc.auto 0` (solo-repo; draai af en toe handmatig `git gc`) of `.git` uitsluiten van Defender real-time scanning. Achtergebleven lege object-mapjes zijn onschadelijk.
 
 ### Spatie + framework-defaults
 - **`storage/media-library/`** hoort in `.gitignore`. Spatie schrijft tijdelijke conversion-kopieën onder random hash-paden; bij crashes of `->queued()` zonder running worker blijven die liggen.
@@ -823,7 +854,8 @@ _Toevoegingen uit 5.4:_
 | **5.4.a**    | Auteurs `/auteurs/{slug}` + Over ons `/over-ons`                                   | 665 → 673 | ✅     |
 | **5.4.b-i**  | Statische pagina's via catch-all `/{page:slug}`                                    | 673 → 679 | ✅     |
 | **5.4.b-ii** | Contactformulier `/contact` (honeypot + throttle, mail-only)                       | 679 → 682 | ✅     |
-| **5.5**      | Newsletter + publieke unsubscribe                                                  |           | ⏳     |
+| **5.5.a**    | Nieuwsbrief-aanmelding + double-opt-in-bevestiging (`/nieuwsbrief`)                | 682 → 690 | ✅     |
+| **5.5.b**    | Publieke unsubscribe `/nieuwsbrief/uitschrijven/{token}` (sluit F4-N11)            | 690 → 693 | ✅     |
 | **5.6**      | Eindcheck + `fase-5-bouwplan.md` schrijven                                         |           | ⏳     |
 
-**Totaal suite-status:** 682 groen (1700 assertions).
+**Totaal suite-status:** 693 groen (1750 assertions).
