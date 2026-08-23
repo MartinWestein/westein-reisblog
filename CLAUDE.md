@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 22 augustus 2026 — Fase 5.3 volledig afgerond: publieke reisroutes (`/reisroutes` index + detail met Leaflet-polylijn) en fotogalerij (`/fotos` met progressive filters + eigen Alpine-lightbox). Suite 665 groen (1653 assertions). Lokaal + origin/main op commit `b6f00fa`.
+**Laatst bijgewerkt:** 23 augustus 2026 — Fase 5.4 volledig afgerond: auteurs (`/auteurs/{slug}`) + Over ons (`/over-ons`), statische pagina's via catch-all (`/{page:slug}`, Privacy) en een open contactformulier (`/contact`, honeypot + throttle, mail-only). Suite 682 groen (1700 assertions). Lokaal + origin/main op commit `b726b56`.
 **Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
 **Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → `fase-4-bouwplan.md`. Fase 5 → wordt na afronding van alle Fase-5-stappen in één keer geschreven (F5-1), niet incrementeel.
 
@@ -37,9 +37,15 @@ Fase 4 volledig afgerond en gemerged naar main (Stap 4.14).
   - **5.3.b** (`aee7a77`) — route-detail compleet: `leaflet-route.js` (genummerde markers + polylijn), waypoint-links + notes, bestemming-link, "Verhalen van deze reis"-strook. F5-104/F5-105. Suite 655 → 659.
   - **5.3.c** (`b6f00fa`) — `/fotos`-galerij: progressive bestemming/locatie-pills, uniform 3:2-grid, eigen Alpine-lightbox (`photo-lightbox.js`). F5-106/F5-107. Suite 659 → 665.
 
-- **Volgende: Fase 5.4** — auteurs + statische pagina's.
+- **Fase 5.4 volledig afgerond** — auteurs + statische pagina's:
+  - **5.4.0** (blocker-chore, `7281f52`) — FamilyMember-bio's + Page-body's (over-ons/privacy/contact) van Lorem naar echte NL; dubbele FamilyMember-seeder geconsolideerd (8 → 4 leden). F5-116. Data-only, suite 665.
+  - **5.4.a** (`90527a0`) — `/auteurs/{familyMember:slug}` (naam/rol/bio + initialen-avatar + gepagineerde verhalenlijst bij gekoppelde auteurs) + `/over-ons` (Page-intro + FamilyMembers-grid) + `<x-public.avatar>`. F5-109/F5-110/F5-114/F5-115. Suite 665 → 673.
+  - **5.4.b-i** (`1ed0628`) — statische pagina's via catch-all `/{page:slug}` (single-segment, sluit `reserved_slugs` uit via lookahead-constraint) + `Page::isPublished()`. F5-111. Suite 673 → 679.
+  - **5.4.b-ii** (`b726b56`) — open contactformulier `/contact` (honeypot + throttle, `ContactMail` queued, mail-only). F5-112/F5-113. Suite 679 → 682.
 
-State-check volgende sessie: `git log --oneline -6` (verwacht `b6f00fa` of de CLAUDE.md-docs-commit daarboven, clean), `git status` (clean), `php artisan test` (verwacht 665). Oriëntatie 5.4: FamilyMembers (`/auteurs/{slug}`, "Over ons") + Pages (Over ons/Privacy/Contact). **Let op de catch-all-volgorde**: een eventuele Pages-`/{page:slug}` moet als láátste vóór de auth-groep, ná álle named één-segment-routes (`/verhalen`, `/reistips`, `/reisroutes`, `/fotos`) — anders vangt 'ie die weg. Contact is nu nog de enige dode nav-link.
+- **Volgende: Fase 5.5** — newsletter + publieke unsubscribe. Contact is al in 5.4.b-ii geleverd, dus 5.5 = publieke nieuwsbrief-aanmelding (Subscriber double-opt-in, F4-17) + unsubscribe-route (`/nieuwsbrief/uitschrijven/{token}`, F4-N11).
+
+State-check volgende sessie: `git log --oneline -6` (verwacht `b726b56` of de CLAUDE.md-docs-commit daarboven, clean), `git status` (clean), `php artisan test` (verwacht 682). **Let op:** er staat nu een catch-all `/{page:slug}` (fallback voor statische pagina's) als laatste route — nieuwe publieke één-segment-routes moeten ná registratie ook in `config('westein.reserved_slugs')` (anders blokkeert F4-11 niet, en is een gelijknamige pagina onbereikbaar).
 
 ## Loose ends
 
@@ -60,13 +66,18 @@ Opgelost in Fase 5.2:
 - ~~Home-item in blog-nav wel/niet houden~~ (F5-79 — blijft; "Verhalen" toegevoegd tussen Bestemmingen en Reistips)
 - ~~Post-hero `large`-conversie ontbreekt~~ — de `featured`-media-collectie op Post registreert alleen `thumb` (400) + `medium` (800), geen `large`. Voor een edge-to-edge post-hero (5.2.b) zit het plafond op 800px, wat op 1440+ viewports upscalet. Afwegen in 5.2.b: `large`-conversie toevoegen (migratie-vrij, maar vereist re-conversie van bestaande media) of hero-breedte beperken.
 - ~~Cross-linking destination-detail → tips~~ (5.2.c-ii — tips-strook "Reistips voor deze reis" op destination-detail, F5-96)
+
 Opgelost in Fase 5.3:
 - ~~Reisroutes + Foto's dode nav-links~~ (5.3.a/5.3.c — `/reisroutes` en `/fotos` zijn nu levende routes; alleen Contact blijft dood tot 5.4).
 - ~~Route.hero ↔ Location.gallery conversie-mismatch ("alignen we tijdens views-stap")~~ (F5-103 — Route.hero-conversies hernoemd naar thumb/medium/large).
 
+Opgelost in Fase 5.4:
+- ~~Pages-routing bestaat nog niet~~ (5.4 — `/over-ons` eigen route, Privacy via catch-all `/{page:slug}`, Contact eigen route + formulier).
+- ~~Contact dode nav-link~~ (5.4.b — laatste dode nav-link nu levend).
+- ~~Catch-all-volgorde-waarschuwing~~ — opgelost én gecorrigeerd: de oude aanname ("catch-all als láátste vóór de auth-groep") klopte niet, want `admin.php` laadt ná `web.php`. Nu een single-segment GET-catch-all die `reserved_slugs` uitsluit via een lookahead-constraint (F5-111). Zie landmines.
+
 Nog open:
 - **Destination-brede post-URL (2-segment) uitgesteld** (F5-74) — `/bestemmingen/{dest}/{slug}` botst structureel met `locations.show` en komt niet voor in de data (elke niet-tip-post heeft een location). Later toe te voegen via gedeelde-route-resolver (met slug-namespace-validatie) of onderscheidend segment, zónder F5-74 terug te draaien. `url()` faalt luid als het geval ooit optreedt.
-- **Pages-routing bestaat nog niet** — `/over-ons`, `/contact`, `/privacy` (Pages in de seeder) hebben geen publieke route; Contact is de enige resterende dode nav-link. Landt in 5.4. Aandachtspunt: de named één-segment-routes zijn nu `/verhalen`, `/reistips`, `/reisroutes`, `/fotos` — een toekomstige Pages-catch-all `/{page:slug}` moet als láátste vóór de auth-groep in `routes/web.php`, ná al deze, anders vangt de catch-all ze weg.
 - **Publieke unsubscribe-route** `/nieuwsbrief/uitschrijven/{token}` (F4-N11) — landt in 5.5 (newsletter + contact).
 - **Hero-intro-tekst verfijnen** in `home.blade.php` + intro op `/verhalen`-index — placeholders met TODO gemarkeerd. Martin verfijnt later.
 - **Flash-key inconsistentie in admin-controllers** — `RouteController` gebruikt `->with('success', ...)`, andere (Destination, Location, Comment) gebruiken `->with('status', ...)`. De `admin._partials.flash`-partial rendert alleen `success/error/info/warning`, dus `status`-flash-messages worden nooit getoond. Fix in Fase 6-cleanup: kies één convention en migreer alle controllers.
@@ -494,6 +505,26 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 
 - **F5-107 Foto-filtering: progressive pills (5.3.c)** — bestemming-pills + locatie-sub-pills (verschijnen bij een actieve bestemming), querystring `?bestemming=&locatie=` server-side (F4-2). Realiseert de masterplan-filter (bestemming/locatie) volledig. Foto-bron = location-`gallery`-collecties (F5-28), query via Locations zodat elke foto z'n location+destination-context draagt. Uniform 3:2-grid, lazy-loaded, geen paginering. `PhotoController` (publiek, niet-`Admin`-namespace), route `fotos.index` op `/fotos`. Ongeldige bestemming-slug valt netjes terug op alles.
 
+### 5.4 — Auteurs + statische pagina's
+
+- **F5-108 Sub-blok-opdeling 5.4** — drie sub-blokken: 5.4.0 (blocker-chore), 5.4.a (auteurs + Over ons), 5.4.b (statische pagina's + catch-all + contactformulier, intern in twee commits b-i/b-ii). Chore apart = schone data/code-scheiding (5.2.0/5.3.0-precedent); catch-all + contact-write-path geïsoleerd van de auteurs-pagina's.
+
+- **F5-109 Auteurs op FamilyMember** — `/auteurs/{familyMember:slug}` voor álle 4 familieleden (alleen FamilyMember heeft een slug; `FamilyMember.user_id` overbrugt naar de User met de posts). `FamilyMember.bio` is de bio-bron (niet `User.bio` — vermijdt een dubbele bron). Verhalen-strook alleen bij aan-User-gekoppelde leden (Jan, Marieke); Sophie/Tim krijgen dezelfde pagina zonder strook. Gekozen boven "alleen gekoppelde leden klikbaar" (inconsistente grid) en "puur op Users" (User heeft geen slug → migratie + dubbele bio-bron).
+
+- **F5-110 Over ons = eigen route** — dedicated `/over-ons` (naam `about`, `AuthorController@overview`): leest de `over-ons`-Page als bewerkbare intro (titel + body + meta) en rendert daaronder de FamilyMembers-card-grid; elke kaart linkt naar `/auteurs/{slug}`. `over-ons` reserved. Gekozen boven puur-dynamische grid (verliest bewerkbare intro) en grid-injectie-in-de-catch-all (koppelt de generieke controller aan één slug, tegen conventie #1).
+
+- **F5-111 Statische pagina's via catch-all** — Privacy + toekomstige admin-pagina's via één catch-all i.p.v. named routes per pagina (masterplan §3.5; maakt de admin-Pages-module pas bruikbaar zonder code per pagina). Implementatie: single-segment GET `/{page:slug}` die `reserved_slugs` uitsluit via een negatieve-lookahead-constraint (`->where('page', '(?!('.$reserved.')$)[^/]+')`), model-binding op slug + `abort_unless($page->isPublished(), 404)`. **Correctie op de oude loose-end** ("catch-all als láátste vóór de auth-groep"): een kale catch-all in `web.php` is NIET globaal laatste — `routes/admin.php` laadt ná `web.php`, dus een gewone `/{page:slug}` kaapte `/admin` (404). `Route::fallback()` is wél globaal laatste, maar matcht élk pad voor GET → onbekende multi-segment POSTs werden 405 i.p.v. 404 (brak TrashManagementTest). De reserved-slug-constraint lost beide op: `/admin` (reserved) valt door naar `admin.php`, en `[^/]+` houdt 'm single-segment zodat multi-segment POSTs 404 blijven. `reserved_slugs` uitgebreid met `verhalen`, `over-ons`, `contact`, `mijn-account`.
+
+- **F5-112 Contactformulier al in 5.4** (i.p.v. 5.5) — bewust naar voren gehaald, ondanks masterplan/F5-1 die 't in 5.5 plaatsten. Contact krijgt daardoor, net als Over ons (F5-110), een eigen route (het formulier is het "iets extra's" bovenop een kale Page).
+
+- **F5-113 Contact: open form, honeypot + throttle, mail-only** — eigen `/contact` (GET `ContactController@show`: contact-Page-intro + form) + POST `/contact` (`@send`, naam `contact.send`). Open voor iedereen (geen auth-groep — dat is het punt van contact); spam-afweer via `ProtectAgainstSpam` (honeypot) + `throttle:6,1`. `StoreContactRequest` (naam/e-mail/onderwerp/bericht, `email:rfc` zonder dns). `ContactMail` (ShouldQueue, reply-to de afzender) naar `config('westein.contact.recipient')` (env `CONTACT_RECIPIENT`, default `website.support@ml-westein.nl`). **Mail-only, geen DB-opslag** — masterplan §8; betrouwbaarheid via queued + `failed_jobs` i.p.v. een `contact_messages`-mini-module (Fase-6-upgrade indien ooit volume). Scoped `contact_success`-flash (layouts.public heeft geen globale flash).
+
+- **F5-114 Portretten: initialen-fallback in dev** — geen portret-fixtures; `HasAvatarFallback` (initialen + accent-kleur) dekt de lege staat, echte familiefoto's later via admin. Consistent met F5-68/Optie-A + F5-28-minimalisme; stockfoto's voor echte personen zouden misleiden.
+
+- **F5-115 Auteur-pagina toont de volledige gepagineerde verhalenlijst** — alle gepubliceerde verhalen van de auteur (`user_id`-match, `published()`, tips uitgesloten F5-94), nieuwste eerst, `paginate(12)->withQueryString()`, via `<x-public.post-card>`. Verborgen bij 0 (Sophie/Tim). Gekozen boven een teaser-strook van 3 (onderbenut een productieve auteur op een pagina die z'n werk hoort te tonen).
+
+- **F5-116 5.4.0 blocker-chore: content + seeder-consolidatie** — FamilyMember-bio's en Page-body's waren Lorem (`fake()->paragraph`/`paragraphs`, F5-32-valkuil) → echte NL. Plus: er draaiden **twee** FamilyMember-seeders (`DemoContentSeeder` keyt op slug, los `FamilyMemberSeeder` op naam) → 8 i.p.v. 4 familieleden. `FamilyMemberSeeder` verwijderd uit `DatabaseSeeder` + bestand opgeruimd; familie enkel nog via `DemoContentSeeder` (4 leden, jan/marieke gekoppeld aan User). Data-only. Commit `7281f52`.
+
 ## Herbruikbare admin-componenten
 Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 
@@ -587,6 +618,18 @@ _Toevoegingen uit 5.3:_
 - `App\Http\Controllers\PhotoController` + route `fotos.index` (`/fotos`, F5-107) — gallery-media van alle locaties, gefilterd op bestemming/locatie via querystring.
 - `resources/js/photo-lightbox.js` (F5-106) — Alpine-lightbox-factory (`Alpine.data('photoLightbox', …)` in `app.js`), progressive enhancement.
 - Views: `routes/index`, `routes/show`, `photos/index`. SCSS-partials: `_routes-index`, `_routes-show`, `_photos-index`.
+
+_Toevoegingen uit 5.4:_
+- `App\Http\Controllers\AuthorController` (publiek) — `overview()` (`/over-ons`, naam `about`: `over-ons`-Page-intro + FamilyMembers-grid) + `show(FamilyMember)` (`/auteurs/{familyMember:slug}`, naam `authors.show`: naam/rol/bio + initialen-avatar + gepagineerde verhalenlijst bij gekoppelde auteurs).
+- `App\Http\Controllers\PageController` (publiek) — `show(Page)` via de catch-all `/{page:slug}`; reserved-slug-lookahead-constraint + `abort_unless(isPublished)`.
+- `App\Http\Controllers\ContactController` — `show()` (contact-Page-intro + form) + `send(StoreContactRequest)` (queued mail-only, scoped `contact_success`-flash).
+- `<x-public.avatar :subject :size>` — portret via `avatarUrl()`, anders initialen-fallback (`HasAvatarFallback`); eigen `.author-avatar`-SCSS (publiek, los van de admin-avatar). Werkt op FamilyMember + User.
+- `Page::isPublished()` (F5-77-patroon) — `published_at !== null && published_at <= now()`, deelt de waarheid met `scopePublished()`.
+- `App\Mail\ContactMail` (ShouldQueue, reply-to de afzender) + `App\Http\Requests\StoreContactRequest` + `resources/views/emails/contact/message.blade.php` (markdown-mail).
+- Views: `authors/overview`, `authors/show`, `pages/show`, `contact/show`. SCSS-partials: `_authors`, `_pages` (incl. contactform-styling).
+- Routes: `about` (`/over-ons`), `authors.show` (`/auteurs/{familyMember:slug}`), `pages.show` (catch-all `/{page:slug}`, reserved-constraint, allerlaatste route), `contact` + `contact.send` (`/contact` GET/POST).
+- `config('westein.contact.recipient')` — ontvanger contactformulier (env `CONTACT_RECIPIENT`).
+- `reserved_slugs` uitgebreid met `verhalen`, `over-ons`, `contact`, `mijn-account`.
 
 ---
 
@@ -737,6 +780,14 @@ _Toevoegingen uit 5.3:_
 - **CRLF op nieuw-aangemaakte files.** VS Code schrijft nieuwe bestanden soms met CRLF; git waarschuwt bij `add` en normaliseert naar LF (conventie #9 blijft gedekt). Zet VS Code's default EOL op `\n` om de waarschuwing te vermijden.
 - **Media in tests: `Storage::fake('public')` + `UploadedFile::fake()->image()` + `addMedia()->toMediaCollection('gallery')`.** Werkt met de nonQueued-conversies (F4-N7, GD draait sync in de test). Nodig om galerij-/media-afhankelijke views te testen. (5.3.c `PhotosIndexTest`)
 
+### Landmines geleerd in Fase 5.4
+
+- **Twee seeders die op verschillende keys `firstOrCreate`'en stapelen stil.** `DemoContentSeeder` keyt FamilyMember op `slug`, de losse `FamilyMemberSeeder` op `name` → geen botsing, wél dubbele records (8 i.p.v. 4). Beide stonden in `DatabaseSeeder`. Diagnose-reflex bij "index/grid toont te veel": check of meerdere seeders hetzelfde model vullen (`Select-String -Path database\seeders\*.php -Pattern "Model::"`).
+- **Een catch-all in `web.php` is NIET globaal laatste.** `routes/admin.php` (en mogelijk andere) laden ná `web.php`, dus een kale `Route::get('/{page:slug}')` als laatste regel van `web.php` kaapt tóch `/admin` (single-segment → 404); `/admin/pages` e.d. (multi-segment) ontsnappen. Fortify's `/login` werd niet gekaapt → laadvolgorde is **Fortify → web.php → admin.php**.
+- **`Route::fallback()` is wél globaal laatste, maar matcht élk pad voor GET|HEAD.** Gevolg: een onbekende **niet-GET** request (bv. `POST /admin/trash/restore/badtype/1`) matcht de fallback qua pad maar niet qua methode → **405** i.p.v. 404 (brak `TrashManagementTest`'s "bad type → 404"). Fallback dus niet gebruiken als je 404-semantiek voor onbekende POSTs wilt behouden.
+- **Gekozen catch-all-patroon:** single-segment GET met reserved-slug-uitsluiting via negatieve lookahead: `Route::get('/{page:slug}', ...)->where('page', '(?!('.implode('|', config('westein.reserved_slugs')).')$)[^/]+')`. `[^/]+` = single-segment (multi-segment POSTs blijven 404), lookahead sluit echte routes uit (`/admin` valt door naar `admin.php`). `reserved_slugs` doet zo dubbel werk: F4-11 page-creation-block én catch-all-uitsluiting. **Bij elke nieuwe publieke één-segment-route: toevoegen aan `reserved_slugs`.**
+- **`Mail::to()->send($mailable)` queue't automatisch als het mailable `ShouldQueue` is.** In tests: `Mail::fake()` + `Mail::assertQueued(...)` (niet `assertSent`). In dev zonder draaiende `queue:work` blijft de contactmail in de `jobs`-tabel staan; de success-flash verschijnt wél meteen (bewust: publieke respons hangt niet op SMTP, F4-N8-parallel).
+
 ## Roadmap — fase-status
 
 - ✅ **Fase 1 — Project setup & design system** _(afgerond 2 mei 2026)_
@@ -768,8 +819,11 @@ _Toevoegingen uit 5.3:_
 | **5.3.a**    | Publieke `/reisroutes`-index + kale route-detail                                   | 644 → 655 | ✅     |
 | **5.3.b**    | Route-detail compleet: Leaflet-polylijn + waypoint-links + verhalen-strook         | 655 → 659 | ✅     |
 | **5.3.c**    | Fotogalerij `/fotos` + progressive filters + Alpine-lightbox                       | 659 → 665 | ✅     |
-| **5.4**      | Auteurs + statische pagina's                                                       |           | ⏳     |
-| **5.5**      | Newsletter + contact                                                               |           | ⏳     |
+| **5.4.0**    | Blocker-chore: content (bio's + page-body's) + seeder-consolidatie                 | 665 → 665 | ✅     |
+| **5.4.a**    | Auteurs `/auteurs/{slug}` + Over ons `/over-ons`                                   | 665 → 673 | ✅     |
+| **5.4.b-i**  | Statische pagina's via catch-all `/{page:slug}`                                    | 673 → 679 | ✅     |
+| **5.4.b-ii** | Contactformulier `/contact` (honeypot + throttle, mail-only)                       | 679 → 682 | ✅     |
+| **5.5**      | Newsletter + publieke unsubscribe                                                  |           | ⏳     |
 | **5.6**      | Eindcheck + `fase-5-bouwplan.md` schrijven                                         |           | ⏳     |
 
-**Totaal suite-status:** 665 groen (1653 assertions).
+**Totaal suite-status:** 682 groen (1700 assertions).
