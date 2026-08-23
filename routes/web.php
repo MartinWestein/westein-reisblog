@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AuthorController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\HomeController;
@@ -53,6 +54,11 @@ Route::get('/reisroutes/{route:slug}', [RouteController::class, 'show'])
 // Named één-segment-route, vóór een toekomstige /{page:slug}-catch-all.
 Route::get('/fotos', [PhotoController::class, 'index'])
     ->name('fotos.index');
+
+// --- Auteurs + Over ons (5.4.a) ---
+// Named routes, vóór een toekomstige /{page:slug}-catch-all (5.4.b).
+Route::get('/over-ons', [AuthorController::class, 'overview'])->name('about');
+Route::get('/auteurs/{familyMember:slug}', [AuthorController::class, 'show'])->name('authors.show');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/mijn-account', [AccountController::class, 'show'])->name('account.show');
