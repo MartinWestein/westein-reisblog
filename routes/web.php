@@ -79,6 +79,8 @@ Route::post('/nieuwsbrief', [NewsletterSubscriptionController::class, 'store'])
     ->name('newsletter.subscribe');
 Route::get('/nieuwsbrief/bevestigen/{token}', [NewsletterSubscriptionController::class, 'confirm'])
     ->name('newsletter.confirm');
+Route::get('/nieuwsbrief/uitschrijven/{token}', [NewsletterSubscriptionController::class, 'unsubscribe'])
+    ->name('newsletter.unsubscribe');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/mijn-account', [AccountController::class, 'show'])->name('account.show');

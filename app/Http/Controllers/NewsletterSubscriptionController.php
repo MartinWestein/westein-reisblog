@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Subscribers\ConfirmSubscriptionAction;
 use App\Actions\Subscribers\SendConfirmationMailAction;
 use App\Actions\Subscribers\SubscribeAction;
+use App\Actions\Subscribers\UnsubscribeAction;
 use App\Http\Requests\SubscribeRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -51,6 +52,21 @@ class NewsletterSubscriptionController extends Controller
         $subscriber = $confirm->execute($token);
 
         return view('newsletter.confirmed', [
+            'subscriber' => $subscriber,
+        ]);
+    }
+
+    /**
+     * Schrijf een subscriber uit via het unsubscribe_token uit de mail-footer.
+     *
+     * UnsubscribeAction is idempotent en nult het token nooit — een tweede klik
+     * blijft dus werken. Onbekend token → null → neutrale melding.
+     */
+    public function unsubscribe(string $token, UnsubscribeAction $unsubscribe): View
+    {
+        $subscriber = $unsubscribe->execute($token);
+
+        return view('newsletter.unsubscribed', [
             'subscriber' => $subscriber,
         ]);
     }

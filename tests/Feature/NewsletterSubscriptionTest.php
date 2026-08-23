@@ -118,4 +118,46 @@ it('toont een neutrale pagina bij een onbekend confirm-token', function () {
         ->assertOk()
         ->assertSee('ongeldig');
 });
+
+it('schrijft een subscriber uit via een geldig token', function () {
+    $subscriber = Subscriber::create([
+        'email' => 'weg@example.com',
+        'confirmed_at' => now(),
+        'confirmation_token' => null,
+    ]);
+
+    get(route('newsletter.unsubscribe', $subscriber->unsubscribe_token))
+        ->assertOk()
+        ->assertSee('uitgeschreven');
+
+    $subscriber->refresh();
+    expect($subscriber->status())->toBe(Subscriber::STATUS_UNSUBSCRIBED)
+        ->and($subscriber->unsubscribed_at)->not->toBeNull();
+});
+
+it('is idempotent bij een tweede klik op de uitschrijflink', function () {
+    $subscriber = Subscriber::create([
+        'email' => 'nogmaals@example.com',
+        'confirmed_at' => now(),
+        'confirmation_token' => null,
+    ]);
+    $token = $subscriber->unsubscribe_token;
+
+    get(route('newsletter.unsubscribe', $token))->assertOk();
+    $firstMoment = $subscriber->fresh()->unsubscribed_at;
+
+    get(route('newsletter.unsubscribe', $token))
+        ->assertOk()
+        ->assertSee('uitgeschreven');
+
+    // Token blijft geldig, timestamp ongewijzigd (geen nieuwe uitschrijving).
+    expect($subscriber->fresh()->unsubscribed_at->equalTo($firstMoment))->toBeTrue();
+});
+
+it('toont een neutrale pagina bij een onbekend uitschrijf-token', function () {
+    get(route('newsletter.unsubscribe', 'onbekend-token'))
+        ->assertOk()
+        ->assertSee('ongeldig');
+});
+
 // EOF
