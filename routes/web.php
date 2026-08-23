@@ -6,6 +6,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\RouteController;
@@ -70,5 +71,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware(ProtectAgainstSpam::class)
         ->name('comments.store');
 });
+
+// --- Statische pagina's via catch-all (5.4.b, F5-111) ---
+// Single-segment ([^/]+) GET-route die de reserved_slugs uitsluit via een negatieve
+// lookahead. Zo kaapt 'ie geen echte routes (o.a. /admin uit routes/admin.php, dat
+// NA web.php laadt) en raakt 'ie geen multi-segment URLs (POSTs blijven 404, niet 405).
+$reservedSlugs = implode('|', config('westein.reserved_slugs'));
+Route::get('/{page:slug}', [PageController::class, 'show'])
+    ->where('page', '(?!('.$reservedSlugs.')$)[^/]+')
+    ->name('pages.show');
 
 // EOF

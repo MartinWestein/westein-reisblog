@@ -85,6 +85,11 @@ class Page extends Model implements HasMedia
         return $query->whereNotNull('published_at')->where('published_at', '<=', now());
     }
 
+    public function isPublished(): bool
+    {
+        return $this->published_at !== null && $this->published_at <= now();
+    }
+
     public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('order')->orderBy('title');
