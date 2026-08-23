@@ -2,8 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 23 augustus 2026 — Fase 5.5 volledig afgerond: publieke nieuwsbrief-aanmelding met double-opt-in (`/nieuwsbrief`, `/nieuwsbrief/bevestigen/{token}`) + publieke unsubscribe (`/nieuwsbrief/uitschrijven/{token}`, sluit F4-N11). Leunt volledig op de bestaande datalaag + Actions uit Fase 4; geen model-/migratie-/action-werk. Suite 693 groen (1750 assertions). Lokaal op `51e2406` (5.5.a `e219179`, 5.5.b `51e2406`).
-**Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
+**Laatst bijgewerkt:** 23 augustus 2026 — Fase 5 volledig afgerond (t/m 5.6): eindcheck + `fase-5-bouwplan.md` geschreven. Alle publieke pagina's staan; cleanups getrieerd naar Fase 6. Suite 693 groen (1750 assertions). Volgende: Fase 6 (SEO/performance + productie-deploy).**Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
 **Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → `fase-4-bouwplan.md`. Fase 5 → wordt na afronding van alle Fase-5-stappen in één keer geschreven (F5-1), niet incrementeel.
 
 ---
@@ -47,7 +46,10 @@ Fase 4 volledig afgerond en gemerged naar main (Stap 4.14).
   - **5.5.a** (`e219179`) — publieke aanmelding + double-opt-in-bevestiging: `GET/POST /nieuwsbrief` (throttle:6,1 + honeypot) + `GET /nieuwsbrief/bevestigen/{token}`, unique-loze `SubscribeRequest`, publieke `NewsletterSubscriptionController` (show/store/confirm), eigen resultaatpagina's, footer-link. Leunt op bestaande `SubscribeAction`/`SendConfirmationMailAction`/`ConfirmSubscriptionAction`. Sluit de confirm-placeholder die de admin-mail al gebruikte. F5-117 t/m F5-122. Suite 682 → 690.
   - **5.5.b** (`51e2406`) — publieke unsubscribe: `GET /nieuwsbrief/uitschrijven/{token}` + `unsubscribe()` + eigen resultaatpagina, leunt op bestaande `UnsubscribeAction` (idempotent). Sluit F4-N11 (testmail-footer-placeholder landt nu netjes i.p.v. 404). F5-123. Suite 690 → 693.
 
-- **Volgende: Fase 5.6** — eindcheck + `fase-5-bouwplan.md` schrijven (F5-1). Kandidaat-cleanups (flash-key-inconsistentie, lege `resources/views/public/`-dir, Tailwind uit `package.json`, Sass-`@use`-migratie) staan bij de loose-ends; in 5.6 besluiten wat mee gaat vs. Fase 6.
+- **Fase 5.6 afgerond** — eindcheck-verificatiepass + `fase-5-bouwplan.md` (fase-4-format, repo-root). Geen cleanups meegepakt; die staan getrieerd voor Fase 6. F5-124.
+
+- **Fase 5 volledig afgerond.
+** Volgende: **Fase 6** — SEO (Spatie SEO/OG/JSON-LD, sitemap, robots, RSS), response-cache, WebP, cookie-banner/analytics-afweging, Lighthouse/WCAG, en de productie-deploy naar NL shared hosting. Vooraf: echte content via de admin invoeren (demo-seeder draait niet mee op productie).
 
 State-check volgende sessie: `git log --oneline -6` (verwacht `51e2406` of de CLAUDE.md-docs-commit daarboven, clean), `git status` (clean), `php artisan test` (verwacht 693). **Let op:** er staat nu een catch-all `/{page:slug}` (fallback voor statische pagina's) als laatste route — nieuwe publieke één-segment-routes moeten ná registratie ook in `config('westein.reserved_slugs')` (anders blokkeert F4-11 niet, en is een gelijknamige pagina onbereikbaar).
 
@@ -548,6 +550,10 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 
 - **F5-123 Sluit F4-N11 (5.5.b)** — `/nieuwsbrief/uitschrijven/{token}` is nu live. De newsletter-testmail-footer (F4-N11) linkt naar een 64-nullen-token; die landt nu op de neutrale "deze uitschrijflink werkt niet"-pagina i.p.v. 404. Impliciet sloot 5.5.a ook de confirm-placeholder: `SubscriberConfirmationMail` (die de admin via `send-confirmation`/`send-bulk-confirmations` al verstuurde) bouwde al een `confirmUrl` naar `/nieuwsbrief/bevestigen/{token}` die tot nu 404'de — de bevestigingsknop werkt nu end-to-end.
 
+### 5.6 — Eindcheck
+
+- **F5-124 Scope 5.6 = puur afsluiten** — eindcheck-verificatiepass + `fase-5-bouwplan.md` + roadmap op ✅. Alle opgespaarde cleanups (flash-key-inconsistentie, lege `resources/views/public/`-dir, Tailwind uit `package.json`, Sass-`@use`-migratie, import-conventie) bewust doorgeschoven naar Fase 6 — admin-scope + build/tooling, blokkeren de livegang niet. Prioriteit verschoven naar snel-naar-live. `fase-5-bouwplan.md` in repo-root (naast fase-2/fase-4) + in de projectomgeving. Vooruitblik Fase 6 (uit deze sessie): host = zelfde als ml-westein.nl (Laravel-geschikt: SSH/PHP 8.3+/MySQL/cron); content-strategie = eerst echte reisverhalen + foto's via de admin, dán live (demo-seeder niet op productie); de **flash-key-bug is de hoogste cleanup-prioriteit**.
+
 ## Herbruikbare admin-componenten
 Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 
@@ -825,7 +831,7 @@ _Toevoegingen uit 5.5:_
 - ✅ **Fase 2 — Authenticatie & autorisatie** _(afgerond 10 mei 2026)_
 - ✅ **Fase 3 — Database & content modellen** _(afgerond 13 mei 2026)_
 - ✅ **Fase 4 — Afgeschermd Admin-gedeelte** _(afgerond)_
-- ⏳ **Fase 5 — Ontwikkeling openbare pagina's** _(in ontwikkeling)_
+- ⏳ **Fase 5 — Ontwikkeling openbare pagina's** _(afgerond 23 augustus 2026)_
 - ⏳ **Fase 6 — SEO, performance en publicatie**
 
 ### Fase 5 — overzicht
@@ -856,6 +862,6 @@ _Toevoegingen uit 5.5:_
 | **5.4.b-ii** | Contactformulier `/contact` (honeypot + throttle, mail-only)                       | 679 → 682 | ✅     |
 | **5.5.a**    | Nieuwsbrief-aanmelding + double-opt-in-bevestiging (`/nieuwsbrief`)                | 682 → 690 | ✅     |
 | **5.5.b**    | Publieke unsubscribe `/nieuwsbrief/uitschrijven/{token}` (sluit F4-N11)            | 690 → 693 | ✅     |
-| **5.6**      | Eindcheck + `fase-5-bouwplan.md` schrijven                                         |           | ⏳     |
+| **5.6**      | Eindcheck + `fase-5-bouwplan.md` schrijven                                         |           | ✅     |
 
 **Totaal suite-status:** 693 groen (1750 assertions).
