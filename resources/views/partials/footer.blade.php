@@ -26,6 +26,7 @@
                 <ul class="site-footer__list">
                     <li><a href="{{ url('/over-ons') }}">Over ons</a></li>
                     <li><a href="{{ url('/contact') }}">Contact</a></li>
+                    <li><a href="{{ url('/nieuwsbrief') }}">Nieuwsbrief</a></li>
                     <li><a href="{{ url('/privacy') }}">Privacy</a></li>
                 </ul>
             </div>

@@ -7,6 +7,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\NewsletterSubscriptionController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PhotoController;
 use App\Http\Controllers\PostController;
@@ -67,6 +68,17 @@ Route::get('/contact', [ContactController::class, 'show'])->name('contact');
 Route::post('/contact', [ContactController::class, 'send'])
     ->middleware(['throttle:6,1', ProtectAgainstSpam::class])
     ->name('contact.send');
+
+// --- Nieuwsbrief (5.5) ---
+// 'nieuwsbrief' staat in reserved_slugs én deze routes staan vóór de catch-all,
+// dus geen botsing met /{page:slug} (die bovendien single-segment is).
+Route::get('/nieuwsbrief', [NewsletterSubscriptionController::class, 'show'])
+    ->name('newsletter.show');
+Route::post('/nieuwsbrief', [NewsletterSubscriptionController::class, 'store'])
+    ->middleware(['throttle:6,1', ProtectAgainstSpam::class])
+    ->name('newsletter.subscribe');
+Route::get('/nieuwsbrief/bevestigen/{token}', [NewsletterSubscriptionController::class, 'confirm'])
+    ->name('newsletter.confirm');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/mijn-account', [AccountController::class, 'show'])->name('account.show');

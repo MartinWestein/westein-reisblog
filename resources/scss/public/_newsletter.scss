@@ -1,0 +1,24 @@
+// Nieuwsbrief-aanmelding + resultaatpagina's (5.5)
+.newsletter-page {
+    &__intro {
+        margin-bottom: var(--space-4);
+    }
+}
+
+.newsletter-form {
+    max-width: 480px;
+
+    &__field { margin-bottom: var(--space-3); }
+    &__success { margin-bottom: var(--space-4); }
+    &__submit { margin-top: var(--space-2); }
+    &__optional {
+        color: var(--color-muted);
+        font-weight: 400;
+        font-size: .875rem;
+    }
+}
+
+.newsletter-result {
+    .static-page__body { max-width: 640px; }
+}
+// EOF
