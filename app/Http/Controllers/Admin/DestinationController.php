@@ -62,7 +62,7 @@ class DestinationController extends Controller
 
         return redirect()
             ->route('admin.destinations.edit', $destination)
-            ->with('status', 'Bestemming aangemaakt. Voeg nu eventueel galerijfoto\'s toe.');
+            ->with('success', 'Bestemming aangemaakt. Voeg nu eventueel galerijfoto\'s toe.');
     }
 
     public function edit(Destination $destination): View
@@ -94,7 +94,7 @@ class DestinationController extends Controller
 
         return redirect()
             ->route('admin.destinations.index')
-            ->with('status', 'Bestemming bijgewerkt.');
+            ->with('success', 'Bestemming bijgewerkt.');
     }
 
     public function destroy(Destination $destination): RedirectResponse
@@ -105,6 +105,6 @@ class DestinationController extends Controller
 
         return redirect()
             ->route('admin.destinations.index')
-            ->with('status', 'Bestemming naar de prullenbak verplaatst.');
+            ->with('success', 'Bestemming naar de prullenbak verplaatst.');
     }
 }

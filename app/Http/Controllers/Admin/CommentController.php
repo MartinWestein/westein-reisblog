@@ -56,7 +56,7 @@ class CommentController extends Controller
         $this->authorize('moderate', $comment);
         $comment->moderate('approved');
 
-        return back()->with('status', 'Reactie goedgekeurd.');
+        return back()->with('success', 'Reactie goedgekeurd.');
     }
 
     public function reject(Comment $comment): RedirectResponse
@@ -64,7 +64,7 @@ class CommentController extends Controller
         $this->authorize('moderate', $comment);
         $comment->moderate('rejected');
 
-        return back()->with('status', 'Reactie afgekeurd.');
+        return back()->with('success', 'Reactie afgekeurd.');
     }
 
     public function spam(Comment $comment): RedirectResponse
@@ -72,7 +72,7 @@ class CommentController extends Controller
         $this->authorize('moderate', $comment);
         $comment->moderate('spam');
 
-        return back()->with('status', 'Reactie gemarkeerd als spam.');
+        return back()->with('success', 'Reactie gemarkeerd als spam.');
     }
 
     public function destroy(Comment $comment): RedirectResponse
@@ -80,6 +80,6 @@ class CommentController extends Controller
         $this->authorize('delete', $comment);
         $comment->delete();
 
-        return back()->with('status', 'Reactie verwijderd.');
+        return back()->with('success', 'Reactie verwijderd.');
     }
 }
