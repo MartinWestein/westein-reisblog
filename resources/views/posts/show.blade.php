@@ -14,6 +14,17 @@
         $heroAlt = $post->featured_image_alt ?: $post->title;
     @endphp
 
+    @section('og_type', 'article')
+    @if ($heroUrl)
+        @section('og_image', $heroUrl)
+    @endif
+    @if ($post->published_at)
+        @section('article_published_time', $post->published_at->toIso8601String())
+    @endif
+    @if ($post->author)
+        @section('article_author', $post->author->name)
+    @endif    
+
     {{-- Breadcrumb: spiegelt de canonieke URL (F5-83). Tip roott in 'Reistips',
          nu een echte link naar de index (5.2.c). --}}
     @if ($isTip)

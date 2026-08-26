@@ -4,6 +4,8 @@ use App\Models\Category;
 use App\Models\Destination;
 use App\Models\Location;
 use App\Models\Post;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 use function Pest\Laravel\get;
 
@@ -170,4 +172,15 @@ it('hides the tips section when the destination has no tips', function () {
         ->assertOk()
         ->assertDontSee('Reistips voor deze reis')
         ->assertDontSee('destination-detail__tips', false);
+});
+
+it('gebruikt de hero als og:image en blijft og:type=website', function () {
+    Storage::fake('public');
+    $destination = Destination::factory()->create(['slug' => 'italie', 'name' => 'Italie']);
+    $destination->addMedia(UploadedFile::fake()->image('hero.jpg', 2000, 1000))->toMediaCollection('hero');
+
+    get('/bestemmingen/italie')
+        ->assertOk()
+        ->assertSee('property="og:type" content="website"', false)
+        ->assertDontSee('images/og-default.jpg', false);
 });

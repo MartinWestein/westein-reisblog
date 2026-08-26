@@ -16,6 +16,11 @@
         $heroUrl = $heroMedia?->getUrl('large') ?: $heroMedia?->getUrl('medium') ?: $heroMedia?->getUrl();
     @endphp
 
+
+    @if ($heroUrl)
+        @section('og_image', $heroUrl)
+    @endif
+    
     {{-- Edge-to-edge 2:1 hero uit gallery[0] (F5-40 + F5-48 + F5-52) --}}
     <div class="location-detail__hero">
         @if ($heroUrl)

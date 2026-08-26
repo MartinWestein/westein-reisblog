@@ -14,6 +14,11 @@
             ?: $destination->getFirstMediaUrl('hero');
     @endphp
 
+
+    @if ($heroUrl)
+        @section('og_image', $heroUrl)
+    @endif
+    
     {{-- Edge-to-edge hero (buiten container, F5-40 + F5-48) --}}
     <div class="destination-detail__hero">
         @if ($heroUrl)

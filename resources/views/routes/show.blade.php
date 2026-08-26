@@ -18,6 +18,10 @@
             ->values();
     @endphp
 
+    @if ($routeHeroUrl)
+        @section('og_image', $routeHeroUrl)
+    @endif    
+
     {{-- Hero (edge-to-edge 2:1, F5-40/F5-48 + F5-97-plafond) --}}
     <section class="route-detail__hero" aria-hidden="true">
         @if ($routeHeroUrl)

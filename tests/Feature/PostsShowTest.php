@@ -4,6 +4,8 @@ use App\Models\Category;
 use App\Models\Destination;
 use App\Models\Location;
 use App\Models\Post;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 use function Pest\Laravel\get;
 
@@ -253,4 +255,37 @@ it('linkt de Reistips-breadcrumb-kruimel naar de reistips-index', function () {
     get('/reistips/'.$post->slug)
         ->assertOk()
         ->assertSee('href="'.route('reistips.index').'"', false);
+});
+
+it('rendert og:type=article + article-meta op een gepubliceerde post', function () {
+    $destination = Destination::factory()->create(['slug' => 'italie', 'name' => 'Italie']);
+    $location = Location::factory()->for($destination)->create(['slug' => 'rome', 'name' => 'Rome']);
+    $post = Post::factory()->published()->create([
+        'destination_id' => $destination->id,
+        'location_id' => $location->id,
+        'title' => 'Onze eerste dag in Rome',
+    ]);
+
+    get('/bestemmingen/italie/rome/'.$post->slug)
+        ->assertOk()
+        ->assertSee('property="og:type" content="article"', false)
+        ->assertSee('property="article:published_time"', false)
+        ->assertSee('property="article:author"', false);
+});
+
+it('gebruikt de featured-afbeelding als og:image op een post met hero', function () {
+    Storage::fake('public');
+    $destination = Destination::factory()->create(['slug' => 'italie', 'name' => 'Italie']);
+    $location = Location::factory()->for($destination)->create(['slug' => 'rome', 'name' => 'Rome']);
+    $post = Post::factory()->published()->create([
+        'destination_id' => $destination->id,
+        'location_id' => $location->id,
+        'title' => 'Onze eerste dag in Rome',
+    ]);
+    $post->addMedia(UploadedFile::fake()->image('hero.jpg', 1600, 900))->toMediaCollection('featured');
+
+    get('/bestemmingen/italie/rome/'.$post->slug)
+        ->assertOk()
+        ->assertSee('property="og:image"', false)
+        ->assertDontSee('images/og-default.jpg', false);
 });
