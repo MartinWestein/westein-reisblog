@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -96,5 +97,27 @@ class FamilyMember extends Model implements HasMedia
         return $this->hasMedia('portrait')
             ? $this->getFirstMediaUrl('portrait', 'webp-300')
             : null;
+    }
+
+    public function personSchema(): array
+    {
+        $schema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Person',
+            'name' => $this->name,
+            'url' => route('authors.show', $this),
+        ];
+
+        $description = Str::limit(strip_tags((string) $this->bio), 200);
+        if ($description !== '') {
+            $schema['description'] = $description;
+        }
+
+        $image = $this->getFirstMediaUrl('portrait');
+        if ($image !== '') {
+            $schema['image'] = $image;
+        }
+
+        return $schema;
     }
 }

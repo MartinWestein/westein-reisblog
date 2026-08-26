@@ -4,6 +4,8 @@
 @section('meta_description', Str::limit(strip_tags($member->bio ?: ''), 160))
 
 @section('content')
+    <x-public.json-ld :data="$member->personSchema()" />
+    
     <x-public.breadcrumb :items="[
         ['label' => 'Over ons', 'url' => route('about')],
         ['label' => $member->name],

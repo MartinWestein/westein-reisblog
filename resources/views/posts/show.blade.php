@@ -7,6 +7,8 @@
 @section('meta_description', Str::limit(strip_tags($post->meta_description ?: $post->excerpt ?? ''), 160))
 
 @section('content')
+    <x-public.json-ld :data="$post->articleSchema()" />
+    
     @php
         $isTip = $post->categories->contains('slug', 'tips');
         $featured = $post->getFirstMedia('featured');

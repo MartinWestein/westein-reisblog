@@ -4,6 +4,8 @@
 @section('meta_description', Str::limit(strip_tags($location->description ?? ''), 160))
 
 @section('content')
+    <x-public.json-ld :data="$location->placeSchema()" />
+    
     <x-public.breadcrumb :items="[
         ['label' => 'Bestemmingen', 'url' => route('destinations.index')],
         ['label' => $destination->name, 'url' => route('destinations.show', $destination)],

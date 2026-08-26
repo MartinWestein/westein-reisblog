@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -90,5 +91,45 @@ class Location extends Model implements HasMedia
         $this->registerWebpConversion('thumb', 400, $media, 'gallery');
         $this->registerWebpConversion('medium', 1200, $media, 'gallery');
         $this->registerWebpConversion('large', 2400, $media, 'gallery');
+    }
+
+    public function placeSchema(): array
+    {
+        $schema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'TouristAttraction',
+            'name' => $this->name,
+            'url' => route('locations.show', [$this->destination, $this]),
+        ];
+
+        $description = Str::limit(strip_tags((string) $this->description), 200);
+        if ($description !== '') {
+            $schema['description'] = $description;
+        }
+
+        if ($this->latitude && $this->longitude) {
+            $schema['geo'] = [
+                '@type' => 'GeoCoordinates',
+                'latitude' => (float) $this->latitude,
+                'longitude' => (float) $this->longitude,
+            ];
+        }
+
+        if ($this->destination) {
+            $schema['containedInPlace'] = [
+                '@type' => 'TouristDestination',
+                'name' => $this->destination->name,
+                'url' => route('destinations.show', $this->destination),
+            ];
+        }
+
+        $image = $this->getFirstMediaUrl('gallery', 'large')
+            ?: $this->getFirstMediaUrl('gallery', 'medium')
+            ?: $this->getFirstMediaUrl('gallery');
+        if ($image !== '') {
+            $schema['image'] = $image;
+        }
+
+        return $schema;
     }
 }

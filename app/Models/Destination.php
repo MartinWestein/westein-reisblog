@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -92,5 +93,29 @@ class Destination extends Model implements HasMedia
         $this->registerWebpConversion('thumb', 400, $media, 'gallery');
         $this->registerWebpConversion('medium', 1200, $media, 'gallery');
         $this->registerWebpConversion('large', 2400, $media, 'gallery');
+    }
+
+    public function placeSchema(): array
+    {
+        $schema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'TouristDestination',
+            'name' => $this->name,
+            'url' => route('destinations.show', $this),
+        ];
+
+        $description = Str::limit(strip_tags((string) $this->description), 200);
+        if ($description !== '') {
+            $schema['description'] = $description;
+        }
+
+        $image = $this->getFirstMediaUrl('hero', 'large')
+            ?: $this->getFirstMediaUrl('hero', 'medium')
+            ?: $this->getFirstMediaUrl('hero');
+        if ($image !== '') {
+            $schema['image'] = $image;
+        }
+
+        return $schema;
     }
 }

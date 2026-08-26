@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -157,5 +158,44 @@ class Post extends Model implements HasMedia
         // Inline images (binnen post-body via TipTap image-picker — stap 4.6)
         $this->registerWebpConversion('thumb', 400, $media, 'inline_images');
         $this->registerWebpConversion('medium', 800, $media, 'inline_images');
+    }
+
+    public function articleSchema(): array
+    {
+        $schema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'BlogPosting',
+            'headline' => $this->title,
+            'url' => $this->url(),
+            'mainEntityOfPage' => $this->url(),
+            'datePublished' => optional($this->published_at)->toIso8601String(),
+            'dateModified' => optional($this->updated_at)->toIso8601String(),
+            'publisher' => [
+                '@type' => 'Organization',
+                'name' => config('app.name', 'Westein Reisblog'),
+                'logo' => [
+                    '@type' => 'ImageObject',
+                    'url' => asset('images/logo.png'),
+                ],
+            ],
+        ];
+
+        $description = Str::limit(strip_tags((string) ($this->meta_description ?: $this->excerpt)), 200);
+        if ($description !== '') {
+            $schema['description'] = $description;
+        }
+
+        if ($this->author) {
+            $schema['author'] = ['@type' => 'Person', 'name' => $this->author->name];
+        }
+
+        $image = $this->getFirstMediaUrl('featured', 'large')
+            ?: $this->getFirstMediaUrl('featured', 'medium')
+            ?: $this->getFirstMediaUrl('featured');
+        if ($image !== '') {
+            $schema['image'] = $image;
+        }
+
+        return $schema;
     }
 }
