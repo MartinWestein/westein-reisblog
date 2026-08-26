@@ -25,6 +25,13 @@ return [
         'verhalen', 'over-ons', 'contact', 'mijn-account',
     ],
 
+    'seo' => [
+        'default_description' => 'Reisverhalen van familie Westein — onze reizen, verhalen en foto\'s',
+        'og_default' => 'images/og-default.jpg',
+        'og_image_width' => 1200,
+        'og_image_height' => 630,
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Gallery media — toegestane eigenaarsmodellen
