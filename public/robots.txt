@@ -1,2 +1,5 @@
 User-agent: *
-Disallow:
+Disallow: /admin
+Disallow: /mijn-account
+
+Sitemap: https://reisblog.ml-westein.nl/sitemap.xml

@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthorController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DestinationController;
+use App\Http\Controllers\FeedController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\NewsletterSubscriptionController;
@@ -92,6 +93,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware(ProtectAgainstSpam::class)
         ->name('comments.store');
 });
+
+Route::get('/feed', [FeedController::class, 'index'])->name('feed');
 
 // --- Statische pagina's via catch-all (5.4.b, F5-111) ---
 // Single-segment ([^/]+) GET-route die de reserved_slugs uitsluit via een negatieve

@@ -22,7 +22,7 @@ return [
         'bestemmingen', 'reistips', 'categorie', 'tag', 'auteurs',
         'reisroutes', 'fotos', 'blog', 'nieuwsbrief',
         'email', 'password', 'two-factor-challenge', 'up',
-        'verhalen', 'over-ons', 'contact', 'mijn-account',
+        'verhalen', 'over-ons', 'contact', 'mijn-account', 'feed',
     ],
 
     'seo' => [
