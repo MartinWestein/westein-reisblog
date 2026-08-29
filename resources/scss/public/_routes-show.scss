@@ -92,7 +92,7 @@
     text-decoration: none;
     &:hover,
     &:focus {
-      color: var(--color-accent-1);
+      color: var(--color-accent-1-ink);
       text-decoration: underline;
     }
   }
@@ -142,7 +142,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background-color: var(--color-accent-1);
+  background-color: var(--color-accent-1-ink);
   color: #fff;
   font-family: var(--font-body);
   font-weight: 700;

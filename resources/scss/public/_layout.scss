@@ -13,4 +13,25 @@
   }
 }
 
+/* === Skip-to-content (a11y, WCAG 2.4.1) === */
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1080;
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-text);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 var(--radius-sm) 0;
+  transform: translateY(-120%);
+  transition: transform 0.15s ease;
+
+  &:focus {
+    transform: translateY(0);
+    outline: 3px solid var(--color-accent-1-ink);
+    outline-offset: 2px;
+  }
+}
 // EOF

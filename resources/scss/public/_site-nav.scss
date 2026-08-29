@@ -5,7 +5,7 @@
 
 .main-nav {
   // Site-nav gebruikt eigen kleur-vars (gescoped, botst niet met design-tokens).
-  --sitenav-primary: #1E90FF;
+  --sitenav-primary: #1668C4; // AA-contrast (was #1E90FF)
   --sitenav-accent: #E63946;
   --sitenav-text: #212529;
   --sitenav-border: #dee2e6;

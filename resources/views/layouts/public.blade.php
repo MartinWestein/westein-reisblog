@@ -25,13 +25,14 @@
         @stack('head')
     </head>
     <body>
+        <a class="skip-link" href="#main-content">Naar hoofdinhoud</a>
         {{-- Site-nav (hoofdsite-look, A-hybrid) — komt in 5.0.a.2 --}}
         @include('partials.site-nav')
 
         {{-- Blog-nav (dark navy, tekst-brand + menu + profiel-dropdown) — komt in 5.0.a.3 --}}
         @include('partials.blog-nav')
 
-        <main class="public-main">
+        <main class="public-main" id="main-content">
             @yield('content')
         </main>
 
