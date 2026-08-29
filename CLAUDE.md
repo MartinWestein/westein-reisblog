@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 29 augustus 2026 — Fase 6 sub-blokken 6.0 t/m 6.6 afgerond en gecommit (laatst `9402abe`): SEO-meta/OG/Twitter, JSON-LD, sitemap/robots/RSS, WebP-check, a11y-contrast + skip-link. Response-cache (6.5) uitgesteld naar post-launch. Suite 705 groen (~1794 assertions). Bezig met **6.7 (productie-deploy)** — Cloud86/Plesk, subdomein `reisblog.ml-westein.nl`, Path A (volledige Laravel-deploy).**Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
+**Laatst bijgewerkt:** 29 augustus 2026 — **Fase 6.7 (deploy) afgerond: de reisblog staat LIVE op https://reisblog.ml-westein.nl** (Cloud86/Plesk shared hosting, PHP 8.4, HTTPS + security-headers, queue-drain via cron, admin-account actief). Fasen 6.0 t/m 6.6 (SEO/OG/JSON-LD, sitemap/robots/RSS, a11y) daarvoor afgerond; response-cache (6.5) uitgesteld. Suite 709 groen (~1814 assertions). Volgende: **6.8** (echte content via de admin) + **6.9** (backups/monitoring).**Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
 **Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → `fase-4-bouwplan.md`. Fase 5 → wordt na afronding van alle Fase-5-stappen in één keer geschreven (F5-1), niet incrementeel.
 
 ---
@@ -61,9 +61,11 @@ Fase 4 volledig afgerond en gemerged naar main (Stap 4.14).
 
 Assets deze fase in de repo (gegenereerd + door Martin geplaatst, gecommit): `public/images/og-default.jpg` (1200×630 branded card), `public/images/logo.png` (MW-monogram), favicon-set (`favicon.ico`, `apple-touch-icon.png`, `favicon-16/32/192/512.png`, `site.webmanifest`).
 
-- **Volgende: Fase 6.7 (deploy).** Zie `claude/sessie-start-6.7.md` voor de 6.7-roadmap (a Plesk-voorbereiding, b productie-artefacten, c deploy-runbook, d cron/scheduler, e live smoke-test).
+**Fase 6.7 (deploy) afgerond — de site is live.** Uitgevoerd: prod-`.env`-template (b-i), force-HTTPS + TrustProxies (b-ii), security-headers-middleware (b-iii), `ProductionSeeder` (b-iv), en de deploy zelf (b-c t/m e): repo op de server via read-only deploy key, `composer install --no-dev` onder `/opt/plesk/php/8.4/bin/php`, `.env` + `key:generate`, `migrate --force` + `db:seed --class=ProductionSeeder --force`, `storage:link`, assets lokaal gebouwd + via `scp` geüpload, caches, `sitemap:generate`, Plesk-cron `schedule:run` (elke minuut → queue-drain + sitemap), HTTP→HTTPS-redirect (Plesk). Live smoke-test groen (styling, sitemap/feed/robots, admin-login via wachtwoord-reset, mail door de queue). Suite 705 → 709. Details + landmines: zie de Fase 6.7-secties hieronder en `fase-6-bouwplan.md`.
 
-State-check bij 6.7-start: `git log --oneline -8` (verwacht `9402abe` bovenaan, plus clean/gepusht-check), `git status` (clean), `php artisan test` (verwacht **705**, ~1794 assertions). **Let op:** er staat een catch-all `/{page:slug}` (fallback voor statische pagina's) als laatste route — nieuwe publieke één-segment-routes moeten ná registratie ook in `config('westein.reserved_slugs')` (anders blokkeert F4-11 niet, en is een gelijknamige pagina onbereikbaar).
+**Productie-omgeving (feiten voor volgende sessies):** host Cloud86/Plesk, subdomein `reisblog.ml-westein.nl`, repo-root `/var/www/vhosts/ml-westein.nl/reisblog.ml-westein.nl` (docroot `.../public`), systeemgebruiker `nvxvunro`, **CLI-PHP pinnen op `/opt/plesk/php/8.4/bin/php`** (de kale `php` is 8.2!), composer op `/usr/local/bin/composer`, DB `nvxvunro_reisblog` / user `reisAdmin`, admin-account `reizen@ml-westein.nl`. Deploy-update = lokaal committen/pushen → op server `git pull` (+ bij asset-wijziging lokaal `npm run build` + `scp public/build`, bij config/route/view-wijziging de caches herbouwen).
+
+State-check volgende sessie (6.8): `git log --oneline -8` (verwacht de laatste 6.7-docs-commit bovenaan, clean), `git status` (clean), `php artisan test` (verwacht **709**, ~1814 assertions). **Let op:** er staat een catch-all `/{page:slug}` (fallback voor statische pagina's) als laatste route — nieuwe publieke één-segment-routes moeten ná registratie ook in `config('westein.reserved_slugs')` (anders blokkeert F4-11 niet, en is een gelijknamige pagina onbereikbaar).
 
 ## Loose ends
 
@@ -589,6 +591,14 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 ### Content + deploy
 - **F6-12 — Content bij lancering:** eerst echte reisverhalen + foto's via de admin invoeren, dán live. **`DemoContentSeeder` draait NIET op productie.** Productie start met alleen rollen/permissies + Martins admin-account → een `ProductionSeeder` (bestaan checken in de 6.7-state-check; anders bouwen in 6.7.b).
 
+### Fase 6.7 — deploy (uitgevoerd)
+
+- **F6-14 — Security-headers hand-rolled in één middleware** (`app/Http/Middleware/SecurityHeaders.php`, globaal appended in `bootstrap/app.php`). Altijd-aan: `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, `Cross-Origin-Opener-Policy: same-origin`. HSTS (`max-age=31536000; includeSubDomains`) alleen op `$request->secure()`. CSP alleen in `production` (zodat lokale Vite-dev niet breekt). Geen package (spatie/laravel-csp e.d.) — consistent met de hand-roll-lijn (F6-3).
+- **F6-15 — CSP direct afdwingen (niet report-only).** Pragmatische policy: `default-src 'self'`; `script-src 'self' 'unsafe-inline' 'unsafe-eval'` (`unsafe-eval` onvermijdelijk voor Alpine's `Function()`-evaluatie, `unsafe-inline` als vangnet voor inline JSON-LD); `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`; `font-src 'self' https://fonts.gstatic.com data:` (**`data:` nodig voor de ingebedde Bootstrap Icons-font** — ontdekt in de smoke-test); `img-src 'self' data: https://*.tile.openstreetmap.org https://ml-westein.nl` (OSM-tiles + het hoofdsite-logo F5-6); `connect-src 'self'`; `frame-ancestors 'self'`; `base-uri 'self'`; `form-action 'self'`; `object-src 'none'`. Strak op alles behalve script (Alpine dwingt de versoepeling af; échte strictheid zou de Alpine-CSP-build vereisen — niet de moeite waard).
+- **F6-16 — force-HTTPS + TrustProxies.** `URL::forceScheme('https')` in `AppServiceProvider::boot()`, alleen in `production`. `$middleware->trustProxies(at: '*', headers: X-Forwarded-For/Host/Port/Proto)` in `bootstrap/app.php` — `'*'` is veilig op Plesk (PHP alleen via de lokale proxy bereikbaar). HTTP→HTTPS-**redirect** zit op webserver-niveau (Plesk-toggle), niet in Laravel — `forceScheme` stuurt binnenkomende http-requests namelijk niet door.
+- **F6-17 — `ProductionSeeder`** roept `RolePermissionSeeder` + `CategorySeeder` (beide idempotent, structureel — Tips-categorie nodig voor F5-72) en maakt het admin-account (`reizen@ml-westein.nl`, naam "Martin") met een **onbruikbaar random wachtwoord** (`Str::random(48)`, `hashed`-cast) + `email_verified_at` via `forceFill` (staat niet in `$fillable`) + `assignRole('admin')`. Wachtwoord wordt op de live site via "wachtwoord vergeten" gezet — nooit een wachtwoord in code/seeder. Draait GEEN `DemoContentSeeder`.
+- **F6-18 — Deploy-mechaniek.** Private repo → **read-only GitHub deploy key** (ed25519 op de server, `~/.ssh/config` met `IdentityFile`, clone via `git@github.com:...`). Composer op de server (geen vendor lokaal). Assets: **geen Node op de server**, dus lokaal `npm run build` + `scp -r public/build`. Prod-`.env` als `.env.production.example` in de repo (gitignore negeert `.env.production`, dus `.example`-suffix); secrets alleen op de server. Toolchain-check bij deploy-updates: caches herbouwen na config/route/view-wijzigingen; OPcache herleest gewijzigde PHP-bestanden binnen enkele seconden (anders PHP herstarten in Plesk).
+
 ## Herbruikbare admin-componenten
 Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 
@@ -860,6 +870,16 @@ _Toevoegingen uit 5.5:_
 - **Gekozen catch-all-patroon:** single-segment GET met reserved-slug-uitsluiting via negatieve lookahead: `Route::get('/{page:slug}', ...)->where('page', '(?!('.implode('|', config('westein.reserved_slugs')).')$)[^/]+')`. `[^/]+` = single-segment (multi-segment POSTs blijven 404), lookahead sluit echte routes uit (`/admin` valt door naar `admin.php`). `reserved_slugs` doet zo dubbel werk: F4-11 page-creation-block én catch-all-uitsluiting. **Bij elke nieuwe publieke één-segment-route: toevoegen aan `reserved_slugs`.**
 - **`Mail::to()->send($mailable)` queue't automatisch als het mailable `ShouldQueue` is.** In tests: `Mail::fake()` + `Mail::assertQueued(...)` (niet `assertSent`). In dev zonder draaiende `queue:work` blijft de contactmail in de `jobs`-tabel staan; de success-flash verschijnt wél meteen (bewust: publieke respons hangt niet op SMTP, F4-N8-parallel).
 
+### Landmines geleerd in Fase 6.7 (deploy — Cloud86/Plesk)
+
+- **Plesk CLI-PHP ≠ web-PHP.** De `php` in de SSH-shell is de server-default (hier **8.2**), niet de versie die je voor het (sub)domein koos (8.4). `composer install` en élk `php artisan …` moeten met de expliciete Plesk-binary `/opt/plesk/php/8.4/bin/php` draaien — anders weigert composer op `"php": "^8.3"` en boot Laravel 13 niet. Composer zelf: `/opt/plesk/php/8.4/bin/php /usr/local/bin/composer …`. Diagnose: `composer --version` toont welke PHP 'ie pakt.
+- **Telescope (dev-dependency) sloopt de `--no-dev`-boot.** `bootstrap/providers.php` registreerde `App\Providers\TelescopeServiceProvider` onvoorwaardelijk; die erft van een Telescope-klasse die op productie (`--no-dev`) niet bestaat → `package:discover` faalt met "Class … not found". Fix (officieel Laravel-patroon): uit `bootstrap/providers.php` halen, conditioneel registreren in `AppServiceProvider::register()` (`environment('local')` + `class_exists`-guard), en `laravel/telescope` in `composer.json` `extra.laravel.dont-discover`. Geldt voor elke dev-only provider met een gepubliceerde app-provider.
+- **`spatie/laravel-sluggable 4.0.2` van Packagist gehaald.** `composer update --lock` faalt ("exact version match" — alleen 4.0.0/4.0.1/4.0.3 beschikbaar), maar `composer install` vanuit de bestaande lock werkt (dist uit de lock). Niet-blokkerend voor de deploy; **post-launch: `composer update spatie/laravel-sluggable` → 4.0.3 + lock committen** zodat een toekomstige `composer install` niet struikelt.
+- **CSP `font-src` heeft `data:` nodig.** Bootstrap Icons wordt door Vite als `data:font/woff2;base64,…` in de CSS ingebakken; zonder `data:` in `font-src` blokkeert de CSP de icoon-glyphs (tekstfonts uit gstatic werken wél, dus makkelijk te missen). Zichtbaar als console-CSP-violation, niet als 500. Zie F6-15.
+- **Plesk-DB-prefix asymmetrisch.** De databasenaam krijgt de subscription-prefix (`nvxvunro_reisblog`), de **gebruikersnaam niet** (`reisAdmin`). Bij `Access denied`: check de exacte user in Plesk → Databases → Connection Info, en reset bij twijfel het wachtwoord naar iets **alfanumeriek** (speciale tekens als `#` breken de `.env`-parsing tenzij tussen dubbele quotes). Test los van Laravel met `mysql -u<user> -p -h 127.0.0.1 <db>`.
+- **chrootsh is beperkt maar compleet genoeg.** De SSH-shell is chrooted (`node` bestaat niet → assets lokaal bouwen), maar `php`, `git`, `composer`, `ssh-keygen`, `ssh` en `mysql` zijn er wél. Plesk File Manager verbergt het absolute pad (chroot-view) — het echte pad haal je via SSH (`readlink -f …/public`) of Connection Info.
+- **`.env.production` staat in de Laravel-`.gitignore`.** Een committeerbaar prod-template moet daarom `.env.production.example` heten (niet genegeerd). De remote-devices-bridge weigert sowieso élk `.env*`-bestand te schrijven — dat plaats/vul je zelf op de server.
+
 ## Roadmap — fase-status
 
 - ✅ **Fase 1 — Project setup & design system** _(afgerond 2 mei 2026)_
@@ -867,7 +887,7 @@ _Toevoegingen uit 5.5:_
 - ✅ **Fase 3 — Database & content modellen** _(afgerond 13 mei 2026)_
 - ✅ **Fase 4 — Afgeschermd Admin-gedeelte** _(afgerond)_
 - ✅ **Fase 5 — Ontwikkeling openbare pagina's** _(afgerond 23 augustus 2026)_
-- ⏳ **Fase 6 — SEO, performance en publicatie** _(6.0–6.6 afgerond; bezig met 6.7 deploy)_
+- ⏳ **Fase 6 — SEO, performance en publicatie** _(6.0–6.7 afgerond; site LIVE op reisblog.ml-westein.nl; rest: 6.8 content + 6.9 backups/monitoring)_
 
 ### Fase 5 — overzicht
 
@@ -910,8 +930,8 @@ _Toevoegingen uit 5.5:_
 | **6.4** | WebP-check (conversies al aanwezig, geen commit)                            | 705       | ✅         |
 | **6.5** | Response-cache                                                               |           | uitgesteld |
 | **6.6** | a11y + Lighthouse/WCAG AA (contrast-fix + skip-link)                         | 705       | ✅         |
-| **6.7** | Productie-deploy (Cloud86/Plesk, `reisblog.ml-westein.nl`)                   |           | ⏳         |
+| **6.7** | Productie-deploy — **LIVE** op `reisblog.ml-westein.nl` (Cloud86/Plesk)      | 705 → 709 | ✅         |
 | **6.8** | Content-invoer + media-migratie                                              |           | ⏳         |
 | **6.9** | Backups + monitoring                                                         |           | ⏳         |
 
-**Totaal suite-status:** 705 groen (~1794 assertions).
+**Totaal suite-status:** 709 groen (~1814 assertions).

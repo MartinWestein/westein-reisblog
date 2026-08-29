@@ -23,22 +23,24 @@ Sub-blokken 6.0 t/m 6.6 afgerond en gepusht (suite 693 → 705, ~1794 assertions
 | 6.5 | Response-cache — **uitgesteld** naar post-launch | — |
 | 6.6 | a11y + Lighthouse/WCAG AA (contrast-fix + skip-link) | `9402abe` |
 
-Beslissingen F6-1 t/m F6-13 staan gelockt in `CLAUDE.md`.
+Beslissingen F6-1 t/m F6-13 (+ F6-14 t/m F6-18 voor 6.7) staan gelockt in `CLAUDE.md`.
 
-**Bezig:** 6.7 productie-deploy naar `reisblog.ml-westein.nl` — Cloud86/Plesk, Path A
-(volledige Laravel-deploy).
+**6.7 AFGEROND (29 aug 2026) — de site staat LIVE op https://reisblog.ml-westein.nl.**
+Cloud86/Plesk, PHP 8.4, HTTPS + security-headers, queue-drain via cron, admin-account actief.
+Suite 705 → 709. Volledige uitvoering + deploy-landmines: zie `CLAUDE.md`.
+Resterend in Fase 6: **6.8** (echte content via de admin) + **6.9** (backups/monitoring).
 
 ---
 
 ## 6.7 — Deploy-roadmap (overzicht)
 
-- [ ] **6.7.a** — Plesk-voorbereiding (checklist hieronder)
-- [ ] **6.7.b** — Productie-artefacten in de repo: prod-`.env`-template, security-headers-middleware
-      (CSP/HSTS/X-Frame-Options/COOP), force-HTTPS (`URL::forceScheme` + `TrustProxies`),
-      `ProductionSeeder` (rollen/permissies + admin, géén demo-content)
-- [ ] **6.7.c** — Deploy-runbook + eerste deploy via SSH
-- [ ] **6.7.d** — Cron + scheduler (één regel `schedule:run`; queue-drain + sitemap)
-- [ ] **6.7.e** — Live smoke-test
+- [x] **6.7.a** — Plesk-voorbereiding (subdomein, docroot `/public`, PHP 8.4, SSH, DB, SSL)
+- [x] **6.7.b** — Productie-artefacten: prod-`.env`-template (`.env.production.example`), security-headers-middleware
+      (CSP/HSTS/X-Frame/COOP), force-HTTPS (`URL::forceScheme` + `TrustProxies`),
+      `ProductionSeeder` (rollen/permissies + categorieën + admin, géén demo-content)
+- [x] **6.7.c** — Eerste deploy via SSH (deploy key, `composer install --no-dev`, migrate + seed, storage:link, assets via `scp`, caches)
+- [x] **6.7.d** — Cron + scheduler (Plesk-cron `schedule:run` elke minuut → queue-drain + sitemap)
+- [x] **6.7.e** — Live smoke-test (styling, sitemap/feed/robots, admin-login via wachtwoord-reset, mail door de queue) + HTTP→HTTPS-redirect
 
 ---
 
