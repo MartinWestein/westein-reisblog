@@ -2,7 +2,7 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 23 augustus 2026 — Fase 5 volledig afgerond (t/m 5.6): eindcheck + `fase-5-bouwplan.md` geschreven. Alle publieke pagina's staan; cleanups getrieerd naar Fase 6. Suite 693 groen (1750 assertions). Volgende: Fase 6 (SEO/performance + productie-deploy).**Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
+**Laatst bijgewerkt:** 29 augustus 2026 — Fase 6 sub-blokken 6.0 t/m 6.6 afgerond en gecommit (laatst `9402abe`): SEO-meta/OG/Twitter, JSON-LD, sitemap/robots/RSS, WebP-check, a11y-contrast + skip-link. Response-cache (6.5) uitgesteld naar post-launch. Suite 705 groen (~1794 assertions). Bezig met **6.7 (productie-deploy)** — Cloud86/Plesk, subdomein `reisblog.ml-westein.nl`, Path A (volledige Laravel-deploy).**Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
 **Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → `fase-4-bouwplan.md`. Fase 5 → wordt na afronding van alle Fase-5-stappen in één keer geschreven (F5-1), niet incrementeel.
 
 ---
@@ -48,10 +48,22 @@ Fase 4 volledig afgerond en gemerged naar main (Stap 4.14).
 
 - **Fase 5.6 afgerond** — eindcheck-verificatiepass + `fase-5-bouwplan.md` (fase-4-format, repo-root). Geen cleanups meegepakt; die staan getrieerd voor Fase 6. F5-124.
 
-- **Fase 5 volledig afgerond.
-** Volgende: **Fase 6** — SEO (Spatie SEO/OG/JSON-LD, sitemap, robots, RSS), response-cache, WebP, cookie-banner/analytics-afweging, Lighthouse/WCAG, en de productie-deploy naar NL shared hosting. Vooraf: echte content via de admin invoeren (demo-seeder draait niet mee op productie).
+- **Fase 5 volledig afgerond.**
 
-State-check volgende sessie: `git log --oneline -6` (verwacht `51e2406` of de CLAUDE.md-docs-commit daarboven, clean), `git status` (clean), `php artisan test` (verwacht 693). **Let op:** er staat nu een catch-all `/{page:slug}` (fallback voor statische pagina's) als laatste route — nieuwe publieke één-segment-routes moeten ná registratie ook in `config('westein.reserved_slugs')` (anders blokkeert F4-11 niet, en is een gelijknamige pagina onbereikbaar).
+**Fase 6 in uitvoering — SEO, performance, a11y, publicatie.** Sub-blokken 6.0 t/m 6.6 deze fase afgerond en gecommit (suite 693 → 705):
+- **6.0** (`99a35a0`) — cleanup-blok (o.a. flash-key-consistentie in admin-controllers). Suite 693.
+- **6.1** (SEO-meta `7913112` + dubbel-escape-fix `fa128cf`) — SEO-meta hand-rolled: `partials/seo-meta.blade.php` (title/description/canonical/OG/Twitter/article-meta), favicon-set + PWA-manifest, `config/westein.php` `seo`-blok. F6-3 t/m F6-5. Suite 693 → 697.
+- **6.2** (JSON-LD-infra `9548eb9` + schema-methodes `10d388b`) — `<x-public.json-ld>`, WebSite + Organization site-breed, BreadcrumbList, en `articleSchema()`/`placeSchema()`/`personSchema()` op de modellen (inline in body gerenderd). F6-7. Suite 697 → 703.
+- **6.3** (`fca484e`) — sitemap (`sitemap:generate`-command + scheduler `dailyAt('04:00')`, `public/sitemap.xml` gitignored), RSS-feed (`/feed`, `FeedController`), `robots.txt`. F6-8. Suite 703 → 705.
+- **6.4** — WebP-check afgevinkt (conversies waren al aanwezig, F4-N7), geen commit.
+- **6.5** — response-cache **uitgesteld** naar post-launch (F6-9).
+- **6.6** (`9402abe`) — a11y + Lighthouse/WCAG AA: contrast-fix + skip-to-content-link. F6-11. Suite 705.
+
+Assets deze fase in de repo (gegenereerd + door Martin geplaatst, gecommit): `public/images/og-default.jpg` (1200×630 branded card), `public/images/logo.png` (MW-monogram), favicon-set (`favicon.ico`, `apple-touch-icon.png`, `favicon-16/32/192/512.png`, `site.webmanifest`).
+
+- **Volgende: Fase 6.7 (deploy).** Zie `claude/sessie-start-6.7.md` voor de 6.7-roadmap (a Plesk-voorbereiding, b productie-artefacten, c deploy-runbook, d cron/scheduler, e live smoke-test).
+
+State-check bij 6.7-start: `git log --oneline -8` (verwacht `9402abe` bovenaan, plus clean/gepusht-check), `git status` (clean), `php artisan test` (verwacht **705**, ~1794 assertions). **Let op:** er staat een catch-all `/{page:slug}` (fallback voor statische pagina's) als laatste route — nieuwe publieke één-segment-routes moeten ná registratie ook in `config('westein.reserved_slugs')` (anders blokkeert F4-11 niet, en is een gelijknamige pagina onbereikbaar).
 
 ## Loose ends
 
@@ -554,6 +566,29 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 
 - **F5-124 Scope 5.6 = puur afsluiten** — eindcheck-verificatiepass + `fase-5-bouwplan.md` + roadmap op ✅. Alle opgespaarde cleanups (flash-key-inconsistentie, lege `resources/views/public/`-dir, Tailwind uit `package.json`, Sass-`@use`-migratie, import-conventie) bewust doorgeschoven naar Fase 6 — admin-scope + build/tooling, blokkeren de livegang niet. Prioriteit verschoven naar snel-naar-live. `fase-5-bouwplan.md` in repo-root (naast fase-2/fase-4) + in de projectomgeving. Vooruitblik Fase 6 (uit deze sessie): host = zelfde als ml-westein.nl (Laravel-geschikt: SSH/PHP 8.3+/MySQL/cron); content-strategie = eerst echte reisverhalen + foto's via de admin, dán live (demo-seeder niet op productie); de **flash-key-bug is de hoogste cleanup-prioriteit**.
 
+## Fase 6 beslissingen
+
+### Fase-macro + hosting
+- **F6-1 — Suite-first ordering.** "Snel naar live" losgelaten: de site hoeft pas live over ~2 weken (nieuwe reis). Eerst de volledige SEO/performance/a11y-suite afmaken, dán deployen.
+- **F6-2 — Sub-fase-opdeling Fase 6:** 6.0 cleanup, 6.1 SEO-meta/OG/Twitter, 6.2 JSON-LD, 6.3 sitemap/robots/RSS, 6.4 WebP-check, 6.5 response-cache (uitgesteld), 6.6 a11y/Lighthouse, 6.7 deploy, 6.8 content-invoer + media-migratie, 6.9 backups + monitoring.
+- **F6-6 — Blog op subdomein `reisblog.ml-westein.nl`.** Productie-`APP_URL` = `https://reisblog.ml-westein.nl` (nodig voor absolute sitemap/OG/canonical-URL's).
+- **F6-13 — Hosting = Cloud86/Plesk, Path A (volledige Laravel-deploy).** SSH beschikbaar (SSH-user in Plesk + SSH voor abonnement aan), cron per-minuut (`schedule:run`), composer op de server (geen vendor lokaal bouwen), PHP 8.3+ CLI met gd/pdo_mysql/mbstring/intl, docroot per (sub)domein op `/public`. **Géén permanente processen** (geen persistente `queue:work`) → queue-drain via de scheduler: `queue:work --stop-when-empty` elke minuut. Eén cronregel `schedule:run` draait zowel `sitemap:generate` (dagelijks) als de queue-drain.
+
+### SEO, structured data, feeds
+- **F6-3 — SEO hand-rollen, niet `spatie/laravel-seo`.** Per-pagina meta via de bestaande `@section`/`@yield`-Blade-conventie; `partials/seo-meta.blade.php` rendert alles. Reden: volledige controle, geen extra package-abstractie, sluit aan op de bestaande title/meta-conventie.
+- **F6-4 — OG-default = branded card** (Niagara-foto 1200×630, in `config('westein.seo.og_default')`).
+- **F6-5 — Favicon van het ml-westein-logo** (MW-monogram), volledige favicon-set + `site.webmanifest`, `theme-color #14213D`.
+- **F6-7 — JSON-LD-scope:** WebSite + Organization site-breed (in head); BlogPosting op posts; TouristAttraction op locations; TouristDestination op destinations; Person op auteurs; BreadcrumbList op alle detail-pagina's. **Inline in de `<body>` gerenderd** (Google accepteert dat) om de `@push('head')`/`@stack('head')`-volgorde-valkuil te vermijden (push vanuit body-content vuurt ná het renderen van de head-stack).
+- **F6-8 — Sitemap via scheduler** (`sitemap:generate` dagelijks 04:00, schrijft `public/sitemap.xml`, gitignored) + **RSS-feed** op `/feed` (gepubliceerde niet-tip-posts, laatste 20) + **robots.txt** (Disallow `/admin` + `/mijn-account`, Sitemap-verwijzing naar de subdomein-URL).
+
+### Performance, privacy, a11y
+- **F6-9 — Response-cache uitgesteld** (`spatie/laravel-responsecache`) naar post-launch fast-follow. Let-op: CSRF op gecachte form-pagina's.
+- **F6-10 — Geen analytics nu** → geen cookie-banner nodig (zonder tracking strikt genomen niet vereist).
+- **F6-11 — a11y-contrast (6.6):** nieuw token `--color-accent-1-ink: #AD5A28` (terracotta) voor perzik-**tekst** en tekst-op-perzik; lichte perzik `#E8A87C` blijft decoratief (borders, outlines, tinten, navy-hovers); admin-`--brand-primary` ongemoeid. Publieke site-nav `--sitenav-primary` `#1E90FF` → `#1668C4` (AA). Skip-to-content-link in `layouts/public.blade.php` + `id="main-content"` op `<main>`. Best-Practices/SEO-Lighthouse-scores waren dev-artefacten (http + phpdebugbar) en lossen zich bij deploy op; security-headers komen in 6.7.
+
+### Content + deploy
+- **F6-12 — Content bij lancering:** eerst echte reisverhalen + foto's via de admin invoeren, dán live. **`DemoContentSeeder` draait NIET op productie.** Productie start met alleen rollen/permissies + Martins admin-account → een `ProductionSeeder` (bestaan checken in de 6.7-state-check; anders bouwen in 6.7.b).
+
 ## Herbruikbare admin-componenten
 Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
 
@@ -831,8 +866,8 @@ _Toevoegingen uit 5.5:_
 - ✅ **Fase 2 — Authenticatie & autorisatie** _(afgerond 10 mei 2026)_
 - ✅ **Fase 3 — Database & content modellen** _(afgerond 13 mei 2026)_
 - ✅ **Fase 4 — Afgeschermd Admin-gedeelte** _(afgerond)_
-- ⏳ **Fase 5 — Ontwikkeling openbare pagina's** _(afgerond 23 augustus 2026)_
-- ⏳ **Fase 6 — SEO, performance en publicatie**
+- ✅ **Fase 5 — Ontwikkeling openbare pagina's** _(afgerond 23 augustus 2026)_
+- ⏳ **Fase 6 — SEO, performance en publicatie** _(6.0–6.6 afgerond; bezig met 6.7 deploy)_
 
 ### Fase 5 — overzicht
 
@@ -864,4 +899,19 @@ _Toevoegingen uit 5.5:_
 | **5.5.b**    | Publieke unsubscribe `/nieuwsbrief/uitschrijven/{token}` (sluit F4-N11)            | 690 → 693 | ✅     |
 | **5.6**      | Eindcheck + `fase-5-bouwplan.md` schrijven                                         |           | ✅     |
 
-**Totaal suite-status:** 693 groen (1750 assertions).
+### Fase 6 — overzicht
+
+| Stap    | Inhoud                                                                        | Suite     | Status     |
+| ------- | ---------------------------------------------------------------------------- | --------- | ---------- |
+| **6.0** | Cleanup (o.a. flash-key-consistentie admin-controllers)                      | 693       | ✅         |
+| **6.1** | SEO-meta/OG/Twitter hand-rolled + favicon-set + PWA-manifest                 | 693 → 697 | ✅         |
+| **6.2** | JSON-LD (WebSite/Organization/BreadcrumbList + schema-methodes op modellen)  | 697 → 703 | ✅         |
+| **6.3** | Sitemap (scheduler) + RSS-feed `/feed` + robots.txt                          | 703 → 705 | ✅         |
+| **6.4** | WebP-check (conversies al aanwezig, geen commit)                            | 705       | ✅         |
+| **6.5** | Response-cache                                                               |           | uitgesteld |
+| **6.6** | a11y + Lighthouse/WCAG AA (contrast-fix + skip-link)                         | 705       | ✅         |
+| **6.7** | Productie-deploy (Cloud86/Plesk, `reisblog.ml-westein.nl`)                   |           | ⏳         |
+| **6.8** | Content-invoer + media-migratie                                              |           | ⏳         |
+| **6.9** | Backups + monitoring                                                         |           | ⏳         |
+
+**Totaal suite-status:** 705 groen (~1794 assertions).
