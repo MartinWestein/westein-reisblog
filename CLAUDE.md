@@ -2,7 +2,8 @@
 
 Briefing voor Claude bij elke sessie. Lees dit eerst.
 
-**Laatst bijgewerkt:** 29 augustus 2026 — **Fase 6.7 (deploy) afgerond: de reisblog staat LIVE op https://reisblog.ml-westein.nl** (Cloud86/Plesk shared hosting, PHP 8.4, HTTPS + security-headers, queue-drain via cron, admin-account actief). Fasen 6.0 t/m 6.6 (SEO/OG/JSON-LD, sitemap/robots/RSS, a11y) daarvoor afgerond; response-cache (6.5) uitgesteld. Suite 709 groen (~1814 assertions). Volgende: **6.8** (echte content via de admin) + **6.9** (backups/monitoring).**Masterplan:** `westein-reisblog-masterplan.md` voor volledige architectuur, ERD, URL-structuur
+**Laatst bijgewerkt:** 29 augustus 2026 — **Fase 6.7 (deploy) afgerond: de reisblog staat LIVE op https://reisblog.ml-westein.nl** (Cloud86/Plesk shared hosting, PHP 8.4, HTTPS + security-headers, queue-drain via cron, admin-account actief). Fasen 6.0 t/m 6.6 (SEO/OG/JSON-LD, sitemap/robots/RSS, a11y) daarvoor afgerond; response-cache (6.5) uitgesteld. Suite 709 groen (~1814 assertions). 
+**Fase 6.8 gestart** — fundament grotendeels staand: auteurs live (F6-20), Privacy-pagina live (F6-10 ingevuld), CSP foto-upload-bug gefixt (F6-21). Suite 709. Nog open in 6.8: familieleden-bio's, tijdzone-fix, over-ons/contact-intro's, hero-home, dán de reizen zelf. Daarna **6.9** (backups/monitoring).
 **Bouwplannen:** Fase 2 → `fase-2-bouwplan.md`. Fase 4 → `fase-4-bouwplan.md`. Fase 5 → wordt na afronding van alle Fase-5-stappen in één keer geschreven (F5-1), niet incrementeel.
 
 ---
@@ -598,6 +599,11 @@ Volledige database-architectuur, ERD en URL-structuur: zie masterplan §3.
 - **F6-16 — force-HTTPS + TrustProxies.** `URL::forceScheme('https')` in `AppServiceProvider::boot()`, alleen in `production`. `$middleware->trustProxies(at: '*', headers: X-Forwarded-For/Host/Port/Proto)` in `bootstrap/app.php` — `'*'` is veilig op Plesk (PHP alleen via de lokale proxy bereikbaar). HTTP→HTTPS-**redirect** zit op webserver-niveau (Plesk-toggle), niet in Laravel — `forceScheme` stuurt binnenkomende http-requests namelijk niet door.
 - **F6-17 — `ProductionSeeder`** roept `RolePermissionSeeder` + `CategorySeeder` (beide idempotent, structureel — Tips-categorie nodig voor F5-72) en maakt het admin-account (`reizen@ml-westein.nl`, naam "Martin") met een **onbruikbaar random wachtwoord** (`Str::random(48)`, `hashed`-cast) + `email_verified_at` via `forceFill` (staat niet in `$fillable`) + `assignRole('admin')`. Wachtwoord wordt op de live site via "wachtwoord vergeten" gezet — nooit een wachtwoord in code/seeder. Draait GEEN `DemoContentSeeder`.
 - **F6-18 — Deploy-mechaniek.** Private repo → **read-only GitHub deploy key** (ed25519 op de server, `~/.ssh/config` met `IdentityFile`, clone via `git@github.com:...`). Composer op de server (geen vendor lokaal). Assets: **geen Node op de server**, dus lokaal `npm run build` + `scp -r public/build`. Prod-`.env` als `.env.production.example` in de repo (gitignore negeert `.env.production`, dus `.example`-suffix); secrets alleen op de server. Toolchain-check bij deploy-updates: caches herbouwen na config/route/view-wijzigingen; OPcache herleest gewijzigde PHP-bestanden binnen enkele seconden (anders PHP herstarten in Plesk).
+### Fase 6.8 — content-invoer (uitgevoerd/lopend)
+
+- **F6-19 — Content-invoerstrategie = optie A.** Content wordt direct op productie ingevoerd via de live `/admin` (reisblog.ml-westein.nl). Geen dev→prod-datamigratie: de prod-DB is de bron van waarheid voor content. `DemoContentSeeder` blijft dev-only. Media-uploads landen direct in de prod-`storage` (Spatie Media Library).
+- **F6-20 — Auteurschap = meerdere schrijvers.** Martin schrijft via het admin-account (`reizen@ml-westein.nl`). Anna heeft een eigen **Auteur-account** (`annacaitlin.ugc@gmail.com`), gekoppeld aan haar familielid-kaart (rol "Dochter en shopexpert"). Linda + Gino zijn **display-only familieleden** op `/over-ons` (geen account, initialen-avatar tot er een portret staat). Uitnodigingslinks verlopen ~60 min → opnieuw versturen via de gebruikerspagina in de admin.
+- **F6-21 — CSP `img-src` `blob:`-fix.** `blob:` toegevoegd aan `img-src` in `app/Http/Middleware/SecurityHeaders.php`. De `<x-admin.image-upload>`-component maakt een `blob:`-object-URL voor de preview + dimensie-meting; zonder `blob:` in de prod-CSP (F6-15) blokkeerde de browser dat stil ("Kon de afbeelding niet lezen"). Commit `4003a01`, live. Alle admin foto-uploads werken nu op productie.
 
 ## Herbruikbare admin-componenten
 Opgebouwd tijdens Fase 4 — hergebruiken in volgende modules:
@@ -880,6 +886,12 @@ _Toevoegingen uit 5.5:_
 - **chrootsh is beperkt maar compleet genoeg.** De SSH-shell is chrooted (`node` bestaat niet → assets lokaal bouwen), maar `php`, `git`, `composer`, `ssh-keygen`, `ssh` en `mysql` zijn er wél. Plesk File Manager verbergt het absolute pad (chroot-view) — het echte pad haal je via SSH (`readlink -f …/public`) of Connection Info.
 - **`.env.production` staat in de Laravel-`.gitignore`.** Een committeerbaar prod-template moet daarom `.env.production.example` heten (niet genegeerd). De remote-devices-bridge weigert sowieso élk `.env*`-bestand te schrijven — dat plaats/vul je zelf op de server.
 
+### Landmines geleerd in Fase 6.8
+
+- **CSP staat ALLEEN in productie aan (F6-14) → "werkt lokaal, faalt live" = check de CSP.** De `blob:`-upload-bug (F6-21) was lokaal onzichtbaar omdat de CSP daar niet wordt gezet. Reflex: bij elk live-only-euvel eerst de console op CSP-violations checken vóór je in de app-code duikt.
+- **Reserved slugs blokkeren `over-ons`/`contact` als admin-Page.** Beide staan in `config('westein.reserved_slugs')`; `StorePageRequest` weigert ze via `NotReservedSlug`. Hun intro-Pages kunnen dus NIET via de admin worden aangemaakt — daarvoor is een klein seedertje nodig (Pages met die slugs direct aanmaken, buiten de admin-validatie om). `privacy` staat NIET in de lijst → die kón wél gewoon via de admin (en is zo live gezet).
+- **App-tijdzone is `UTC` (hardcoded in `config/app.php`).** De admin-datetime-invoer wordt als UTC geïnterpreteerd, terwijl Martin lokale (Amsterdamse) wandkloktijd typt → geplande publicaties staan 1u (winter) / 2u (zomer) vooruit → status "Gepland" + publieke 404 tot dat moment. Directe workaround: publicatiedatum leeg laten (= nu) of in het verleden zetten. Structurele fix (open beslissing): `'timezone' => 'Europe/Amsterdam'` → één-regel-wijziging, testpoort, op de server `config:cache` herbouwen.
+
 ## Roadmap — fase-status
 
 - ✅ **Fase 1 — Project setup & design system** _(afgerond 2 mei 2026)_
@@ -927,11 +939,11 @@ _Toevoegingen uit 5.5:_
 | **6.1** | SEO-meta/OG/Twitter hand-rolled + favicon-set + PWA-manifest                 | 693 → 697 | ✅         |
 | **6.2** | JSON-LD (WebSite/Organization/BreadcrumbList + schema-methodes op modellen)  | 697 → 703 | ✅         |
 | **6.3** | Sitemap (scheduler) + RSS-feed `/feed` + robots.txt                          | 703 → 705 | ✅         |
-| **6.4** | WebP-check (conversies al aanwezig, geen commit)                            | 705       | ✅         |
+| **6.4** | WebP-check (conversies al aanwezig, geen commit)                             | 705       | ✅         |
 | **6.5** | Response-cache                                                               |           | uitgesteld |
 | **6.6** | a11y + Lighthouse/WCAG AA (contrast-fix + skip-link)                         | 705       | ✅         |
 | **6.7** | Productie-deploy — **LIVE** op `reisblog.ml-westein.nl` (Cloud86/Plesk)      | 705 → 709 | ✅         |
-| **6.8** | Content-invoer + media-migratie                                              |           | ⏳         |
+| **6.8** | Content-invoer via live admin (F6-19/20/21; auteurs + Privacy live)          | 709       | ⏳         |
 | **6.9** | Backups + monitoring                                                         |           | ⏳         |
 
 **Totaal suite-status:** 709 groen (~1814 assertions).
