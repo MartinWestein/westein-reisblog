@@ -138,49 +138,54 @@ export function tiptapRich() {
         },
         
         // Tekst-opmaak
-        toggleBold()        { this.editor.chain().focus().toggleBold().run() },
-        toggleItalic()      { this.editor.chain().focus().toggleItalic().run() },
-        toggleUnderline()   { this.editor.chain().focus().toggleUnderline().run() },
-        toggleStrike()      { this.editor.chain().focus().toggleStrike().run() },
+        // Always go through the raw editor: ProseMirror identity checks fail on Alpine's reactive Proxy
+        chain() {
+            return window.Alpine.raw(this.editor).chain().focus()
+        },
+        toggleBold()        { this.chain().toggleBold().run() },
+        toggleItalic()      { this.chain().toggleItalic().run() },
+        toggleUnderline()   { this.chain().toggleUnderline().run() },
+        toggleStrike()      { this.chain().toggleStrike().run() },
 
         // Block-niveau
-        setHeading(level)   { this.editor.chain().focus().toggleHeading({ level }).run() },
-        setParagraph()      { this.editor.chain().focus().setParagraph().run() },
-        toggleBulletList()  { this.editor.chain().focus().toggleBulletList().run() },
-        toggleOrderedList() { this.editor.chain().focus().toggleOrderedList().run() },
-        toggleBlockquote()  { this.editor.chain().focus().toggleBlockquote().run() },
-        toggleCode()        { this.editor.chain().focus().toggleCode().run() },
-        toggleCodeBlock()   { this.editor.chain().focus().toggleCodeBlock().run() },
-        insertHorizontalRule() { this.editor.chain().focus().setHorizontalRule().run() },
+        setHeading(level)   { this.chain().toggleHeading({ level }).run() },
+        setParagraph()      { this.chain().setParagraph().run() },
+        toggleBulletList()  { this.chain().toggleBulletList().run() },
+        toggleOrderedList() { this.chain().toggleOrderedList().run() },
+        toggleBlockquote()  { this.chain().toggleBlockquote().run() },
+        toggleCode()        { this.chain().toggleCode().run() },
+        toggleCodeBlock()   { this.chain().toggleCodeBlock().run() },
+        insertHorizontalRule() { this.chain().setHorizontalRule().run() },
 
         // Tabel
         insertTable() {
-            this.editor.chain().focus()
+            this.chain()
                 .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
                 .run()
         },
-        addColumnAfter() { this.editor.chain().focus().addColumnAfter().run() },
-        addRowAfter()    { this.editor.chain().focus().addRowAfter().run() },
-        deleteColumn()   { this.editor.chain().focus().deleteColumn().run() },
-        deleteRow()      { this.editor.chain().focus().deleteRow().run() },
-        deleteTable()    { this.editor.chain().focus().deleteTable().run() },
+        addColumnAfter() { this.chain().addColumnAfter().run() },
+        addRowAfter()    { this.chain().addRowAfter().run() },
+        deleteColumn()   { this.chain().deleteColumn().run() },
+        deleteRow()      { this.chain().deleteRow().run() },
+        deleteTable()    { this.chain().deleteTable().run() },
 
         // Undo/redo
-        undo() { this.editor.chain().focus().undo().run() },
-        redo() { this.editor.chain().focus().redo().run() },
+        undo() { this.chain().undo().run() },
+        redo() { this.chain().redo().run() },
 
         // Link
         setLink() {
-            const previousUrl = this.editor.getAttributes('link').href
+            const editor = window.Alpine.raw(this.editor)
+            const previousUrl = editor.getAttributes('link').href
             const url = window.prompt('URL (laat leeg om link te verwijderen):', previousUrl ?? '')
             if (url === null) return
             if (url === '') {
-                this.editor.chain().focus().extendMarkRange('link').unsetLink().run()
+                this.chain().extendMarkRange('link').unsetLink().run()
                 return
             }
-            this.editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+            this.chain().extendMarkRange('link').setLink({ href: url }).run()
         },
-
+        
         // ─── Image (stap 4.6) ────────────────────────────────────────────
         openImagePicker() {
             // Postcontext wordt door de modal zelf gelezen uit data-attribuut.
